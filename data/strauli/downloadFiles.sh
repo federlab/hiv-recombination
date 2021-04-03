@@ -15,5 +15,5 @@ cd /net/gs/vol1/home/evromero/2021_hiv-rec/data/strauli/
 while read accession; do
     echo $accession
     fastq-dump --split-files SRA_files/$accession.sra
-done < $(pwd)/PRJNA543982.txt
+done < $(pwd)/missedFiles.txt
 echo "Finish - `date`"
