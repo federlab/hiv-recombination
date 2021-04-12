@@ -14,14 +14,14 @@ runInfo = pd.read_csv(infoFile)
 
 #iterate through the fastq files in the directory
 for filename in os.listdir(dirPath):
-    if not os.isdir(filename):
+    if len(filename.split('.')) == 2:
         #just get the first version (I accidentally got duplicates of the files)
         print(filename, file = sys.stderr)
         version = filename.split('_')
         accession = version[0]
         version = version[1].split('.')
         version = int(version[0])
-        if version == 1:
+        if version == 2:
             
 
             #now we need to determine if the file is env sequences
@@ -32,9 +32,11 @@ for filename in os.listdir(dirPath):
             isRNA = ((currRow['LibrarySource'] == 'VIRAL RNA').to_numpy())[0]
             # print("isRNA is", file = sys.stderr)
             # print(isRNA, file = sys.stderr)
+            patient = ((currRow['SampleName']).to_numpy())[0]
+            currLibrary = ((currRow['LibraryName']).to_numpy())[0]
+
             if isRNA:
-                patient = ((currRow['SampleName']).to_numpy())[0]
-                currLibrary = ((currRow['LibraryName']).to_numpy())[0]
+                
                 # print("the library is", file = sys.stderr)
                 # print(currLibrary, file = sys.stderr)
             
@@ -49,5 +51,7 @@ for filename in os.listdir(dirPath):
                 os.rename(dirPath + filename, dirPath + patient + "/" + newName)
             #move the antibody sequences to a different directory
             else:
+                newName = filename.split('.')
+                newName = newName[0] + "_" + currLibrary + ".fastq"
                 os.rename(dirPath + filename, dirPath + "transcriptome/" + newName)
             
