@@ -82,65 +82,196 @@ def get_sam_reads(vcfDF, bamfile):
 
 
 
-def 
-    # read  loc1    loc2    loc3
-    # 1     #       g       t
-    # 2      a       g       #
-
-    #fetch our reads, I think a dataframe ordered by position would be best
-    #we need to loop through the reads and for each, record the genotype
-    #at all of the segregating positions. We could have a column for each and then
-    #do like a pandas loc to find columns where the entry for that locus is not like
-    #some prespecified null value
-
-
-
-    # #we need to get each pair of loci. To do this we can iterate through the
-    # #rows with nested for loops
-    # for index1, locus1 in vcfDF.iterrows():
-    #     #just get all the reads where locus one is present
-    #     for index2, locus2 in vcfDF.iterrows():
-    #         #if the two loci are not the same, also we don't care about the
-    #         #order of pairs so we can just use greater than to not get 
-    #         #the two pairs
-    #         if index1 > index2:
-                
-    #             locusDist = locus1['POS'] - locus2['POS']
-    #             #if its possible for the two loci to be on the same read
-    #             if locusDist < 201:
-    #                 print(locusDist, file = sys.stderr)
-
-                    #locate rows where loc1 not # and loc2 not #
-
-                # for read in alignedReads.fetch(start = locus1['POS'], stop = locus2['POS']):
-                #     print(read.is_paired, file = sys.stderr)
-                #     print(read.cigartuples, file = sys.stderr)
-                #     #now we can use the two loci to get all of the reads between them
-                #     #we can do this using pysam
-                #     print(locus1, file = sys.stderr)
-                #     print(locus2, file = sys.stderr)
-                #then we need to check for spanning reads
-
-
-    return
-
-
-
-
-
-def calculateR2():
+def r2_all_loci(genDF):
     """
-    Given two segregating loci, calculate their R^2 value
+    Loop through dataframe of reads and for loci that are present on same read,
+    Calculate R^2 and distance
+    ---------------------------------------------------------------------------
+    Params
+    ------
+    genDF:  pd.DataFrame, each row is a read's genotype at a specific locus
+                            [position, read name, base]
+    Returns:
+    -------
+    r2List: list, R^2 values for each locus
+    distList: list, distances between each corresponding pair of loci
+    """
+    #make a list to store the values in 
+    r2List = []
+    distList = []
+
+    #our loci
+    lociList = genDF[0].unique()
+
+    #convert our dataframe to wide
+    wideGenDF = genDF.pivot(index = 1,columns = 0, values = 2).reset_index()
+
+
+    #we need every pair of loci
+    for locus1 in lociList:
+        #get dataframe for our current locus
+        currLoc1 = wideGenDF[wideGenDF[locus1].notnull()]
+        for locus2 in lociList:
+            #order doesn't matter
+            if locus1 > locus2:
+                currDist = locus1 - locus2
+                print("----------", file = sys.stderr)
+                print(locus1, file = sys.stderr)
+                print(locus2, file = sys.stderr)
+                print(currDist, file = sys.stderr)
+                #get all of the reads with a genotype for both loci
+                bothLoc = currLoc1[currLoc1[locus2].notnull()]
+                if not bothLoc.empty:
+                    #calculate R^2 for these two loci
+                    currR2 = calculateR2(bothLoc, locus1, locus2)
+                    #if both the loci are polymorphic for some reads
+                    if currR2 is not None:
+                        r2List.append(currR2)
+                        distList.append(locus1-locus2)
+                        
+    return r2List, distList
+
+
+
+def calculateR2(readDf, locus1, locus2):
+    """
+    Given two segregating loci, calculate their R^2 value using the direct
+    inference method
     https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0048588
+    Params
+    ------
+    readDF:  pd.DataFrame, each row is a read's genotype at a specific locus
+                        [position, read name, base]. Dataframe should contain
+                        all of the reads that have genotypes at both loci
+    locus1:  int, position of first locus
+    locus2:  int, position of second locus
+    Returns
+    -------
+    None if both loci are not segregating on the overlapping reads
     """
-    #We need to know both alleles at each locus
-    #To get this we can use our vcf file.
+    #check how many alleles at the locus
+    numLoc1 = readDf[locus1].unique()
+    numLoc2 = readDf[locus2].unique()
 
+    #We need to know the frequency of each allele
+    freqList1 = calculate_allele_freq(readDf, locus1)
+    freqList2 = calculate_allele_freq(readDf, locus2)
 
+    #if both loci are not polymorphic on the overlapping reads, return None
+    if len(freqList1) == 1 or len(freqList2) == 1:
+        return None
+    
+    #sort our lists by most frequent
+    freqList1 = sorted(freqList1, key = lambda x: x[1], reverse=True)
+    freqList2 = sorted(freqList2, key = lambda x: x[1], reverse=True)
+
+    #make sure both our loci have frequency higher than 1%
+    #we just need to check the second entries since the list is sorted
+    if freqList1[1][1] < 0.01 or freqList2[1][1] < 0.01:
+        return None
+
+    #throw out all alleles that aren't the two most frequent 
+    #and start labeling each genotype
+    freqList1 = freqList1[:2]
+    loc1A = readDf[readDf[locus1] == freqList1[0][0]]
+    loc1a = readDf[readDf[locus1] == freqList1[1][0]]
+    freqList2 = freqList2[:2]
+    # loc2b = readDf[readDf[locus2] == freqList2[0][0]]
+    # loc2B = readDf[readDf[locus2] == freqList2[1][0]]
+
+    #we need to count the observations for each haplotype
+    AB = loc1A[loc1A[locus2] == freqList2[0][0]]
+    aB = loc1a[loc1a[locus2] == freqList2[0][0]]
+    Ab = loc1A[loc1A[locus2] == freqList2[1][0]]
+    ab = loc1a[loc1a[locus2] == freqList2[1][0]]
+
+    AB_obs = len(AB.index)
+    aB_obs = len(aB.index)
+    Ab_obs = len(Ab.index)
+    ab_obs = len(ab.index)
+
+    allSum = AB_obs + aB_obs + Ab_obs + ab_obs
+
+    p_A = (Ab_obs + AB_obs)/float(allSum)
+    p_B = (AB_obs + aB_obs)/float(allSum)
+
+    #make sure the frequencies aren't to close to 1
+    if p_A == 1 or p_B == 1: return None
+
+    # print(AB_obs + aB_obs + Ab_obs + ab_obs, file = sys.stderr)
+    # print(len(readDf.index), file = sys.stderr)
+    # print("-------------------", file = sys.stderr)
+    # print(p_A, file = sys.stderr)
+    # print(p_B, file = sys.stderr)
+    #now do the calculation
+    topFrac = AB_obs/ (AB_obs + aB_obs + Ab_obs + ab_obs)
+    # print(topFrac, file = sys.stderr)
+    numerator = topFrac - (p_A * p_B)
+    numerator = numerator ** 2
+    # print(numerator, file = sys.stderr)
+    denominator = p_A * p_B * (1-p_A) * (1-p_B)
+    # print(denominator, file = sys.stderr)
+    
+    r2 = numerator / denominator
+
+    # if r2 < 0.1  or r2 > 0.9:
+    #     print("--------------------")
+    #     print(r2)
+    #     print("AB")
+    #     print(AB_obs/allSum)
+    #     print("aB")
+    #     print(aB_obs/allSum)
+    #     print("Ab")
+    #     print(Ab_obs/allSum)
+    #     print("ab")
+    #     print(ab_obs/allSum)
+
+    return r2
+    
     
     #I think I need to ask more about which files to use (should I use samples
     # from multiple patient dates, or should there be a plot for each date)
 
     #We need the allele frequencies from the intersecting reads
 
+def calculate_allele_freq(readDf, locus): 
+    """Calculate the frequency of an allele at a locus
+    ---------------------------------------------------------------------------
+    Params
+    ------
+    readDF:  pd.DataFrame, each row is a read's genotype at a specific locus
+                        [position, read name, base]. Dataframe should contain
+                        all of the reads that have genotypes at both loci
+    locus:  int, position of locus
     
+    Returns
+    -------
+    freqList:   list of tuples, the first element in each tuple is the allele
+                        and the second element is its frequency. 
+    """
+    #initialize our list to return
+    freqList = []
+
+    #get how many unique alleles there are
+    currLoc = readDf[locus]
+    uniqueAlleles = currLoc.unique()
+    # print(locus, file = sys.stderr)
+    # print(uniqueAlleles, file = sys.stderr)
+    # print("-----------------------------", file = sys.stderr)
+    denominator = len(readDf.index)
+
+    for allele in uniqueAlleles:
+        # print("---------------------------- \n allel is", file = sys.stderr)
+        # print(allele, file = sys.stderr)
+        # print("locus is", file = sys.stderr)
+        # print(locus, file = sys.stderr)
+        readsWithGenotype = readDf[readDf[locus] == allele]
+        # print(readsWithGenotype, file = sys.stderr)
+        count = len(readsWithGenotype.index)
+        # print(count, file = sys.stderr)
+        frequency = count/float(denominator)
+        # print(frequency, file = sys.stderr)
+        freqList.append((allele, frequency))
+
+    return freqList
+
