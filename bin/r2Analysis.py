@@ -17,9 +17,10 @@ def get_VCF_Loci(vcfFile):
     """
     #load our data into a dataframe
     vcfDat = allel.read_vcf(vcfFile)
-    #check for extra alternate alleles
-    if vcfDat['variants/ALT'].shape[1] > 3:
-        print('More than 3 alternate alleles', file = sys.stderr)
+    #make sure our dictionary isn't empty
+    if not vcfDat:
+        print('No variants detected in ' + vcfFile, file = sys.stderr)
+        return None
 
     vcfDat = pd.DataFrame({'POS': vcfDat['variants/POS'], 
             'REF': vcfDat['variants/REF'] ,
@@ -95,10 +96,12 @@ def r2_all_loci(genDF):
     -------
     r2List: list, R^2 values for each locus
     distList: list, distances between each corresponding pair of loci
+    supportList: list, number of reads supporting each corresponding r^2 value
     """
     #make a list to store the values in 
     r2List = []
     distList = []
+    supportList = []
 
     #our loci
     lociList = genDF[0].unique()
@@ -115,25 +118,24 @@ def r2_all_loci(genDF):
             #order doesn't matter
             if locus1 > locus2:
                 currDist = locus1 - locus2
-                print("----------", file = sys.stderr)
-                print(locus1, file = sys.stderr)
-                print(locus2, file = sys.stderr)
-                print(currDist, file = sys.stderr)
                 #get all of the reads with a genotype for both loci
                 bothLoc = currLoc1[currLoc1[locus2].notnull()]
                 if not bothLoc.empty:
                     #calculate R^2 for these two loci
                     currR2 = calculateR2(bothLoc, locus1, locus2)
+                    support = len(bothLoc.index)
                     #if both the loci are polymorphic for some reads
                     if currR2 is not None:
                         r2List.append(currR2)
                         distList.append(locus1-locus2)
+                        supportList.append(support)
                         
-    return r2List, distList
+                        
+    return r2List, distList, supportList
 
 
 
-def calculateR2(readDf, locus1, locus2):
+def calculateR2(readDf, locus1, locus2, verbose = False):
     """
     Given two segregating loci, calculate their R^2 value using the direct
     inference method
@@ -145,9 +147,11 @@ def calculateR2(readDf, locus1, locus2):
                         all of the reads that have genotypes at both loci
     locus1:  int, position of first locus
     locus2:  int, position of second locus
+    verbose: bool, whether to print debugging info
     Returns
     -------
     None if both loci are not segregating on the overlapping reads
+    r2: float, the calculated R^2 value.
     """
     #check how many alleles at the locus
     numLoc1 = readDf[locus1].unique()
@@ -176,8 +180,6 @@ def calculateR2(readDf, locus1, locus2):
     loc1A = readDf[readDf[locus1] == freqList1[0][0]]
     loc1a = readDf[readDf[locus1] == freqList1[1][0]]
     freqList2 = freqList2[:2]
-    # loc2b = readDf[readDf[locus2] == freqList2[0][0]]
-    # loc2B = readDf[readDf[locus2] == freqList2[1][0]]
 
     #we need to count the observations for each haplotype
     AB = loc1A[loc1A[locus2] == freqList2[0][0]]
@@ -198,11 +200,11 @@ def calculateR2(readDf, locus1, locus2):
     #make sure the frequencies aren't to close to 1
     if p_A == 1 or p_B == 1: return None
 
-    # print(AB_obs + aB_obs + Ab_obs + ab_obs, file = sys.stderr)
-    # print(len(readDf.index), file = sys.stderr)
-    # print("-------------------", file = sys.stderr)
-    # print(p_A, file = sys.stderr)
-    # print(p_B, file = sys.stderr)
+    # print(AB_obs + aB_obs + Ab_obs + ab_obs)
+    # print(len(readDf.index))
+    # print("-------------------")
+    # print(p_A)
+    # print(p_B)
     #now do the calculation
     topFrac = AB_obs/ (AB_obs + aB_obs + Ab_obs + ab_obs)
     # print(topFrac, file = sys.stderr)
@@ -214,17 +216,19 @@ def calculateR2(readDf, locus1, locus2):
     
     r2 = numerator / denominator
 
-    # if r2 < 0.1  or r2 > 0.9:
-    #     print("--------------------")
-    #     print(r2)
-    #     print("AB")
-    #     print(AB_obs/allSum)
-    #     print("aB")
-    #     print(aB_obs/allSum)
-    #     print("Ab")
-    #     print(Ab_obs/allSum)
-    #     print("ab")
-    #     print(ab_obs/allSum)
+    if verbose:
+        if r2 < 0.1  or r2 > 0.9:
+            print("--------------------")
+            print("Locus 1 is : " + str(locus1) + " Locus 2 is : " + str(locus2))
+            print(r2)
+            print("AB")
+            print(AB_obs/allSum)
+            print("aB")
+            print(aB_obs/allSum)
+            print("Ab")
+            print(Ab_obs/allSum)
+            print("ab")
+            print(ab_obs/allSum)
 
     return r2
     
