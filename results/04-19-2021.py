@@ -41,5 +41,6 @@ for file in os.listdir(vcfDir):
         plt.tight_layout()
         plt.savefig(outDir + parDate)
         plt.close()
+    break
 
 

@@ -1,10 +1,19 @@
+import os
+import sys
 import numpy as np
 import r2Analysis as r2
 #utilize analysis proposed by Neher and Leitner to investigate how viral load
 #affects recombination
 
-#Start making background slides
-#concepts to touch on 
+def plotPoint(timepoint, genotypeDF):
+    """
+    """
+    print(genotypeDF, file = sys.stderr)
+    #loop through our pairs of loci
+    lociList = genDF[0].unique()
+
+# Start making background slides
+# concepts to touch on 
 # why recombination is important in viruses in general
 # can increase in frequency and be transmissible, has played an important role in 
 # shaping HIV diversity globally
@@ -12,43 +21,43 @@ import r2Analysis as r2
 # can contribute to immune escape, production of multi-drug resistant variants
 # how do we measure recombination rate - past methods
 # set up problem : why recombination in hiv might depend on viral load
-#
-# 
-#Speak with Erick
-#schedule for some time next week , plots stratified by patient, talk through 
-#rough version of slides as far as background
-#third check in with erick, what we've gotten done and what we would push to get done
-#
-#
-#Plan to talk about Strauli preprint - maybe early next week. what the data is coming from. 
-#Tuesday at 1pm PST, ping erick to chat mid to late next week
-#Meet with erick 
+
+
+# Speak with Erick
+# schedule for some time next week , plots stratified by patient, talk through 
+# rough version of slides as far as background
+# third check in with erick, what we've gotten done and what we would push to get done
+
+
+# Plan to talk about Strauli preprint - maybe early next week. what the data is coming from. 
+# Tuesday at 1pm PST, ping erick to chat mid to late next week
+# Meet with erick 
 
 #first we need to start by looking for three different haplotypes at each locus
-def three_hap_loci(genDF, locus1, locus2):
-    """ Start with a genotype dataframe for a specific patient at a specific
-    time point. 
-    """
-    #convert our dataframe to wide
-    wideGenDF = genDF.pivot(index = 1,columns = 0, values = 2).reset_index()
+# def three_hap_loci(genDF, locus1, locus2):
+#     """ Start with a genotype dataframe for a specific patient at a specific
+#     time point. 
+#     """
+#     #convert our dataframe to wide
+#     wideGenDF = genDF.pivot(index = 1,columns = 0, values = 2).reset_index()
 
-    #get the rows where both loci are present
-    currLoc1 = wideGenDF[wideGenDF[locus1].notnull()]
-    bothLoc = currLoc1[currLoc1[locus2].notnull()]
+#     #get the rows where both loci are present
+#     currLoc1 = wideGenDF[wideGenDF[locus1].notnull()]
+#     bothLoc = currLoc1[currLoc1[locus2].notnull()]
 
-    #if there are no reads with genotypes at both loci
-    if bothLoc.empty:
-        return False
+#     #if there are no reads with genotypes at both loci
+#     if bothLoc.empty:
+#         return False
     
-    #now check that there are three haplotypes
-    #need to make sure only two alleles present at each locus
-    alleles1 = wideGenDf[locus]
-    uniqueAlleles1 = alleles1.unique()
-    alleles2 = wideGenDF[locus]
-    uniqueAlleles2 = alleles2.unique()
+#     #now check that there are three haplotypes
+#     #need to make sure only two alleles present at each locus
+#     alleles1 = wideGenDf[locus]
+#     uniqueAlleles1 = alleles1.unique()
+#     alleles2 = wideGenDF[locus]
+#     uniqueAlleles2 = alleles2.unique()
 
 
-    if len(uniqueAlleles1) == 2 and len(uniqueAlleles2) == 2:
+#     if len(uniqueAlleles1) == 2 and len(uniqueAlleles2) == 2:
         
 
 #mutation - one time point, one bi-allelic and second mono-allelic. at following time point, both bi-allelic
@@ -85,3 +94,4 @@ def three_hap_loci(genDF, locus1, locus2):
 #TC - TC
 #     AA
 #are some time points having loci covered by vastly different numbers of reads
+
