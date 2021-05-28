@@ -6,6 +6,7 @@ import neher
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import r2Analysis as r2
 
 #Today we want to implement the analysis described by neher and Leitner
 vcfDir = '/net/gs/vol1/home/evromero/2021_hiv-rec/results/vcfs/'
@@ -14,9 +15,6 @@ outDir = '/net/gs/vol1/home/evromero/2021_hiv-rec/results/r2_plots/'
 
 #To start we need to collect the files for each patient
 patient_files = utility.getPatientList(vcfDir)
-
-
-print(patient_files, file = sys.stderr)
 
 
 #Now, for each file, we need to get all of the genotypes.
@@ -55,9 +53,7 @@ for patient in patient_files.keys():
     timepointList = all_genotypes['timepoint'].unique()
     timepointList.sort()
     #last timepoint left out of loop
-    for curr_timepoint in timepointList[:-1]:
-        neher.plotPoint(curr_timepoint, all_genotypes)
-        break
+    neher.plotPoint(timepointList, all_genotypes)
     break
 
 

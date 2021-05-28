@@ -5,12 +5,55 @@ import r2Analysis as r2
 #utilize analysis proposed by Neher and Leitner to investigate how viral load
 #affects recombination
 
-def plotPoint(timepoint, genotypeDF):
+def plotPoint(timepointList, genotypeDF):
+    """Takes a list of timepoints and a dataframe of genotypes. For each pair
+    of loci, 
     """
-    """
+    lociList = genotypeDF[0].unique()
+
+    #pivot our dataframe
+    wideGenDF = genotypeDF.pivot(index = 1,columns = 0, values = 2).reset_index()
     print(genotypeDF, file = sys.stderr)
-    #loop through our pairs of loci
-    lociList = genDF[0].unique()
+
+    #make a dataframe that will be in long format. 
+    resultsDF = []
+
+    #Loop through our loci
+    for locus1 in lociList:
+        #get dataframe for our current locus
+        currLoc1 = wideGenDF[wideGenDF[locus1].notnull()]
+        for locus2 in lociList:
+            #order doesn't matter
+            if locus1 > locus2:
+                currDist = locus1 - locus2
+                #get all of the reads with a genotype for both loci
+                bothLoc = currLoc1[currLoc1[locus2].notnull()]
+                if not bothLoc.empty:
+                    #now we need to loop through all our timepoints
+                    for curr_timepoint in timepointList:
+                        print(bothLoc, file = sys.stderr)
+                        #get reads at this timepoint
+                        time_t = bothLoc[bothLoc['timepoint' == curr_timepoint]]
+                        if time_t.notNull():
+                            print(time_t, file = sys.stderr)
+
+                        # #enumerate all the haplotypes at this timepoint
+                        # print(enumerateHaplotypes(
+                        #     bothLoc[bothLoc['timepoint' == curr_timepoint]],
+                        #     locus1, locus2), file = sys.stderr)
+
+
+############################ Helper Functions #################################
+
+def enumerateHaplotypes(wideGenDF, locus1, locus2):
+    """Takes a wide dataframe of genotypes and enumerates all the haplotypes
+    across two loci. Returns a Dataframe where each row is a genotype and a
+    count column keeps track of the times each was observed"""
+    #group our dataframe by pairs of loci
+    haplotypesDF = wideGenDF.groupby([locus1,locus2]).size()
+    haplotypesDF.reset_index()
+    haplotypesDF.rename(columns={0:'count'})
+    return haplotypesDF
 
 # Start making background slides
 # concepts to touch on 
@@ -78,7 +121,7 @@ def plotPoint(timepoint, genotypeDF):
                 #at time point tp+1
                 #enumerate all genotypes, g2
                 #if list g1 has 3 haplotypes, 
-                    #return l1, l2, t1,t2, bool (does g2 have a haplotype)
+                    #return l1, l2, t1,t2, bool (does g2 have a fourth haplotype)
                 #if g1 has 2 or 3 haplotypes,
                     #does g2 have a haplotype that can be created by mutation but not recombination
 
