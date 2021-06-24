@@ -3,10 +3,10 @@ import os
 import sys
 from Bio import SeqIO
 
-parList = ['3', '4', '5', '6', '7', '8', '9','10' ]
+parList = ['1','2','3', '4', '5', '6', '7', '8', '9','10' ]
 for currPar in parList:
     #path to the directory with the Fastq files we want to work with
-    dirPath = "/net/gs/vol1/home/evromero/2021_hiv-rec/data/strauli/fastq/Participant "+ currPar
+    dirPath = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/strauli/fastq2/Participant "+ currPar
 
     dirList = os.listdir(dirPath)
     #loop through the files in the directory

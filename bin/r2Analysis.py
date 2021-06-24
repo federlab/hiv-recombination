@@ -59,6 +59,7 @@ def get_sam_reads(vcfDF, bamfile):
         if pileupcolumn.pos in segregatingLoci:
             for pileupread in pileupcolumn.pileups:
                 if not pileupread.is_del and not pileupread.is_refskip:
+                    print(pileupread.alignment.query_name, file = sys.stderr)
                     #make a wide row in our dataframe
                     readGenotypes.append([pileupcolumn.pos,
                                 pileupread.alignment.query_name,
