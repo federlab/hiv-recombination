@@ -4,7 +4,6 @@ from Bio.Align.Applications import MafftCommandline
 
 parList = ["1","2","3","4","5","6","7","8","9","10"]
 
-
 for participant in parList:
     dataDir1 = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/strauli/fastq2/Participant\ " + participant
     dataDir2 = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/strauli/fastq2/Participant " + participant
