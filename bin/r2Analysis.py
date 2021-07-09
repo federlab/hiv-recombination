@@ -391,8 +391,8 @@ def calculate_R2_pairCounts(coCounts_arr, snp_loci, fragmentStart, verbose = Fal
                 # print(j_allele1, file = sys.stderr)
                 #get the counts for this pair
                 # print(coCounts_arr)
-                print("our first index is " + str(i - currStart -1), file = sys.stderr)
-                print("our second index is " + str(j - currStart -1), file = sys.stderr)
+                # print("our first index is " + str(i - currStart -1), file = sys.stderr)
+                # print("our second index is " + str(j - currStart -1), file = sys.stderr)
                 
                 currentCounts = coCounts_arr[:,:,i - currStart -1 ,j - currStart - 1]
                 # print(currentCounts, file = sys.stderr)

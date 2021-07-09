@@ -51,7 +51,9 @@ p11_timepoints = [209, 332, 572, 1026, 1396, 1750, 2043]
 # r2.calculate_R2_pairCounts(coCounts_arr, snp_loci, 'F6')
 
 par_list_1 = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
+# par_list_1 = ['p10']
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
+# fragment_list = ['F2']
 
 #keep track of the datafiles for each participant
 participant_files = {}
@@ -156,17 +158,27 @@ for curr_fragment in fragment_list:
                     curr_df['date'] = sample_t
                     curr_df['participant'] = curr_par
                     timepoints.append(curr_df)
-            
-
+        
+        #make sure there are segregating loci
+        if len(timepoints) == 0:
+            continue
         timepoints = pd.concat(timepoints)
         timepoints = timepoints.sort_values(by=['date'])
 
+        #make sure there are pairs with support
+        if timepoints.empty:
+            continue
+        
         #now we can calculate our moving average
-        windowStarts = range(0,250, WINSTEP)
+        windowStarts = range(0,int(max(timepoints['dist'])), WINSTEP)
         patient_aves = []
 
         ##############THRESHOLD = 10 supporting reads ###############
         timepoints= timepoints[timepoints['support']>=50]
+
+        #make sure there are pairs with support
+        if timepoints.empty:
+            continue
 
         all_patients_points.append(timepoints)
 
@@ -189,7 +201,7 @@ for curr_fragment in fragment_list:
 
         #plot the results for the current participant
         sns.set(rc={'figure.figsize':(15,5)})
-        myplot = sns.scatterplot(x = 'dist', y = 'r2', hue = 'date', data = timepoints)
+        myplot = sns.scatterplot(x = 'dist', y = 'r2', hue = 'date', data = timepoints, alpha = 0.5)
         myplot.legend(loc='center left', bbox_to_anchor=(1.25, 0.5), ncol=2)
         sns.lineplot(x = 'center', y = 'average', data = patient_aves)
         plt.ylim(-0.1,1.1)
@@ -206,7 +218,7 @@ for curr_fragment in fragment_list:
 
     #plot the results for all our participants
     sns.set(rc={'figure.figsize':(15,5)})
-    myplot = sns.scatterplot(x = 'dist', y = 'r2', hue = 'participant', data = all_patients_points)
+    myplot = sns.scatterplot(x = 'dist', y = 'r2', hue = 'participant', data = all_patients_points, alpha = 0.5)
     myplot.legend(loc='center left', bbox_to_anchor=(1.25, 0.5), ncol=2)
     sns.lineplot(x = 'center', y = 'average', data = all_patients_ave)
     plt.ylim(-0.1,1.1)
