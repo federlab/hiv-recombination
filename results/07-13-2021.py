@@ -74,4 +74,21 @@ for i in range(fragmentLen):
 segregatingLoci = pd.DataFrame(segregatingLoci,
                         columns= ["position", "allele_1", "freq_1",
                                   "allele_2", "freq_2"])
-r2.calculate_R2_pairCounts(coCounts_arr, segregatingLoci, verbose = True)
+
+r2List, distList, supportList = r2.calculate_R2_pairCounts(coCounts_arr, segregatingLoci, verbose = True)
+r2_results = pd.DataFrame(r2List, columns=['r2'])
+r2_results['dist'] = distList
+r2_results['support'] = supportList
+
+print(r2_results, file = sys.stderr)
+
+#plot the results for the current participant
+sns.set(rc={'figure.figsize':(15,5)})
+myplot = sns.scatterplot(x = 'dist', y = 'r2', data = r2_results)
+plt.ylim(-0.1,1.1)
+plt.xlim(-10,max(r2_results['dist']))
+plt.xlabel("Distance Between Loci")
+plt.ylabel("R^2 Value")
+plt.tight_layout()
+plt.savefig(outDir + "p5f5Test")
+plt.close()

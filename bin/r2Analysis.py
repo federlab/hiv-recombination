@@ -324,7 +324,7 @@ def calculate_R2_pairCounts(coCounts_arr, segregating_loci, verbose = False):
     for locus_1 in segregating_loci.index:
         #get the indices for the segregating alleles at this locus
         locus_1_entry = segregating_loci.iloc[[locus_1]]
-        i = locus_1_entry["position"]
+        i = locus_1_entry["position"].tolist()[0]
         i_allele1 = locus_1_entry['allele_1'].tolist()[0]
         i_allele1 = alleleToPos[i_allele1]
         i_allele2 = locus_1_entry['allele_2'].tolist()[0]
@@ -334,7 +334,7 @@ def calculate_R2_pairCounts(coCounts_arr, segregating_loci, verbose = False):
             if locus_1 < locus_2:
                 #get the indices for the segregating alleles at this locus
                 locus_2_entry = segregating_loci.iloc[[locus_2]]
-                j = locus_2_entry["position"]
+                j = locus_2_entry["position"].tolist()[0]
                 j_allele1 = locus_2_entry['allele_1'].tolist()[0]
                 j_allele1 = alleleToPos[j_allele1]
                 j_allele2 = locus_2_entry['allele_2'].tolist()[0]
