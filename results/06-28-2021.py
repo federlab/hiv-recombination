@@ -7,6 +7,10 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+#I was using this script to make R^2 plots for the zanini data.
+#This strategy doesn't work/ is defunct because it's essentially impossible
+#to get the indexing from the snp data and use it for the counts array.
+
 fragStarts = {}
 fragStarts['p1'] = {'F1': 1, 'F2' : 1482, 'F3' : 3124, 'F4' : 4389, 
                   'F5' : 5449, 'F6' : 7266}
@@ -51,9 +55,10 @@ p11_timepoints = [209, 332, 572, 1026, 1396, 1750, 2043]
 # r2.calculate_R2_pairCounts(coCounts_arr, snp_loci, 'F6')
 
 par_list_1 = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
+#just sample one file
 # par_list_1 = ['p10']
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
-# fragment_list = ['F2']
+fragment_list = ['F5']
 
 #keep track of the datafiles for each participant
 participant_files = {}
@@ -173,7 +178,7 @@ for curr_fragment in fragment_list:
         windowStarts = range(0,int(max(timepoints['dist'])), WINSTEP)
         patient_aves = []
 
-        ##############THRESHOLD = 10 supporting reads ###############
+        ##############THRESHOLD = 50 supporting reads ###############
         timepoints= timepoints[timepoints['support']>=50]
 
         #make sure there are pairs with support
@@ -189,7 +194,7 @@ for curr_fragment in fragment_list:
             #get all of the datapoints in our window
             curr_window = timepoints[timepoints['dist'].between(winStart, winEnd)]
             if not curr_window.empty:
-                ave_r2 = curr_window['r2'].mean()
+                ave_r2 = curr_window['r2'].median()
                 center = winStart + (WINSIZE/2)
                 patient_aves.append([center, winStart, winEnd, ave_r2, curr_par])
                     
@@ -209,7 +214,7 @@ for curr_fragment in fragment_list:
         plt.xlabel("Distance Between Loci")
         plt.ylabel("R^2 Value")
         plt.tight_layout()
-        plt.savefig(outDir + curr_par + "_window_" + str(WINSIZE) + "_" + curr_fragment)
+        plt.savefig(outDir + curr_par + "_window_" + str(WINSIZE) +  "_median_" + curr_fragment)
         plt.close()
 
     #convert our list of dataframes across all patients
@@ -226,7 +231,7 @@ for curr_fragment in fragment_list:
     plt.xlabel("Distance Between Loci")
     plt.ylabel("R^2 Value")
     plt.tight_layout()
-    plt.savefig(outDir + "allPatients_window_" + str(WINSIZE) + "_" + curr_fragment)
+    plt.savefig(outDir + "allPatients_window_" + str(WINSIZE) + "_median_" + curr_fragment)
     plt.close()
 
 
