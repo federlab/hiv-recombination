@@ -56,7 +56,7 @@ for curr_fragment in fragment_list:
     for curr_par in par_list:
         timepoints = []
         #for each participant loop through their timepoints
-        for curr_file in participant_files[curr_par]:
+        for curr_file in participant_files[curr_par +  "_" + curr_fragment]:
             #load our current counts
             coCounts_arr = np.load(curr_file)
             #find the segregating sites
