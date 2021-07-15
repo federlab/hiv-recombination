@@ -58,7 +58,7 @@ for curr_fragment in fragment_list:
         #for each participant loop through their timepoints
         for curr_file in participant_files[curr_par +  "_" + curr_fragment]:
             #load our current counts
-            coCounts_arr = np.load(curr_file)
+            coCounts_arr = np.load(dataDir + curr_file)
             #find the segregating sites
             segregatingLoci = zu.find_segregating_diagonal(coCounts_arr)
 
@@ -72,7 +72,7 @@ for curr_fragment in fragment_list:
             curr_df = pd.DataFrame(r2List, columns=['r2'])
             curr_df['dist'] = distList
             curr_df['support'] = supportList
-            curr_df['date'] = curr_file.split("_")[2]
+            curr_df['date'] = str(curr_file.split("_")[3])
             curr_df['participant'] = curr_par
             timepoints.append(curr_df)
 
@@ -80,9 +80,9 @@ for curr_fragment in fragment_list:
         timepoints = pd.concat(timepoints)
         timepoints = timepoints.sort_values(by=['date'])
         
-
         #now we can calculate our moving average
         windowStarts = range(0,int(max(timepoints['dist'])), WINSTEP)
+        print(windowStarts, file = sys.stderr)
         patient_aves = []
 
         ##############THRESHOLD = 50 supporting reads ###############
@@ -97,10 +97,11 @@ for curr_fragment in fragment_list:
             #get all of the datapoints in our window
             curr_window = timepoints[timepoints['dist'].between(winStart, winEnd)]
             if not curr_window.empty:
-                ave_r2 = curr_window['r2'].median()
+                ave_r2 = curr_window['r2'].mean()
                 center = winStart + (WINSIZE/2)
                 patient_aves.append([center, winStart, winEnd, ave_r2, curr_par])
-                patient_aves = pd.DataFrame(patient_aves, columns = ['center','window_start', 'window_end', 'average', 'participant'])
+        
+        patient_aves = pd.DataFrame(patient_aves, columns = ['center','window_start', 'window_end', 'average', 'participant'])
 
         #make a dataframe of all our results
         all_patients_ave.append(patient_aves)
@@ -109,13 +110,13 @@ for curr_fragment in fragment_list:
         sns.set(rc={'figure.figsize':(15,5)})
         myplot = sns.scatterplot(x = 'dist', y = 'r2', hue = 'date', data = timepoints, alpha = 0.5)
         myplot.legend(loc='center left', bbox_to_anchor=(1.25, 0.5), ncol=2)
-        sns.lineplot(x = 'center', y = 'average', data = patient_aves)
+        sns.lineplot(x = 'center', y = 'average', data = patient_aves, linewidth = 3)
         plt.ylim(-0.1,1.1)
         plt.xlim(-10,max(timepoints['dist']))
         plt.xlabel("Distance Between Loci")
         plt.ylabel("R^2 Value")
         plt.tight_layout()
-        plt.savefig(outDir + curr_par + "_window_" + str(WINSIZE) +  "_median_" + curr_fragment)
+        plt.savefig(outDir + curr_par + "_window_" + str(WINSIZE) + curr_fragment)
         plt.close()
 
     #convert our list of dataframes across all patients
@@ -126,11 +127,11 @@ for curr_fragment in fragment_list:
     sns.set(rc={'figure.figsize':(15,5)})
     myplot = sns.scatterplot(x = 'dist', y = 'r2', hue = 'participant', data = all_patients_points, alpha = 0.5)
     myplot.legend(loc='center left', bbox_to_anchor=(1.25, 0.5), ncol=2)
-    sns.lineplot(x = 'center', y = 'average', data = all_patients_ave)
+    sns.lineplot(x = 'center', y = 'average', data = all_patients_ave, linewidth = 3)
     plt.ylim(-0.1,1.1)
     plt.xlim(-10, max(all_patients_points['dist']))
     plt.xlabel("Distance Between Loci")
     plt.ylabel("R^2 Value")
     plt.tight_layout()
-    plt.savefig(outDir + "allPatients_window_" + str(WINSIZE) + "_median_" + curr_fragment)
+    plt.savefig(outDir + "allPatients_window_" + str(WINSIZE) + curr_fragment)
     plt.close()

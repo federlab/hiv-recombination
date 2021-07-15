@@ -10,6 +10,7 @@ def find_segregating_diagonal(coCounts_arr):
                         site as well as the two most frequent alleles.
     """
     segregatingLoci = []
+    fragmentLen = coCounts_arr.shape[-1]
 
     #scan our array and get the observed frequency for each row
     for i in range(fragmentLen):
