@@ -303,7 +303,8 @@ def get_Zanini_SNP_Loci(snp_file):
 
     return snp_df
 
-def calculate_R2_pairCounts(coCounts_arr, segregating_loci, verbose = False):
+def calculate_R2_pairCounts(coCounts_arr, segregating_loci, verbose = False, statistic = 'r2',
+                            saveData = False):
     """ Takes an array of snps at specific loci with counts of the number of 
     times they were observed together. Calculates the R^2 value for each pair.
     ---------------------------------------------------------------------------
@@ -312,11 +313,17 @@ def calculate_R2_pairCounts(coCounts_arr, segregating_loci, verbose = False):
     coCounts_arr : array of dimension 6 x 6 x L x L where six is the length of
                    the alphabet "ACGT-N" and the last two dimensions refer to
                    the positions of the two alleles
-    snp_loci : a dataframe 
+    segregating_loci : a dataframe indicating the segregating loci and the 
+                        highest frequency alleles at those loci
+    verbose: bool, whether to print out information for debugging
+    statistic: str, 'r2' or 'D' to indicate which statistic to return
+    saveData: bool, whether to save our results to a dataframe
     """
-    r2List = []
+    stat_list = []
     distList = []
-    supportList = []    
+    supportList = []  
+    if saveData:
+        resultsDf = []  
     #dictionary indicating which alleles correspond to which positions
     alleleToPos = {'A' : 0, 'C' : 1, 'G' : 2, 'T' : 3}
 
@@ -351,21 +358,28 @@ def calculate_R2_pairCounts(coCounts_arr, segregating_loci, verbose = False):
                 #make sure there are enough spanning reads
                 if allSum < 10:
                     continue
+                #calculate both statistics if we are saving things
+                if saveData:
+                    r_squared = r2(AB_obs=AB_obs, Ab_obs=Ab_obs,
+                                 aB_obs=aB_obs, ab_obs= ab_obs)
+                    d_prime = calc_D(AB_obs=AB_obs, Ab_obs=Ab_obs,
+                                 aB_obs=aB_obs, ab_obs= ab_obs)
+                    p_A = (Ab_obs + AB_obs)/float(allSum)
+                    p_B = (AB_obs + aB_obs)/float(allSum)
+                    dataList = [i, j, p_A, p_B, AB_obs, Ab_obs, aB_obs, ab_obs, r_squared, d_prime ]
+                    resultsDf.append(dataList)
 
-                p_A = (Ab_obs + AB_obs)/float(allSum)
-                p_B = (AB_obs + aB_obs)/float(allSum)
-
-                if p_A > 0.99 or p_B > 0.99 or p_A < 0.01 or p_B < 0.01: 
-                    print("Frequencies were too low")
+                if statistic == 'D':
+                    curr_stat = calc_D(AB_obs=AB_obs, Ab_obs=Ab_obs,
+                                 aB_obs=aB_obs, ab_obs= ab_obs)
+                else:
+                    curr_stat = r2(AB_obs=AB_obs, Ab_obs=Ab_obs,
+                                 aB_obs=aB_obs, ab_obs= ab_obs)
+                #If the frequencies were too low
+                if curr_stat is None:
                     continue
 
-                topFrac = AB_obs/ (AB_obs + aB_obs + Ab_obs + ab_obs)
-                numerator = topFrac - (p_A * p_B)
-                numerator = numerator ** 2
-                denominator = p_A * p_B * (1-p_A) * (1-p_B)
-
-                r2 = numerator / denominator
-                r2List.append(r2)
+                stat_list.append(curr_stat)
                 distance = j - i 
                 distList.append(distance)
                 support = allSum
@@ -383,149 +397,82 @@ def calculate_R2_pairCounts(coCounts_arr, segregating_loci, verbose = False):
                     print(Ab_obs/allSum)
                     print("ab")
                     print(ab_obs/allSum)
-    return r2List, distList, supportList
+    if saveData:
+        resultsDf = pd.DataFrame(resultsDf, columns=[
+            'Locus_1', 'Locus_2', 'p_A', 'p_B', 'AB_obs', 'Ab_obs', 
+            'aB_obs', 'ab_obs', 'r_squared', 'd_prime'])
+        return stat_list, distList, supportList, resultsDf
+    return stat_list, distList, supportList
+
+######################### Calculation Functions ###############################
+
+def r2(AB_obs, Ab_obs, aB_obs, ab_obs):
+    """ Takes in the numbers of observations of each haplotype and outputs
+    the R^2 statistic
+    ---------------------------------------------------------------------------
+    returns
+    -------
+    r_squared: float, The R^2 statistic
+    None if frequencies of alleles A or B are greater than 99%
+    """
+    #sum our haplotypes to get total number of observations
+    allSum = AB_obs + aB_obs + Ab_obs + ab_obs
+
+    #calculate the frequencies of our alleles
+    p_A = (Ab_obs + AB_obs)/float(allSum)
+    p_B = (AB_obs + aB_obs)/float(allSum)
+
+    #make sure we wont get a value error
+    if p_A > 0.99 or p_B > 0.99 or p_A < 0.01 or p_B < 0.01: 
+        print("Frequencies were too low")
+        return None
+    
+
+    topFrac = AB_obs/ (AB_obs + aB_obs + Ab_obs + ab_obs)
+    numerator = topFrac - (p_A * p_B)
+    numerator = numerator ** 2
+    denominator = p_A * p_B * (1-p_A) * (1-p_B)
+
+    r_squared = numerator / denominator
+    return r_squared
+
+def calc_D(AB_obs, Ab_obs, aB_obs, ab_obs):
+    """ Takes in the numbers of observations of each haplotype and outputs
+    the D' statistic
+    ---------------------------------------------------------------------------
+    returns
+    -------
+    d_stat: float, The D' statistic
+    None if frequencies of alleles A or B are greater than 99%
+    """
+    #sum our haplotypes to get total number of observations
+    allSum = AB_obs + aB_obs + Ab_obs + ab_obs
+
+    #calculate the frequencies of our alleles
+    p_A = (Ab_obs + AB_obs)/float(allSum)
+    p_B = (AB_obs + aB_obs)/float(allSum)
+
+    #make sure we wont get a value error
+    if p_A > 0.99 or p_B > 0.99 or p_A < 0.01 or p_B < 0.01: 
+        print("Frequencies were too low")
+        return None
+    
+    AB_freq = AB_obs/allSum
+    Ab_freq = Ab_obs/allSum
+    aB_freq = aB_obs/allSum
+    ab_freq = ab_obs/allSum
+    
+    d_stat = AB_freq * ab_freq - aB_freq * Ab_freq
+    D_max = None
+    if d_stat > 0:
+        D_max = min(p_A * (1-p_B), (1-p_A) * p_B)
+    elif d_stat == 0:
+        return 0
+    else:
+        D_max = min(p_A * p_B, (1-p_A) * (1-p_B))
+
+    d_stat = d_stat / D_max 
+    return abs(d_stat)
 
 
-# def calculate_R2_pairCounts(coCounts_arr, snp_loci, fragmentStart, verbose = False):
-#     """ Takes an array of snps at specific loci with counts of the number of 
-#     times they were observed together. Calculates the R^2 value for each pair.
-#     ---------------------------------------------------------------------------
-#     Params
-#     ---------
-#     coCounts_arr : array of dimension 6 x 6 x L x L where six is the length of
-#                    the alphabet "ACGT-N" and the last two dimensions refer to
-#                    the positions of the two alleles
-#     snp_loci : a dataframe 
-#     """
-#     r2List = []
-#     distList = []
-#     supportList = []
-
-#     #get the positions spanned by the fragment
-#     fragmentLen = coCounts_arr.shape[-1]
-#     currStart = fragmentStart
-#     currEnd = currStart + fragmentLen
-#     print("fragment start = " + str(currStart), file = sys.stderr)
-#     print("segregating loci are : ", file = sys.stderr)
-
-
-
-#     #subset the loci to get only those in the fragment
-#     snp_loci = snp_loci.loc[snp_loci.index >= currStart-1]
-#     snp_loci = snp_loci.loc[snp_loci.index <= currEnd]
-
-#     print("There are " + str(len(snp_loci.index)) + " segregating loci", file = sys.stderr)
-
-
-#     #get rid of the entries corresponding to "-" and "N" characters
-#     coCounts_arr = coCounts_arr[:4, :4, :, :]
-#     #dictionary indicating which alleles correspond to which positions
-#     alleleToPos = {'A' : 0, 'C' : 1, 'G' : 2, 'T' : 3}
-
-#     #loop through all possible pairs of segregating loci
-#     for i in snp_loci.index:
-#         #get the information from each position
-#         snp1 = snp_loci.loc[snp_loci.index == i]
-
-#         #use this to get the most common alleles
-#         freqList1 = [('A', snp1['A_freq'].iloc[0]),('C', snp1['C_freq'].iloc[0]),
-#                     ('G', snp1['G_freq'].iloc[0]),('T', snp1['T_freq'].iloc[0])]
-        
-#         #sort our lists by most frequent and get the top two alleles
-#         freqList1 = sorted(freqList1, key = lambda x: x[1], reverse=True)
-        
-#         #get indices for the top two alleles at locus i
-#         i_allele1 = freqList1[0][0]
-#         i_allele1 = alleleToPos[i_allele1]
-#         i_allele2 = freqList1[1][0]
-#         i_allele2 = alleleToPos[i_allele2]
-
-#         for j in snp_loci.index:
-#             #only consider each pair once
-#             if i < j:
-#                 #if both loci are in the fragment
-            
-                    
-#                 #get the information from each position
-#                 snp2 = snp_loci.loc[snp_loci.index == j]
-
-#                 #use this to get the most common alleles at locus 2
-#                 freqList2 = [('A', snp2['A_freq'].iloc[0]),('C', snp2['C_freq'].iloc[0]),
-#                             ('G', snp2['G_freq'].iloc[0]),('T', snp2['T_freq'].iloc[0])] 
-                
-
-#                 #sort our list by most frequent and get the top two alleles
-#                 freqList2 = sorted(freqList2, key = lambda x: x[1], reverse=True)  
-#                 j_allele1 = freqList2[0][0]
-#                 j_allele1 = alleleToPos[j_allele1]
-#                 j_allele2 = freqList2[1][0]
-#                 j_allele2 = alleleToPos[j_allele2]
-
-#                 #get the counts for our current pair of alleles
-#                 currentCounts = coCounts_arr[:,:,i - currStart -1 ,j - currStart - 1]
-#                 print("---------------------------- \n Our first frequency list is:")
-#                 print(freqList1)
-#                 print("Our second frequency list is")
-#                 print(freqList2)
-#                 print("Our counts are")
-#                 print(currentCounts)
-
-#                 #now we get just the entries corresponding to the haplotypes
-#                 AB_obs = int(currentCounts[i_allele1, j_allele1])
-#                 Ab_obs = int(currentCounts[i_allele1, j_allele2])
-#                 aB_obs = int(currentCounts[i_allele2, j_allele1])
-#                 ab_obs = int(currentCounts[i_allele2, j_allele2])
-
-
-#                 # print("starting calculations", file = sys.stderr)
-
-#                 allSum = AB_obs + aB_obs + Ab_obs + ab_obs
-#                 if allSum < 10:
-#                     continue
-#                 # print(allSum, file = sys.stderr)
-
-
-#                 p_A = (Ab_obs + AB_obs)/float(allSum)
-#                 p_B = (AB_obs + aB_obs)/float(allSum)
-#                 # print(p_A, file = sys.stderr)
-#                 # print(p_B, file = sys.stderr)
-#                 # print("-------------------", file = sys.stderr)
-
-#                 #make sure the frequencies aren't to close to 0 or 1
-#                 if p_A > 0.99 or p_B > 0.99 or p_A < 0.01 or p_B < 0.01: 
-#                     print("Frequencies were too low")
-#                     continue
-                
-
-#                 topFrac = AB_obs/ (AB_obs + aB_obs + Ab_obs + ab_obs)
-
-#                 # print(topFrac, file = sys.stderr)
-#                 numerator = topFrac - (p_A * p_B)
-#                 numerator = numerator ** 2
-#                 # print(numerator, file = sys.stderr)
-#                 denominator = p_A * p_B * (1-p_A) * (1-p_B)
-#                 # print(denominator, file = sys.stderr)
-
-#                 r2 = numerator / denominator
-#                 r2List.append(r2)
-#                 distance = j - i 
-#                 print("the distance is: " + str(distance), file = sys.stderr)
-#                 distList.append(distance)
-#                 support = allSum
-#                 supportList.append(support)
-
-#                 if verbose:
-#                     if r2 < 0.1  or r2 > 0.9:
-#                         print("--------------------")
-#                         print("Locus 1 is : " + str(i) + " Locus 2 is : " + str(j))
-#                         print(r2)
-#                         print("AB")
-#                         print(AB_obs/allSum)
-#                         print("aB")
-#                         print(aB_obs/allSum)
-#                         print("Ab")
-#                         print(Ab_obs/allSum)
-#                         print("ab")
-#                         print(ab_obs/allSum)
-#     return r2List, distList, supportList
 
