@@ -7,8 +7,17 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import zaniniUtil as zu
+from lmfit import minimize, Parameters
 
 ######################### Helper Functions ####################################
+
+def residual(params, x, data):
+    rho = params['rho']
+    n = params['n']
+
+    #code adapted from https://eacooper400.github.io/gen8900/exercises/ld-2.html
+    model = (((10+(rho*x))/((2+(rho*x))*(11+(rho*x))))*(1+(((3+(rho*x))*(12+(12*(rho*x))+((rho*x)**2)))/(n*(2+(rho*x))*(11+(rho*x))))))
+    return data-model
 
 ###############################################################################
 
@@ -37,38 +46,34 @@ for currFile in dataFiles:
     currData['fragment'] = (currFile.split('_')[2]).split('.')[0]
     currData['dist'] = abs(currData['Locus_1'] - currData['Locus_2'])
 
-    #get the averages
-    #now we can calculate our moving average
-    windowStarts = range(0,int(max(currData['dist'])), WINSTEP)
-    current_aves = []
-    #subset the dataframe based on distance
-    for i in windowStarts:
-        winStart = i
-        winEnd = i + WINSIZE
-        #get all of the datapoints in our window
-        curr_window = currData[currData['dist'].between(winStart, winEnd)]
-        if not curr_window.empty:
-            ave_D = curr_window['d_prime'].mean()
-            center = winStart + (WINSIZE/2)
-            current_aves.append([center, winStart, winEnd, ave_D])
-    
-    current_aves = pd.DataFrame(current_aves, columns = ['center','window_start', 'window_end', 'average'])
+    #start by setting parameters for our fit
+    params = Parameters()
+    params.add('rho', value=0.001, vary=False)
+    params.add('n', value=len(currData.index), vary=False)
 
-    #plot the results for the current participant and fragment
-    sns.set(rc={'figure.figsize':(15,5)})
-    myplot = sns.scatterplot(x = 'dist', y = 'd_prime', hue = 'date', data = currData, alpha = 0.5)
-    myplot.legend(loc='center left', bbox_to_anchor=(1.25, 0.5), ncol=2)
-    sns.lineplot(x = 'center', y = 'average', data = current_aves, linewidth = 3)
-    plt.ylim(-0.1,1.1)
-    plt.xlim(-10,max(currData['dist']))
-    plt.xlabel("Distance Between Loci")
-    plt.ylabel("D' Value")
-    plt.tight_layout()
-    plt.savefig(outDir + currFile.split('_')[1] + "_window_" + str(WINSIZE) + (currFile.split('_')[2]).split('.')[0])
-    plt.close()
+    out = minimize(residual, params, args=(currData['dist'],), kws={'data': currData['r_squared']})
+    out.params.pretty_print()
 
-    allStats.append(currData)
+    break
 
+#     #plot the results for the current participant and fragment
+#     sns.set(rc={'figure.figsize':(15,5)})
+#     myplot = sns.scatterplot(x = 'dist', y = 'd_prime', hue = 'date', data = currData, alpha = 0.5)
+#     myplot.legend(loc='center left', bbox_to_anchor=(1.25, 0.5), ncol=2)
+#     sns.lineplot(x = 'center', y = 'average', data = current_aves, linewidth = 3)
+#     plt.ylim(-0.1,1.1)
+#     plt.xlim(-10,max(currData['dist']))
+#     plt.xlabel("Distance Between Loci")
+#     plt.ylabel("D' Value")
+#     plt.tight_layout()
+#     plt.savefig(outDir + currFile.split('_')[1] + "_window_" + str(WINSIZE) + (currFile.split('_')[2]).split('.')[0])
+#     plt.close()
 
+#     allStats.append(currData)
 
-allStats = pd.concat(allStats)
+# allStats = pd.concat(allStats)
+
+#Now, we need to do the fit
+#code from https://eacooper400.github.io/gen8900/exercises/ld-2.html
+#for this small test we can subset the data to just one example
+
