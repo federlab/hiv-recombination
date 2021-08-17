@@ -274,6 +274,10 @@ def get_Zanini_SNP_Loci(snp_file):
     ---------
     snp_file : a file from the Zanini dataset indicating the genomewide SNPs
                 that they called.
+    Returns
+    ---------
+    snp_df :  pd.dataframe, a dataframe with the segregating sites and their 
+              allele frequencies.
     """
     #read the counts of different nucleotide types into a dataframe
     snp_df = pd.read_csv(snp_file, sep = "\t", comment = "#", names = 

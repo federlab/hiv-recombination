@@ -5,37 +5,44 @@ import r2Analysis as r2
 #utilize analysis proposed by Neher and Leitner to investigate how viral load
 #affects recombination
 
-def plotPoint(timepointList, genotypeDF):
-    """Takes a list of timepoints and a dataframe of genotypes. For each pair
-    of loci, 
+#I need to get started here by putting the data into a dataframe of genotypes.
+
+def plotPoint(genotypeDF, segregatintLoci):
+    """Takes a long formats dataframe of genotypes at different timepoints. 
+    For each pair of loci, 
+    Params
+    ------------
+    genotypeDF : pd.dataframe, dataframe with two columns indicating loci pairs
+                 an aditional column indicates the 2 haplotype at those loci 
+                 and the timepoint is also labeled. Data is from one patient 
+    segregatingLoci : pd.dataframe, dataframe with the position of each segregating
+                      site as well as all the alleles and their frequencies
     """
-    lociList = genotypeDF[0].unique()
+    groupedGenDF = genotypeDF.groupby(['Locus_1', 'Locus_2'])
+    
+    #iterate through pairs of loci
+    for name, group in groupedGenDF:
+        pass
+    # #make a dataframe that will be in long format. 
+    # resultsDF = []
 
-    #pivot our dataframe
-    wideGenDF = genotypeDF.pivot(index = 1,columns = 0, values = 2).reset_index()
-    print(genotypeDF, file = sys.stderr)
+    # We want to loop through pairs of loci so I think we can just loop through the
+    # index of the genotype dataframe
+    
+    #I think we want to loop through all possible pairs of loci.
 
-    #make a dataframe that will be in long format. 
-    resultsDF = []
 
-    #Loop through our loci
-    for locus1 in lociList:
-        #get dataframe for our current locus
-        currLoc1 = wideGenDF[wideGenDF[locus1].notnull()]
-        for locus2 in lociList:
-            #order doesn't matter
-            if locus1 > locus2:
-                currDist = locus1 - locus2
-                #get all of the reads with a genotype for both loci
-                bothLoc = currLoc1[currLoc1[locus2].notnull()]
-                if not bothLoc.empty:
-                    #now we need to loop through all our timepoints
-                    for curr_timepoint in timepointList:
-                        print(bothLoc, file = sys.stderr)
-                        #get reads at this timepoint
-                        time_t = bothLoc[bothLoc['timepoint' == curr_timepoint]]
-                        if time_t.notNull():
-                            print(time_t, file = sys.stderr)
+    #             currDist = locus1 - locus2
+    #             #get all of the reads with a genotype for both loci
+    #             bothLoc = currLoc1[currLoc1[locus2].notnull()]
+    #             if not bothLoc.empty:
+    #                 #now we need to loop through all our timepoints
+    #                 for curr_timepoint in timepointList:
+    #                     print(bothLoc, file = sys.stderr)
+    #                     #get reads at this timepoint
+    #                     time_t = bothLoc[bothLoc['timepoint' == curr_timepoint]]
+    #                     if time_t.notNull():
+    #                         print(time_t, file = sys.stderr)
 
                         # #enumerate all the haplotypes at this timepoint
                         # print(enumerateHaplotypes(
@@ -54,27 +61,6 @@ def enumerateHaplotypes(wideGenDF, locus1, locus2):
     haplotypesDF.reset_index()
     haplotypesDF.rename(columns={0:'count'})
     return haplotypesDF
-
-# Start making background slides
-# concepts to touch on 
-# why recombination is important in viruses in general
-# can increase in frequency and be transmissible, has played an important role in 
-# shaping HIV diversity globally
-# recombination between two very different variants vs. subtler recombination within patients
-# can contribute to immune escape, production of multi-drug resistant variants
-# how do we measure recombination rate - past methods
-# set up problem : why recombination in hiv might depend on viral load
-
-
-# Speak with Erick
-# schedule for some time next week , plots stratified by patient, talk through 
-# rough version of slides as far as background
-# third check in with erick, what we've gotten done and what we would push to get done
-
-
-# Plan to talk about Strauli preprint - maybe early next week. what the data is coming from. 
-# Tuesday at 1pm PST, ping erick to chat mid to late next week
-# Meet with erick 
 
 #first we need to start by looking for three different haplotypes at each locus
 # def three_hap_loci(genDF, locus1, locus2):
@@ -138,3 +124,10 @@ def enumerateHaplotypes(wideGenDF, locus1, locus2):
 #     AA
 #are some time points having loci covered by vastly different numbers of reads
 
+    
+    # for locus1 in lociList:
+    #     #get dataframe for our current locus
+    #     currLoc1 = wideGenDF[wideGenDF[locus1].notnull()]
+    #     for locus2 in lociList:
+    #         #order doesn't matter
+    #         if locus1 > locus2:
