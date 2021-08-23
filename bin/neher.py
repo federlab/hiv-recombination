@@ -1,14 +1,13 @@
-import os
 import sys
 import numpy as np
-import r2Analysis as r2
+
 #utilize analysis proposed by Neher and Leitner to investigate how viral load
 #affects recombination
 
 #I need to get started here by putting the data into a dataframe of genotypes.
 
-def plotPoint(genotypeDF, segregatintLoci):
-    """Takes a long formats dataframe of genotypes at different timepoints. 
+def run_analysis(genotypeDF, segregatingLoci):
+    """Takes a long format dataframe of genotypes at different timepoints. 
     For each pair of loci, 
     Params
     ------------
@@ -22,45 +21,111 @@ def plotPoint(genotypeDF, segregatintLoci):
     
     #iterate through pairs of loci
     for name, group in groupedGenDF:
-        pass
-    # #make a dataframe that will be in long format. 
-    # resultsDF = []
+        #get the timepoints for this data
+        time_list = group['timepoint'].unique()
+        #the labels are strings but they need to be ints to be sorted
+        time_list = list(map(int, time_list))
+        time_list.sort()
+        time_list = list(map(str, time_list))
 
-    # We want to loop through pairs of loci so I think we can just loop through the
-    # index of the genotype dataframe
-    
-    #I think we want to loop through all possible pairs of loci.
+        #make sure we have multiple timepoints
+        if len(time_list) == 1:
+            continue
 
+        #loop to -1 since last timepoint has nothing following it
+        for curr_time in time_list[:-1]:
+            #this is all the haplotypes at this timepoint
+            curr_haps_df = group[group['timepoint'] == curr_time]
+            #now we need to check if there are three haplotypes that we can use
+            #to see recombination
+            check_three_haps(curr_haps_df['2_Haplotype'].to_list())
+            print(curr_haps_df, file = sys.stderr)
+            break
+        break
 
-    #             currDist = locus1 - locus2
-    #             #get all of the reads with a genotype for both loci
-    #             bothLoc = currLoc1[currLoc1[locus2].notnull()]
-    #             if not bothLoc.empty:
-    #                 #now we need to loop through all our timepoints
-    #                 for curr_timepoint in timepointList:
-    #                     print(bothLoc, file = sys.stderr)
-    #                     #get reads at this timepoint
-    #                     time_t = bothLoc[bothLoc['timepoint' == curr_timepoint]]
-    #                     if time_t.notNull():
-    #                         print(time_t, file = sys.stderr)
-
-                        # #enumerate all the haplotypes at this timepoint
-                        # print(enumerateHaplotypes(
-                        #     bothLoc[bothLoc['timepoint' == curr_timepoint]],
-                        #     locus1, locus2), file = sys.stderr)
-
+    return
 
 ############################ Helper Functions #################################
 
-def enumerateHaplotypes(wideGenDF, locus1, locus2):
-    """Takes a wide dataframe of genotypes and enumerates all the haplotypes
-    across two loci. Returns a Dataframe where each row is a genotype and a
-    count column keeps track of the times each was observed"""
-    #group our dataframe by pairs of loci
-    haplotypesDF = wideGenDF.groupby([locus1,locus2]).size()
-    haplotypesDF.reset_index()
-    haplotypesDF.rename(columns={0:'count'})
-    return haplotypesDF
+testCase = 
+
+def check_three_haps(hap_list):
+    """ Takes in a list of haplotypes and returns false if there are not three 
+    haplotypes that we can use for the haplotype test. Otherwise, returns a 
+    list of haplotypes that would satisfy the test
+    """
+    #make a list to add haplotypes to that would satisfy the test
+    return_haps = []
+
+    #position 1
+    first_alleles = np.array([x[0] for x in hap_list])
+    second_alleles = np.array([x[1] for x in hap_list])
+    first_alleles_un = np.unique(first_alleles)
+    for al in first_alleles_un:
+        #check for alleles at this position that have at least two entries
+        #aka are present in two genotypes
+        if first_alleles.count(al) < 2:
+            continue
+        
+        #get the alleles its matched with
+        matches = [x[1] for x in hap_list if x[0] == al]
+        #and alleles we havent observed it with.
+        non_matches = []
+        for curr_candidate in np.unique(second_alleles):
+            if al + curr_candidate not in hap_list:
+                non_matches.append(curr_candidate)
+        
+        #make sure there are some haplotypes we havent observed
+        if non_matches == []:
+            continue
+
+        #now check the alleles its matched with to see if they have at least
+        #two entries
+        locus_2_allele1 = []
+        locus_1_allele2 = []
+        for curr_match in matches:
+            if second_alleles.count(curr_match) < 2:
+                continue
+            else: 
+                #put in options for allele at second site
+                locus_2_allele1.append(curr_match)
+                #store matches corresponding with this allele at the first site
+                locus_1_allele2.extend([x[0] for x in hap_list if x[1] == curr_match])
+        
+        #check if there are options for an allele at the second site
+        if locus_2_allele1 == []:
+            continue
+        #if there are, get possible recombination haplotypes
+        for curr_test in locus_2_allele1:
+
+
+
+
+    #position 2
+    second_alleles = np.array([x[1] for x in hap_list])
+    second_alleles = np.unique(second_alleles)
+    print(first_alleles, file = sys.stderr)
+    print(second_alleles, file = sys.stderr)
+    
+    #which position we are checking
+    positions = range(2)
+    for i in positions:
+
+
+
+        
+
+
+
+# def enumerateHaplotypes(wideGenDF, locus1, locus2):
+#     """Takes a wide dataframe of genotypes and enumerates all the haplotypes
+#     across two loci. Returns a Dataframe where each row is a genotype and a
+#     count column keeps track of the times each was observed"""
+#     #group our dataframe by pairs of loci
+#     haplotypesDF = wideGenDF.groupby([locus1,locus2]).size()
+#     haplotypesDF.reset_index()
+#     haplotypesDF.rename(columns={0:'count'})
+#     return haplotypesDF
 
 #first we need to start by looking for three different haplotypes at each locus
 # def three_hap_loci(genDF, locus1, locus2):

@@ -5,13 +5,17 @@ import sys
 def find_segregating_diagonal(coCounts_arr, all_seg = False):
     """ Takes a numpy array of co-SNP counts from the Zanini et al. data.
     Scans the diagonal of the array to find segregating sites. 
+    Params
+    ------
+    coCounts_arr:   np.array, array from Zanini et al. of snp counts
+    all_seg:        bool, if true, all information for all segregating 
+                    alleles will be included. This is needed for neher
+                    analysis (neher.py).
+
     returns
     --------
     segregatingLoci:    pd.df, dataframe with the position of each segregating
                         site as well as the two most frequent alleles.
-    all_seg:            bool, if true, all information for all segregating 
-                        alleles will be included. This is needed for neher
-                        analysis (neher.py).
     """
     segregatingLoci = []
     fragmentLen = coCounts_arr.shape[-1]
@@ -66,13 +70,19 @@ def find_segregating_diagonal(coCounts_arr, all_seg = False):
 
 def make_genotype_df(segregatingLoci, coCounts_arr):
     """ Takes a list of segregating loci and the of co-SNP counts from the 
-    Zanini et al. data.
+    Zanini et al. data. Then makes a dataframe where each row represents 
+    a pair of loci and there is an entry containing a genotype observed for 
+    that loci pair.
     ---------------------------------------------------------------------------
     Params
     ------
     segregatingLoci:    pd.df, dataframe with the position of each segregating
                         site as well as the two most frequent alleles.
     coCounts_arr:       np.array, array from Zanini et al. of snp counts
+    Returns
+    -------
+    genotype_df:        pd.df, dataframe where each row corresponds to a 
+                        2 haplotype observed at a pair of segregating loci.
     """
     #this dictionary matches positions in arrays to alleles
     allele_dict = { 0 : 'A',

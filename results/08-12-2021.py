@@ -6,12 +6,13 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import zaniniUtil as zu
-import neher
 
 #This script is to try and get Neher and Leitner's analysis 
-#from 2009 up and running for the data from Zanini
+#It makes dataframes of the haplotypes and segregating loci observed in the Zanini dataset.
+#Then it saves these dataframes to outDir
 
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/snpPairs/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
 
 
 #my idea, we can probably do the analysis for each pair of loci at a time. (loop through loci pairs
@@ -48,9 +49,6 @@ for curr_fragment in fragment_list:
     #make a list to save all our moving average dataframes in
     all_patients_ave = []
     all_patients_points = []
-    #make a list to save our genotypes in (this will become a dataframe)
-    fragment_genotypes = []
-    segregatingLoci_all = []
 
     #loop through the participants
     for curr_par in par_list:
@@ -61,6 +59,10 @@ for curr_fragment in fragment_list:
         #if there isn't a file for this combination of participant and fragment
         if par_frag not in participant_files.keys():
             continue
+
+        #make a list to save our genotypes in (this will become a dataframe)
+        fragment_genotypes = []
+        segregatingLoci_all = []
 
         #for each participant loop through their timepoints
         for curr_file in participant_files[par_frag]:
@@ -90,7 +92,6 @@ for curr_fragment in fragment_list:
         fragment_genotypes = pd.concat(fragment_genotypes)
         segregatingLoci_all = pd.concat(segregatingLoci_all)
 
-        #Next we need to perform neher leitner analysis using these dataframes
-        neher.plotPoint(fragment_genotypes, segregatingLoci_all )
-        break
-    break
+        #Next we can save these dataframes
+        fragment_genotypes.to_pickle(outDir + "haplotype_dfs/haplotypes_" + par_frag + ".pkl")
+        segregatingLoci_all.to_pickle(outDir + "segregating_Loci/segregating_" + par_frag + ".pkl")
