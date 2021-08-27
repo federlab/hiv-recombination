@@ -1,4 +1,5 @@
 import sys
+import pandas as pd
 import numpy as np
 
 #utilize analysis proposed by Neher and Leitner to investigate how viral load
@@ -21,10 +22,13 @@ def run_analysis(genotypeDF, segregatingLoci):
     recombination_df : pd.dataframe, one column indicates whether a pair of loci
                         triggered a three haplotype test. Two columns give the loci
                         pair and a third column indicates whether they passed the test. 
+                        Additionally it has two columns indicating what timepoints these
+                        were observed between.
     mutation_df :   
     """
     groupedGenDF = genotypeDF.groupby(['Locus_1', 'Locus_2'])
     recombination_df = []
+    mutation_df = []
     
     #iterate through pairs of loci
     for name, group in groupedGenDF:
@@ -44,9 +48,14 @@ def run_analysis(genotypeDF, segregatingLoci):
 
         #observed haplotypes
         observed_haps = set()
+        #which alleles we've seen at each locus
+        observed_alleles_1 = set()
+        observed_alleles_2 = set()
 
         #loop to -1 since last timepoint has nothing following it
-        for curr_time in time_list[:-1]:
+        for i in range(len(time_list) -1):
+            curr_time = time_list[i]
+
             #this is all the haplotypes at this timepoint
             curr_haps_df = group[group['timepoint'] == curr_time]
 
@@ -58,12 +67,43 @@ def run_analysis(genotypeDF, segregatingLoci):
 
             #do we need to check for the 4th haplotype?
             if passed_3_haps is not False:
+                #variable to check if successful
+                success = False
                 #check for the fourth haplotype and mark its distance
                 for hap_four in passed_3_haps:
                     if hap_four in first_time_haps:
-                        print(name, file = sys.stderr)
-                        # recombination_df.append([name])
-                #mark the distance between the loci
+                        recombination_df.append([name[0], name[1], True, 
+                                        hap_four, curr_time, time_list[i-1]])
+                        success = True
+                #save failures so we can caluclate frequency
+                if not success:
+                    recombination_df.append([name[0], name[1], False, 
+                                        "-", curr_time, time_list[i-1]])
+                #reset test
+                passed_3_haps = False
+            
+            #check for alleles that weren't present before
+            #only do this past the first timepoint though
+            #add all alleles we observe at the first timepoint
+            if i == 0:
+               for test_hap in first_time_haps:
+                   observed_alleles_1.add(test_hap[0])
+                   observed_alleles_2.add(test_hap[1])
+            else:
+                mut_found = False
+                for test_hap in first_time_haps:
+                    allele1 = test_hap[0]
+                    allele2 = test_hap[1]
+                    if allele1 not in observed_alleles_1 \
+                        or allele2 not in observed_alleles_2:
+                        #dont have to worry about duplicates
+                        observed_alleles_1.add(allele1)
+                        observed_alleles_2.add(allele2)
+                        mutation_df.append([name[0], name[1], True, curr_time, time_list[i-1]])
+                        mutFount = True
+                #if our test did not find any mutations
+                if not mut_found:
+                    mutation_df.append([name[0], name[1], False, curr_time, time_list[i-1]])
 
 
             #now we need to check if there are three haplotypes that we can use
@@ -71,11 +111,15 @@ def run_analysis(genotypeDF, segregatingLoci):
             passed_3_haps = check_three_haps(curr_haps_df['2_Haplotype'].to_list())
 
             #update the haplotype list with everything we observed
-            observed_haps.extend(curr_haps_df['2_Haplotype'].to_list())
-            break
-        break
-
-    return
+            for hap_2 in curr_haps_df['2_Haplotype'].to_list():
+                observed_haps.add(hap_2)
+    recombination_df = pd.DataFrame(recombination_df, columns = ["Locus_1", "Locus_2",
+                                            "Test_Passed", "Haplotype","Curr_Timepoint", 
+                                            "Last_Timepoint"])
+    mutation_df = pd.DataFrame(mutation_df, columns = ["Locus_1", "Locus_2",
+                                        "Test_Passed", "Curr_Timepoint", 
+                                        "Last_Timepoint"])
+    return recombination_df, mutation_df
 
 ############################ Helper Functions #################################
 #return 1 = CG

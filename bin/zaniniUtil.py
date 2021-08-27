@@ -119,3 +119,45 @@ def make_genotype_df(segregatingLoci, coCounts_arr):
     genotype_df = pd.DataFrame(genotype_df, columns= ['Locus_1', 'Locus_2', '2_Haplotype', 'Count'])
     return genotype_df
                 
+def filter_genotype_df(genotypeDF, segregatingLoci, cutoff):
+    """Takes a dataframe of genotypes and filter it based on frequency of the 
+    alleles present
+    Params
+    ------------
+    genotypeDF : pd.dataframe, dataframe with two columns indicating loci pairs
+                 an aditional column indicates the 2 haplotype at those loci 
+                 and the timepoint is also labeled. Data is from one patient 
+    segregatingLoci : pd.dataframe, dataframe with the position of each segregating
+                      site as well as all the alleles and their frequencies
+    cutoff : float, the frequency at with to include alleles
+    """
+    filtered_genotypes = []
+    #put all of the allele frequencies into a dictionary of dictionaries
+    #the first key is the locus and the second key is the allele
+    freqDict = {}
+    for index, row in segregatingLoci.iterrows():
+        locus = row.get('position')
+        allele_dict = {}
+        allele_dict[row.get('allele_1')] = row.get('freq_1')
+        allele_dict[row.get('allele_2')] = row.get('freq_2')
+        allele_dict[row.get('allele_3')] = row.get('freq_3')
+        allele_dict[row.get('allele_4')] = row.get('freq_4')
+        freqDict[locus] = allele_dict
+
+    #now use the dictionary to check the frequency of each allele is above
+    #the cutoff
+    for index, row in genotypeDF.iterrows():
+        #get the loci to check
+        locus1 = row.get("Locus_1")
+        locus2 = row.get("Locus_2")
+        haplotype = row.get("2_Haplotype")
+        allele1 = haplotype[0]
+        allele2 = haplotype[1]
+
+        #get the allele frequencies
+        check_1 = (freqDict[locus1])[allele1]
+        check_2 = (freqDict[locus2])[allele2]
+        if check_1 > cutoff and check_2 > cutoff:
+            filtered_genotypes.append(row)
+    filtered_genotypes = pd.DataFrame(filtered_genotypes)
+    return filtered_genotypes
