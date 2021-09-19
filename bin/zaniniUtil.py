@@ -132,32 +132,36 @@ def filter_genotype_df(genotypeDF, segregatingLoci, cutoff):
     cutoff : float, the frequency at with to include alleles
     """
     filtered_genotypes = []
-    #put all of the allele frequencies into a dictionary of dictionaries
-    #the first key is the locus and the second key is the allele
-    freqDict = {}
-    for index, row in segregatingLoci.iterrows():
-        locus = row.get('position')
-        allele_dict = {}
-        allele_dict[row.get('allele_1')] = row.get('freq_1')
-        allele_dict[row.get('allele_2')] = row.get('freq_2')
-        allele_dict[row.get('allele_3')] = row.get('freq_3')
-        allele_dict[row.get('allele_4')] = row.get('freq_4')
-        freqDict[locus] = allele_dict
+    timepoint_list = segregatingLoci['timepoint'].unique()
+    for curr_timepoint in timepoint_list:
+        curr_seg = segregatingLoci[segregatingLoci['timepoint'] == curr_timepoint]
+        curr_gen = genotypeDF[genotypeDF['timepoint'] == curr_timepoint]
+        #put all of the allele frequencies into a dictionary of dictionaries
+        #the first key is the locus and the second key is the allele
+        freqDict = {}
+        for index, row in curr_seg.iterrows():
+            locus = row.get('position')
+            allele_dict = {}
+            allele_dict[row.get('allele_1')] = row.get('freq_1')
+            allele_dict[row.get('allele_2')] = row.get('freq_2')
+            allele_dict[row.get('allele_3')] = row.get('freq_3')
+            allele_dict[row.get('allele_4')] = row.get('freq_4')
+            freqDict[locus] = allele_dict
 
-    #now use the dictionary to check the frequency of each allele is above
-    #the cutoff
-    for index, row in genotypeDF.iterrows():
-        #get the loci to check
-        locus1 = row.get("Locus_1")
-        locus2 = row.get("Locus_2")
-        haplotype = row.get("2_Haplotype")
-        allele1 = haplotype[0]
-        allele2 = haplotype[1]
+        #now use the dictionary to check the frequency of each allele is above
+        #the cutoff
+        for index, row in curr_gen.iterrows():
+            #get the loci to check
+            locus1 = row.get("Locus_1")
+            locus2 = row.get("Locus_2")
+            haplotype = row.get("2_Haplotype")
+            allele1 = haplotype[0]
+            allele2 = haplotype[1]
 
-        #get the allele frequencies
-        check_1 = (freqDict[locus1])[allele1]
-        check_2 = (freqDict[locus2])[allele2]
-        if check_1 > cutoff and check_2 > cutoff:
-            filtered_genotypes.append(row)
+            #get the allele frequencies
+            check_1 = (freqDict[locus1])[allele1]
+            check_2 = (freqDict[locus2])[allele2]
+            if check_1 > cutoff and check_2 > cutoff:
+                filtered_genotypes.append(row)
     filtered_genotypes = pd.DataFrame(filtered_genotypes)
     return filtered_genotypes
