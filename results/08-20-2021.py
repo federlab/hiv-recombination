@@ -13,7 +13,7 @@ import os
 #the zanini data to perform the neher and leitner analysis.
 
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/troubleshootingPlots/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/'
 
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
 par_list = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
@@ -63,14 +63,9 @@ for success_filt in SUCCESSFILTERS:
             recombination_df['dist'] = recombination_df['Locus_2'] - recombination_df['Locus_1']
             mutation_df['dist'] = mutation_df['Locus_2'] - mutation_df['Locus_1']
 
-            # #Filter the dataframe to only get rows where the success frequency is higher than the cutoff
-            # recombination_df = recombination_df.loc[recombination_df['Success_Freq'] >= success_filt]
-            # mutation_df = mutation_df.loc[mutation_df['Success_Freq'] >= success_filt]
-
             #get the support for all of the tests into a dataframe so we can plot it for troubleshooting
             mutation_df['Test_Type'] = 'mutation'
             recombination_df['Test_Type'] = 'recombination'
-            #if success frequency is high enough
             support_df.append(mutation_df[['dist','Test_Passed','Supporting_Reads', 'Test_Type', 'Success_Freq']])
             support_df.append(recombination_df[['dist','Test_Passed','Supporting_Reads', 'Test_Type', 'Success_Freq']])
 

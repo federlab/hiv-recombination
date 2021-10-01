@@ -39,7 +39,9 @@ def make_vl_df(loadDataDir):
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
 vlDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/'
 outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/paper_filtering/fits/'
-dataFiles = os.listdir(dataDir)
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/poster/'
+dataFiles = os.listdir(dataDir + 'RandD/' )
+print(dataFiles, file = sys.stderr)
 
 WINSIZE = 20
 WINSTEP = 5
@@ -52,7 +54,7 @@ print(allLoads, file = sys.stderr)
 
 #We can start by making 
 for currFile in dataFiles:
-    currData = pd.read_csv(dataDir + currFile)
+    currData = pd.read_csv(dataDir + 'RandD/' + currFile)
     # our columns should be
     # Locus_1,Locus_2,p_A,p_B,AB_obs,Ab_obs,aB_obs,ab_obs,r_squared,d_prime,date
     #filter to get frequencies between 80 and 20 like Zanini did.
@@ -139,6 +141,7 @@ allStats = pd.DataFrame(allStats, columns = ['viral_load', 'rho', 'n_snps', 'dat
 #plot rho vs viral load color by participant
 myplot = sns.scatterplot(x = 'viral_load', y = 'rho', hue = 'participant', data = allStats, alpha = 0.5)
 myplot.set(xscale="log")
+plt.xlim(1000,1000000)
 plt.xlabel("Viral Load [Virions/ml]")
 plt.ylabel("Estimated Rho")
 plt.ylim(-0.1,1.1)
