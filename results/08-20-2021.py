@@ -20,7 +20,7 @@ par_list = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
 available_files_hap = os.listdir(dataDir + "haplotype_dfs/")
 available_files_seg = os.listdir(dataDir + "segregating_Loci/")
 
-# par_list = ['p5']
+# par_list = ['p5', 'p6']
 
 BINWIDTH = 100
 MIN_BIN = 0

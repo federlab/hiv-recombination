@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import zaniniUtil as zu
 import os
 
 #Today I am quickly plotting the viral loads to add to my poster
@@ -16,21 +17,7 @@ outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/poster/'
 available_files = os.listdir(dataDir)
 
 #data frame of viral loads for each patient
-viralLoadData = []
-
-#loop through the files to add to our dataframe
-for curr_file in available_files:
-    curr_par = curr_file.split('_')[1]
-    curr_par = curr_par.split('.')[0]
-    
-    #get the current viral loads
-    curr_vls = pd.read_csv(dataDir + curr_file, sep = '\t')
-    curr_vls['Participant'] = curr_par
-    print(curr_vls, file = sys.stderr)
-
-    viralLoadData.append(curr_vls)
-
-viralLoadData = pd.concat(viralLoadData)
+viralLoadData = zu.make_viral_load_df(dataDir)
 
 #now plot the viral loads
 sns.set(rc={'figure.figsize':(10,5)})

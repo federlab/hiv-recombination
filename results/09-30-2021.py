@@ -18,10 +18,12 @@ import os
 
 #directories for cluster run
 # dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
+# viralLoadDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/'
 # outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/'
 
 #for running on desktop
 dataDir = '../data/zanini/analysis/'
+viralLoadDir = '../data/zanini/viralLoads/'
 outDir = '/Volumes/feder_vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/10-01-2020/'
 
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
@@ -29,7 +31,7 @@ par_list = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
 available_files_hap = os.listdir(dataDir + "haplotype_dfs/")
 available_files_seg = os.listdir(dataDir + "segregating_Loci/")
 
-par_list = ['p5']
+par_list = ['p5', 'p6']
 
 BINWIDTH = 100
 MIN_BIN = 0
@@ -40,7 +42,7 @@ SUCCESSFILTERS = [0.01]
 
 for success_filt in SUCCESSFILTERS:
     #name to use for the plots
-    RUNNAME = str(CUTOFF) +  "filtering_success_"  + str(success_filt) +"_haps_vlp.png"
+    RUNNAME = str(CUTOFF) +  "filtering_success_"  + str(success_filt) +"_haps.png"
 
     #make dataframes to store our data to plot
     all_frequencies_patients = []
@@ -169,7 +171,7 @@ for success_filt in SUCCESSFILTERS:
     plt.xlim(-10, 500)
     plt.xlabel("Distance Between Loci")
     plt.ylabel("Frequency")
-    # plt.tight_layout()
+    plt.tight_layout()
     plt.savefig(outDir + "recombination_tests" + RUNNAME)
     plt.close()
 
@@ -206,90 +208,7 @@ for success_filt in SUCCESSFILTERS:
     plt.savefig(outDir + "mutation_tests_patientBinned" + RUNNAME)
     plt.close()
   
-    
-    # print(patient_binned, file = sys.stderr)
-
-    # #for some further trouble shooting, I'm going to make a plot that indicates the frequency of the
-    # #haplotype that triggered the success
-    # sns.set(rc={'figure.figsize':(20,5)})
-    # myplot = sns.FacetGrid(support_df[support_df['Test_Passed'] == True], col="Test_Type")
-    # myplot.map_dataframe(sns.scatterplot, y = 'Success_Freq', x = 'dist', hue = 'Test_Passed', size = 'Success_Freq', alpha = 0.5)
-    # plt.xlim(-10, MAX_BIN)
-    # plt.xlabel("Distance Between Loci")
-    # plt.ylabel("Frequency of Success Haplotype")
-    # plt.tight_layout()
-    # plt.savefig(outDir + "success_scatter_" + RUNNAME )
-    # plt.close()
-
-
-    # #I want to do some trouble shooting and make a histogram of the number of reads supporting each test.
-    # sns.set(rc={'figure.figsize':(20,5)})
-    # myplot = sns.FacetGrid(support_df, col="Test_Type")
-    # myplot.map_dataframe(sns.scatterplot, y = 'Supporting_Reads', x = 'dist', hue = 'Test_Passed', alpha = 0.5)
-    # myplot.set(yscale = 'log')
-    # plt.xlim(-10, MAX_BIN)
-    # plt.xlabel("Distance Between Loci")
-    # plt.ylabel("Supporting Reads")
-    # plt.tight_layout()
-    # plt.savefig(outDir + "support_scatter_" + RUNNAME )
-    # plt.close()
-
-    # #plot the results for all our participants
-    # #bin by participant - mutation tests
-    # sns.set(rc={'figure.figsize':(15,5)})
-    # myplot = sns.FacetGrid(all_frequencies_patients, col="Participant")
-    # myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'mut_frequencies', alpha = 0.5, size = 'Mutation Tests')
-    # myplot.map_dataframe(sns.lineplot, x = 'window', y = 'mut_frequencies', ci = None)
-    # plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-    # plt.ylim(-0.1,1.1)
-    # plt.xlim(-10, 500)
-    # plt.xlabel("Distance Between Loci")
-    # plt.ylabel("Frequency")
-    # plt.tight_layout()
-    # plt.savefig(outDir + "mutation_tests_participantBin" + RUNNAME)
-    # plt.close()
-
-    # #plot the results for all our participants
-    # #bin by participant - recombination tests
-    # sns.set(rc={'figure.figsize':(15,5)})
-    # myplot = sns.FacetGrid(all_frequencies_patients, col="Participant")
-    # myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'recomb_frequencies', alpha = 0.5, size = 'Recombination Tests')
-    # myplot.map_dataframe(sns.lineplot, x = 'window', y = 'recomb_frequencies', ci = None)
-    # plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-    # plt.ylim(-0.1,1.1)
-    # plt.xlim(-10, 500)
-    # plt.xlabel("Distance Between Loci")
-    # plt.ylabel("Frequency")
-    # plt.tight_layout()
-    # plt.savefig(outDir + "recombination_tests_participantBin" + RUNNAME)
-    # plt.close()
-
-    # #plot the results for all our participants
-    # #bin by viral load - mutation tests
-    # sns.set(rc={'figure.figsize':(15,5)})
-    # myplot = sns.FacetGrid(all_frequencies_patients, col="Participant")
-    # myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'mut_frequencies', alpha = 0.5, size = 'Mutation Tests')
-    # myplot.map_dataframe(sns.lineplot, x = 'window', y = 'mut_frequencies', ci = None)
-    # plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-    # plt.ylim(-0.1,1.1)
-    # plt.xlim(-10, 500)
-    # plt.xlabel("Distance Between Loci")
-    # plt.ylabel("Frequency")
-    # plt.tight_layout()
-    # plt.savefig(outDir + "mutation_tests_vlBin" + RUNNAME)
-    # plt.close()
-
-    # #plot the results for all our participants
-    # #bin by viral load - recombination tests
-    # sns.set(rc={'figure.figsize':(15,5)})
-    # myplot = sns.FacetGrid(all_frequencies_patients, col="Participant")
-    # myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'recomb_frequencies', alpha = 0.5, size = 'Recombination Tests')
-    # myplot.map_dataframe(sns.lineplot, x = 'window', y = 'recomb_frequencies', ci = None)
-    # plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-    # plt.ylim(-0.1,1.1)
-    # plt.xlim(-10, 500)
-    # plt.xlabel("Distance Between Loci")
-    # plt.ylabel("Frequency")
-    # plt.tight_layout()
-    # plt.savefig(outDir + "recombination_tests_vlBin" + RUNNAME)
-    # plt.close()
+#Now we can bin data points by the average viral load between the two timepoints that the tests were run at
+#To do this, we need the viral load data.
+viralLoadData = zu.make_viral_load_df(viralLoadDir)
+#now we need to convert timepoints to days from infection

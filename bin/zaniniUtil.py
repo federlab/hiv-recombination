@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import sys
+import os
 
 def find_segregating_diagonal(coCounts_arr, all_seg = False):
     """ Takes a numpy array of co-SNP counts from the Zanini et al. data.
@@ -165,3 +166,37 @@ def filter_genotype_df(genotypeDF, segregatingLoci, cutoff):
                 filtered_genotypes.append(row)
     filtered_genotypes = pd.DataFrame(filtered_genotypes)
     return filtered_genotypes
+
+def make_viral_load_df(viralLoadDir):
+    """ Takes in the path to a folder holding the Zanini viral load data. Reads
+    in this data and returns a pandas dataframe containing it.
+    ---------------------------------------------------------------------------
+    Params
+    ------
+    viralLoadDir:       str, a string with the path to the directory holding
+                        the files with the viral load data
+    Returns
+    -------
+    viralLoadData:      pd.DataFrame, its columns are 'Days from infection',
+                        'Viral load [virions/ml]', and 'Participant
+    """
+    available_files = os.listdir(viralLoadDir)
+
+    #data frame of viral loads for each patient
+    viralLoadData = []
+
+    #loop through the files to add to our dataframe
+    for curr_file in available_files:
+        curr_par = curr_file.split('_')[1]
+        curr_par = curr_par.split('.')[0]
+        
+        #get the current viral loads
+        curr_vls = pd.read_csv(viralLoadDir + curr_file, sep = '\t')
+        curr_vls['Participant'] = curr_par
+        print(curr_vls, file = sys.stderr)
+
+        viralLoadData.append(curr_vls)
+
+    viralLoadData = pd.concat(viralLoadData)
+
+    return viralLoadData
