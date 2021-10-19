@@ -193,7 +193,6 @@ def make_viral_load_df(viralLoadDir):
         #get the current viral loads
         curr_vls = pd.read_csv(viralLoadDir + curr_file, sep = '\t')
         curr_vls['Participant'] = curr_par
-        print(curr_vls, file = sys.stderr)
 
         viralLoadData.append(curr_vls)
 

@@ -1,8 +1,8 @@
 import sys
 #for cluster run
-# sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
-#for running on desktop
-sys.path.append('../bin')
+sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+# #for running on desktop
+# sys.path.append('../bin')
 import os
 import numpy as np
 import pandas as pd
@@ -12,26 +12,25 @@ import neher
 import zaniniUtil as zu
 import os
 
-#In this file we are goint to use the haplotypes and segregating loci in 
+#In this file we are going to use the haplotypes and segregating loci in 
 #the zanini data to perform the neher and leitner analysis.
-#We will extend this analysis by taking into account patient and viral load.
+#Then I extend this analysis and make plots where all of the patients' tests are 
+#binned accross timepoints
 
 #directories for cluster run
-# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
-# viralLoadDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/'
-# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/'
 
-#for running on desktop
-dataDir = '../data/zanini/analysis/'
-viralLoadDir = '../data/zanini/viralLoads/'
-outDir = '/Volumes/feder_vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/10-01-2020/'
+# #for running on desktop
+# dataDir = '../data/zanini/analysis/'
+# outDir = '/Volumes/feder_vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/10-01-2020/'
 
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
 par_list = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
 available_files_hap = os.listdir(dataDir + "haplotype_dfs/")
 available_files_seg = os.listdir(dataDir + "segregating_Loci/")
 
-par_list = ['p5', 'p6']
+# par_list = ['p5', 'p6']
 
 BINWIDTH = 100
 MIN_BIN = 0
@@ -77,7 +76,6 @@ for success_filt in SUCCESSFILTERS:
             #get the support for all of the tests into a dataframe so we can plot it for troubleshooting
             mutation_df['Test_Type'] = 'mutation'
             recombination_df['Test_Type'] = 'recombination'
-            #if success frequency is high enough
             support_df.append(mutation_df[['dist','Test_Passed','Supporting_Reads', 'Test_Type', 'Success_Freq']])
             support_df.append(recombination_df[['dist','Test_Passed','Supporting_Reads', 'Test_Type', 'Success_Freq']])
 
@@ -88,8 +86,6 @@ for success_filt in SUCCESSFILTERS:
                 #get just the tests run at this timepoint
                 time_subsetted_recomb = recombination_df[recombination_df['Curr_Timepoint'] == curr_time]
                 time_subsetted_mut = mutation_df[mutation_df['Curr_Timepoint'] == curr_time]
-
-
 
                 #create our bins
                 for bin_start in range(MIN_BIN, MAX_BIN, BINWIDTH):
@@ -188,7 +184,9 @@ for success_filt in SUCCESSFILTERS:
 
     #plot our binning by participant timepoint
     myplot = sns.FacetGrid(patient_binned, col="Participant")
+    sns.set(rc={'figure.figsize':(20,5)})
     myplot.map_dataframe(sns.scatterplot, x = 'Window', y = 'Recombination Frequency', alpha = 0.5, size = 'Recombination Tests', hue = 'Fragment')
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.ylim(-0.1,1.1)
     plt.xlim(-10, 500)
     plt.xlabel("Distance Between Loci")
@@ -199,7 +197,9 @@ for success_filt in SUCCESSFILTERS:
 
     #plot our binning by participant timepoint
     myplot = sns.FacetGrid(patient_binned, col="Participant")
+    sns.set(rc={'figure.figsize':(20,5)})
     myplot.map_dataframe(sns.scatterplot, x = 'Window', y = 'Mutation Frequency', alpha = 0.5, size = 'Mutation Tests', hue = 'Fragment')
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.ylim(-0.1,1.1)
     plt.xlim(-10, 500)
     plt.xlabel("Distance Between Loci")
@@ -208,7 +208,3 @@ for success_filt in SUCCESSFILTERS:
     plt.savefig(outDir + "mutation_tests_patientBinned" + RUNNAME)
     plt.close()
   
-#Now we can bin data points by the average viral load between the two timepoints that the tests were run at
-#To do this, we need the viral load data.
-viralLoadData = zu.make_viral_load_df(viralLoadDir)
-#now we need to convert timepoints to days from infection
