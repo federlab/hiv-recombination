@@ -30,11 +30,10 @@ savedData = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neh
 
 #Next we need to set some things for the run
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
-par_list = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
+par_list = ['p1', 'p2', 'p3', 'p5', 'p6', 'p8', 'p9', 'p10', 'p11']
 available_files_hap = os.listdir(dataDir + "haplotype_dfs/")
 available_files_seg = os.listdir(dataDir + "segregating_Loci/")
 
-# par_list = ['p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
 
 NUM_VL_GROUPS = 5
 BINWIDTH = 100
@@ -47,16 +46,29 @@ RUNNAME = str(CUTOFF) +  "filtering_success_"  + str(SUCCESSFILTER) +"_binnedVL.
 
 #We can start by getting the viral load data
 viralLoadData = zu.make_viral_load_df(viralLoadDir)
+#We can also load our dataframe for converting days to timepoints
+dayToTime = pd.read_csv(dataDir + "DaysToTimepoints.csv")
 labeledLoads = []
 
-#This data is in days, but we need to label the timepoints sequentially
+#We need to add a timepoint column to our viral load data
 for curr_par in par_list:
     curr_data = viralLoadData[viralLoadData['Participant'] == curr_par]
-    #pandas gives a warning if you don't explicitely make a copy
-    dfWithLabel = curr_data.copy(deep = True)
-    dfWithLabel['Timepoint'] = range(1, len(curr_data) + 1)
-    labeledLoads.append(dfWithLabel)
-viralLoadData = pd.concat(labeledLoads)
+    curr_days = dayToTime[dayToTime['Participant'] == curr_par]
+    labels = []
+    #get the timepoint for the day
+    for index, row in curr_data.iterrows():
+        date = int(row['Days from infection'])
+        currLabel = curr_days[curr_days[' Day'] == date]
+        print("****************", file = sys.stderr)
+        print(curr_par, file = sys.stderr)
+        print(currLabel, file = sys.stderr)
+        print(date, file = sys.stderr)
+        labels.append(currLabel[' Timepoint'].tolist()[0])
+    labeled_current = curr_data.copy()
+    labeled_current['Timepoint'] = labels
+    labeledLoads.append(labeled_current)
+labeledLoads = pd.concat(labeledLoads)
+viralLoadData = labeledLoads
 
 #make a dataframe to store our data to plot
 all_frequencies_patients = []
@@ -78,7 +90,7 @@ for curr_par in par_list:
 
         #now we can perform neher analysis on this dataframe
         #first we will filter out genotypes with alleles at less than 3% frequency
-        haplotype_df = zu.filter_genotype_df(haplotype_df, segregating_Loci, cutoff = CUTOFF)
+        haplotype_df = zu.filter_genotype_df(haplotype_df, segregating_Loci, allele_cutoff = CUTOFF, hap_cutoff = SUCCESSFILTER)
         if haplotype_df.empty:
             continue
         recombination_df, mutation_df = neher.run_analysis(haplotype_df, verbose = False, success_filt = SUCCESSFILTER)
@@ -102,12 +114,18 @@ for curr_par in par_list:
 
             #get the viral load at the timepoint that triggered the test
             vl_bef = participant_vls[participant_vls['Timepoint'] == time_bef]
-            vl_bef = vl_bef['Viral load [virions/ml]'].tolist()[0]
-
+            if vl_bef.empty:
+                average_vls.append(float('inf'))
+            else:
+                 vl_bef = vl_bef['Viral load [virions/ml]'].tolist()[0]
+            
             #get the viral load at the success timepoint
             vl_success = participant_vls[participant_vls['Timepoint'] == success_time]
-            vl_success = vl_success['Viral load [virions/ml]'].tolist()[0]
-            average_vls.append(sum([vl_success, vl_bef])/2)
+            if vl_success.empty:
+                average_vls.append(float('inf'))
+            else: 
+                vl_success = vl_success['Viral load [virions/ml]'].tolist()[0]
+                average_vls.append(sum([vl_success, vl_bef])/2)
         mutation_df['Average_vl'] = average_vls
 
         #now repeat the same thing for our recombination df to get the average viral loads
@@ -118,15 +136,20 @@ for curr_par in par_list:
 
             #get the viral load at the timepoint that triggered the test
             vl_bef = participant_vls[participant_vls['Timepoint'] == time_bef]
-            vl_bef = vl_bef['Viral load [virions/ml]'].tolist()[0]
+            if vl_bef.empty:
+                average_vls.append(float('inf'))
+            else: vl_bef = vl_bef['Viral load [virions/ml]'].tolist()[0]
 
             #get the viral load at the success timepoint
             vl_success = participant_vls[participant_vls['Timepoint'] == success_time]
-            vl_success = vl_success['Viral load [virions/ml]'].tolist()[0]
-            average_vls.append(sum([vl_success, vl_bef])/2)
+            if vl_success.empty:
+                average_vls.append(float('inf'))
+            else:
+                vl_success = vl_success['Viral load [virions/ml]'].tolist()[0]
+                average_vls.append(sum([vl_success, vl_bef])/2)
         recombination_df['Average_vl'] = average_vls
 
-        #write our dataframes to files
+        # write our dataframes to files
         recombination_df.to_csv(savedData + "Recombination_"+ curr_par + "_" + curr_fragment + ".csv")
         mutation_df.to_csv(savedData + "Mutation_"+ curr_par + "_" + curr_fragment + ".csv")
 

@@ -78,7 +78,8 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                 if curr_hap not in observed_haps:
                     first_time_haps.add(curr_hap)
 
-            #do we need to check for the 4th haplotype?
+            #do we need to check for the 4th haplotype (see if there are successes)
+            #that have not been previously observed
             if passed_3_haps is not False:
                 if verbose:
                     print("***********************\n Possible Successes")
@@ -88,11 +89,17 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                 if len(passed_3_haps) > 1:
                     #get only the successes that haven't been previously observed
                     passed_3_haps = [x for x in passed_3_haps if x not in observed_successes]
-                    passed_3_haps = [random.choice(passed_3_haps)]
+                    if len(passed_3_haps) >= 1:
+                        passed_3_haps = [random.choice(passed_3_haps)]
+                    else: passed_3_haps = False
+            
+            #do we need to check for the 4th haplotype?
+            if passed_3_haps is not False:            
                 #check for the fourth haplotype and mark its distance we dont
                 #want any repeat successes either
                 if passed_3_haps[0] in first_time_haps and \
                     passed_3_haps[0] not in observed_successes:
+
                     #compute the frequency of the success haplotype
                     success_freq = curr_haps_df[curr_haps_df['2_Haplotype'] == passed_3_haps[0]]
                     success_freq = success_freq['Count'].tolist()[0]/supporting_reads
@@ -102,13 +109,12 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                         recombination_df.append([name[0], name[1], False, 
                                         "-", curr_time, time_list[i-1],
                                         supporting_reads, float('inf')])
-                        continue
-
-                    recombination_df.append([name[0], name[1], True, 
-                                    passed_3_haps[0], curr_time, time_list[i-1],
-                                    supporting_reads, success_freq])
-                    observed_successes.add(passed_3_haps[0])
-                #save failures so we can caluclate frequency
+                    else:
+                        recombination_df.append([name[0], name[1], True, 
+                                        passed_3_haps[0], curr_time, time_list[i-1],
+                                        supporting_reads, success_freq])
+                        observed_successes.add(passed_3_haps[0])
+                #save failures so we can calculate frequency
                 else:
                     recombination_df.append([name[0], name[1], False, 
                                         "-", curr_time, time_list[i-1],
@@ -141,11 +147,10 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                         if success_freq < success_filt:
                             mutation_df.append([name[0], name[1], False, curr_time,
                                 time_list[i-1], supporting_reads, float('inf')])
-                            continue
-
-                        mutation_df.append([name[0], name[1], True, curr_time,
-                                time_list[i-1], supporting_reads, success_freq])
-                        mut_found = True
+                        else:
+                            mutation_df.append([name[0], name[1], True, curr_time,
+                                    time_list[i-1], supporting_reads, success_freq])
+                            mut_found = True
                 #if our test did not find any mutations
                 if not mut_found:
                     mutation_df.append([name[0], name[1], False, curr_time,

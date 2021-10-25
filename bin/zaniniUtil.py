@@ -120,7 +120,7 @@ def make_genotype_df(segregatingLoci, coCounts_arr):
     genotype_df = pd.DataFrame(genotype_df, columns= ['Locus_1', 'Locus_2', '2_Haplotype', 'Count'])
     return genotype_df
                 
-def filter_genotype_df(genotypeDF, segregatingLoci, cutoff):
+def filter_genotype_df(genotypeDF, segregatingLoci, allele_cutoff,  hap_cutoff):
     """Takes a dataframe of genotypes and filter it based on frequency of the 
     alleles present
     Params
@@ -130,7 +130,10 @@ def filter_genotype_df(genotypeDF, segregatingLoci, cutoff):
                  and the timepoint is also labeled. Data is from one patient 
     segregatingLoci : pd.dataframe, dataframe with the position of each segregating
                       site as well as all the alleles and their frequencies
-    cutoff : float, the frequency at with to include alleles
+    allele_cutoff : float, the frequency each allele in a haplotype has to reach
+                    for it to be included in the output
+    hap_cutoff : float, the frequency each haplotype has to reach for it to be
+                 included in the output.
     """
     filtered_genotypes = []
     timepoint_list = segregatingLoci['timepoint'].unique()
@@ -162,9 +165,18 @@ def filter_genotype_df(genotypeDF, segregatingLoci, cutoff):
             #get the allele frequencies
             check_1 = (freqDict[locus1])[allele1]
             check_2 = (freqDict[locus2])[allele2]
-            if check_1 > cutoff and check_2 > cutoff:
+            if check_1 > allele_cutoff and check_2 > allele_cutoff:
                 filtered_genotypes.append(row)
     filtered_genotypes = pd.DataFrame(filtered_genotypes)
+
+    second_filtered = []
+    #Now we want to make sure all our genotypes have frequency > hap_cutoff
+    for name, group in filtered_genotypes.groupby(['Locus_1', 'Locus_2', 'timepoint']):
+        group_sum = group['Count'].sum()
+        group['hap_freq'] = group['Count']/group_sum
+        second_filtered.append(group[group['hap_freq'].gt(hap_cutoff)])
+    
+    filtered_genotypes = pd.concat(second_filtered)
     return filtered_genotypes
 
 def make_viral_load_df(viralLoadDir):
