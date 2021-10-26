@@ -14,13 +14,16 @@ import os
 
 # #directories for cluster run
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neher/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/10-06-2021/'
+dayDir =  '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/10-26-2021/'
 
 # # for running on desktop
 # dataDir = '/Volumes/feder_vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neher/'
-# outDir = '/Volumes/feder_vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/10-20-2021/'
+# dayDir = '/Volumes/feder_vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
+# outDir = '/Volumes/feder_vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/10-26-2021/'
 
 #Today I am going to write code to save the reconstitute the results I saved from my Neher analysis and plot them.
+#This is similar to the 10-06-2021 file, but I want to add the days between timepoints as the x axis
 
 #Next we need to set some things for the run
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
@@ -32,12 +35,15 @@ VL_MIN_BIN = 3
 VL_BIN_WIDTH = .75
 
 #distance bins
-BINWIDTH = 100
+BINWIDTH = 10000
 MIN_BIN = 0
-MAX_BIN = 700
+MAX_BIN = 60000
 CUTOFF = 0.03
 SUCCESS = 0.01
-RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "p1test"
+RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "Truncated60k"
+
+#We can also load our dataframe for converting days to timepoints
+dayToTime = pd.read_csv(dayDir + "DaysToTimepoints.csv")
 
 #create lists to store all of the results in
 rec_dfs = []
@@ -70,6 +76,65 @@ recombination_df = pd.concat(rec_dfs)
 #take the log of viral load
 mutation_df['Average_vl'] = np.log10(mutation_df['Average_vl'])
 recombination_df['Average_vl'] = np.log10(recombination_df['Average_vl'])
+
+#label each entry with the distance between timepoints.
+time_diffs_mut = []
+for index, cur_row in mutation_df.iterrows():
+    curr_par = cur_row['Participant']
+    second_time = cur_row['Curr_Timepoint']
+    first_time = cur_row['Last_Timepoint']
+    day_1 = dayToTime[dayToTime['Participant'] == curr_par]
+    day_1 = dayToTime[dayToTime[' Timepoint'] == first_time]
+    day_1 = day_1[' Day'].tolist()[0]
+    day_2 = dayToTime[dayToTime['Participant'] == curr_par]
+    day_2 = dayToTime[dayToTime[' Timepoint'] == second_time]
+    day_2 = day_2[' Day'].tolist()[0]
+    time_diffs_mut.append(day_2 - day_1)
+
+time_diffs_rec = []
+for index, cur_row in recombination_df.iterrows():
+    curr_par = cur_row['Participant']
+    second_time = cur_row['Curr_Timepoint']
+    first_time = cur_row['Last_Timepoint']
+    day_1 = dayToTime[dayToTime['Participant'] == curr_par]
+    day_1 = dayToTime[dayToTime[' Timepoint'] == first_time]
+    day_1 = day_1[' Day'].tolist()[0]
+    day_2 = dayToTime[dayToTime['Participant'] == curr_par]
+    day_2 = dayToTime[dayToTime[' Timepoint'] == second_time]
+    day_2 = day_2[' Day'].tolist()[0]
+    time_diffs_rec.append(day_2 - day_1)
+
+mutation_df['Time_Diff'] = time_diffs_mut
+recombination_df['Time_Diff'] = time_diffs_rec
+mutation_df['Dist_x_Time'] = mutation_df['dist'] * mutation_df['Time_Diff']
+recombination_df['Dist_x_Time'] = recombination_df['dist'] * recombination_df['Time_Diff']
+
+#filter out rows with infinite viral loads (aka not matched to a timepoint)
+mutation_df = mutation_df[mutation_df['Average_vl'] != float('inf')]
+recombination_df = recombination_df[recombination_df['Average_vl'] != float('inf')]
+
+#make a histogram of the distances multiplied by times
+sns.set(rc={'figure.figsize':(20,5)})
+myplot = sns.FacetGrid(mutation_df, col="Fragment")
+myplot.map_dataframe(sns.histplot, x = 'Dist_x_Time')
+plt.xlim((0, 500000))
+plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+plt.tight_layout()
+plt.savefig(outDir + "mutation_time_diffHist" + RUNNAME + ".jpg")
+plt.close()
+
+sns.set(rc={'figure.figsize':(20,5)})
+myplot = sns.FacetGrid(recombination_df, col="Fragment")
+myplot.map_dataframe(sns.histplot, x = 'Dist_x_Time')
+plt.xlim((0, 500000))
+plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+plt.tight_layout()
+plt.savefig(outDir + "recombination_time_diffHist" + RUNNAME + ".jpg")
+plt.close()
+
+
+
+
 
 #make a place to store all of the test results
 all_frequencies_patients = []
@@ -106,8 +171,8 @@ for vl_bin_start in vl_groups:
             recomb_tests = []
 
             #get all of the datapoints in our bin
-            curr_recomb = vl_frag_recomb[vl_frag_recomb['dist'].between(bin_start, bin_end)]
-            curr_mut = vl_frag_mut[vl_frag_mut['dist'].between(bin_start, bin_end)]
+            curr_recomb = vl_frag_recomb[vl_frag_recomb['Dist_x_Time'].between(bin_start, bin_end)]
+            curr_mut = vl_frag_mut[vl_frag_mut['Dist_x_Time'].between(bin_start, bin_end)]
 
 
             #Calculate the frequencies in each bin
@@ -150,6 +215,10 @@ for vl_bin_start in vl_groups:
 #now we can make a dataframe with all our results to plot
 all_frequencies_patients = pd.concat(all_frequencies_patients)
 
+#filter out points with less than 10 tests
+
+
+
 #now we can plot our results. at first we'll just color by viral load
 #plot the results for all our participants
 # myplot = sns.FacetGrid(all_frequencies_patients, col="Participant")
@@ -159,8 +228,7 @@ myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'mut_frequencies',  size
 # myplot.map_dataframe(sns.lineplot, x = 'window', y = 'mut_frequencies', ci = None)
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.ylim(-0.1,1.1)
-plt.xlim(-10, 500)
-plt.xlabel("Distance Between Loci")
+plt.xlabel("Distance Between Loci X Days Between Timepoints")
 plt.ylabel("Frequency")
 plt.tight_layout()
 plt.savefig(outDir + "mutation_tests" + RUNNAME + ".jpg")
@@ -174,8 +242,7 @@ myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'recomb_frequencies', si
 # myplot.map_dataframe(sns.lineplot, x = 'window', y = 'recomb_frequencies', ci = None)
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.ylim(-0.1,1.1)
-plt.xlim(-10, 500)
-plt.xlabel("Distance Between Loci")
+plt.xlabel("Distance Between Loci X Days Between Timepoints")
 plt.ylabel("Frequency")
 plt.tight_layout()
 plt.savefig(outDir + "recombination_tests" + RUNNAME + ".jpg")
