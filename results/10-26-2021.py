@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import neher
 import zaniniUtil as zu
 import os
@@ -24,23 +25,25 @@ outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analys
 
 #Today I am going to write code to save the reconstitute the results I saved from my Neher analysis and plot them.
 #This is similar to the 10-06-2021 file, but I want to add the days between timepoints as the x axis
+#I am also adding error bars to my plots based on neher and leitner's approximation
 
 #Next we need to set some things for the run
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
 par_list = ['p1', 'p2','p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
 
+
 #viral load bins
-NUM_VL_GROUPS = 3
+NUM_VL_GROUPS = 2
 VL_MIN_BIN = 3
-VL_BIN_WIDTH = .75
+VL_BIN_WIDTH = 1.25
 
 #distance bins
-BINWIDTH = 10000
+BINWIDTH = 5000
 MIN_BIN = 0
-MAX_BIN = 60000
+MAX_BIN = 100000
 CUTOFF = 0.03
 SUCCESS = 0.01
-RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "Truncated60k"
+RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "Truncated100k"
 
 #We can also load our dataframe for converting days to timepoints
 dayToTime = pd.read_csv(dayDir + "DaysToTimepoints.csv")
@@ -148,10 +151,6 @@ for vl_bin_start in vl_groups:
     #get the data in this group
     vl_subsetted_recomb = recombination_df[recombination_df['Average_vl'].between(vl_bin_start, vl_bin_end)]
     vl_subsetted_mut = mutation_df[mutation_df['Average_vl'].between(vl_bin_start, vl_bin_end)]
-    print("New Bin")
-    print("The start of this bin is " + str(vl_bin_start))
-    print("The data in this bin is :")
-    print(vl_subsetted_recomb)
     
     #subset by fragment
     for frag in fragment_list:
@@ -210,7 +209,7 @@ for vl_bin_start in vl_groups:
             all_frequencies['Avg Viral Load'] = vl_bin_start
             all_frequencies['Fragment'] = frag
             all_frequencies_patients.append(all_frequencies)
-        print("The bin was labelled as " + str(vl_bin_start))
+
 
 #now we can make a dataframe with all our results to plot
 all_frequencies_patients = pd.concat(all_frequencies_patients)
@@ -221,11 +220,24 @@ all_frequencies_patients = pd.concat(all_frequencies_patients)
 
 #now we can plot our results. at first we'll just color by viral load
 #plot the results for all our participants
-# myplot = sns.FacetGrid(all_frequencies_patients, col="Participant")
+all_frequencies_patients['Mut Error'] = 1 / np.sqrt(all_frequencies_patients['Mutation Tests'])
+# sns.set(rc={'figure.figsize':(20,5)})
+# myplot = sns.FacetGrid(all_frequencies_patients, col="Fragment")
+# my_groups = np.unique(all_frequencies_patients['Avg Viral Load'])
+# my_colors = sns.color_palette("rocket", as_cmap = True)
+# normalized_vls = my_groups/np.linalg.norm(my_groups)
+# for i in range(len(my_groups)):
+#     curr_vl = my_groups[i]
+#     curr_color = my_colors(normalized_vls[i])
+#     curr_data = all_frequencies_patients[all_frequencies_patients['Avg Viral Load'] == curr_vl]
+#     myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'mut_frequencies', hue = 'Avg Viral Load', data = curr_data)
+#     myplot.map_dataframe(plt.errorbar, x = 'window', y = 'mut_frequencies', yerr = 'Mut Error', xerr = None, fmt = '', ls = 'none', ecolor = curr_color, color = curr_color , data = curr_data)
+
 sns.set(rc={'figure.figsize':(20,5)})
 myplot = sns.FacetGrid(all_frequencies_patients, col="Fragment")
-myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'mut_frequencies',  size = 'Mutation Tests', hue = 'Avg Viral Load', data = all_frequencies_patients)
-# myplot.map_dataframe(sns.lineplot, x = 'window', y = 'mut_frequencies', ci = None)
+myplot.map_dataframe(plt.errorbar, x = 'window', y = 'mut_frequencies', yerr = 'Mut Error', xerr = None, ls = 'none', ecolor = 'gray')
+myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'mut_frequencies', hue = 'Avg Viral Load', palette = 'tab10')    
+
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.ylim(-0.1,1.1)
 plt.xlabel("Distance Between Loci X Days Between Timepoints")
@@ -235,14 +247,33 @@ plt.savefig(outDir + "mutation_tests" + RUNNAME + ".jpg")
 plt.close()
 
 #plot the results for all our participants
-# myplot = sns.FacetGrid(all_frequencies_patients, col="Participant")
+all_frequencies_patients['Recomb Error'] = 1 / np.sqrt(all_frequencies_patients['Recombination Tests'])
 sns.set(rc={'figure.figsize':(20,5)})
 myplot = sns.FacetGrid(all_frequencies_patients, col="Fragment")
-myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'recomb_frequencies', size = 'Recombination Tests', hue = 'Avg Viral Load', data = all_frequencies_patients)
-# myplot.map_dataframe(sns.lineplot, x = 'window', y = 'recomb_frequencies', ci = None)
+myplot.map_dataframe(plt.errorbar, x = 'window', y = 'recomb_frequencies', yerr = 'Recomb Error', xerr = None, ls = 'none', ecolor = 'gray')
+myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'recomb_frequencies', hue = 'Avg Viral Load', palette = 'tab10')    
+
+# plot_groups = np.unique(all_frequencies_patients['Fragment']) 
+# #define a color palette index based on column 'B'
+# all_frequencies_patients['cind'] = pd.Categorical(all_frequencies_patients['Avg Viral Load'])
+# print(all_frequencies_patients['cind'])
+# #get the seaborn colour palette and convert to array
+# cp = sns.color_palette("rocket", as_cmap = True)
+# my_colors = sns.color_palette("rocket", as_cmap = True)
+# all_frequencies_patients['cind'] = all_frequencies_patients['Avg Viral Load']/np.linalg.norm(np.unique(all_frequencies_patients['Avg Viral Load']))
+# #draw a subplot for each category in column "A"
+# fig, axs = plt.subplots(nrows=1, ncols=len(plot_groups), sharey=True)
+# for i,ax in enumerate(axs):
+#     for vi
+#     curr_data = all_frequencies_patients[all_frequencies_patients['Fragment'] == plot_groups[i]]
+#     col = list(map (my_colors, curr_data['cind']))
+#     print(col)
+#     ax.scatter(curr_data['window'], curr_data['recomb_frequencies'], c=col)
+#     eb = ax.errorbar(curr_data['window'], curr_data['recomb_frequencies'], yerr=curr_data['Recomb Error'], color = col)
+
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.ylim(-0.1,1.1)
-plt.xlabel("Distance Between Loci X Days Between Timepoints")
+plt.xlabel("Distance x Time [BP X Generation]")
 plt.ylabel("Frequency")
 plt.tight_layout()
 plt.savefig(outDir + "recombination_tests" + RUNNAME + ".jpg")

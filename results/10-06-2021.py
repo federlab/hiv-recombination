@@ -167,11 +167,9 @@ plt.savefig(outDir + "mutation_tests" + RUNNAME + ".jpg")
 plt.close()
 
 #plot the results for all our participants
-# myplot = sns.FacetGrid(all_frequencies_patients, col="Participant")
 sns.set(rc={'figure.figsize':(20,5)})
 myplot = sns.FacetGrid(all_frequencies_patients, col="Fragment")
 myplot.map_dataframe(sns.scatterplot, x = 'window', y = 'recomb_frequencies', size = 'Recombination Tests', hue = 'Avg Viral Load', data = all_frequencies_patients)
-# myplot.map_dataframe(sns.lineplot, x = 'window', y = 'recomb_frequencies', ci = None)
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.ylim(-0.1,1.1)
 plt.xlim(-10, 500)
