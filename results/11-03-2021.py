@@ -11,10 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import neher
 import os
-import statsmodels.api as sm
-from statsmodels.tools.tools import add_constant
-from statsmodels.sandbox.regression.predstd import wls_prediction_std
-from lmfit import minimize, Parameters, fit_report
+from scipy import optimize
 
 #directories for cluster run
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neher/'
@@ -26,6 +23,8 @@ outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analys
 # dayDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
 # outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/fits/'
 
+# This file is the same as 11-03-2021.py, but I am going to try to use a different
+# package since lmfit initializations are giving me trouble.
 # Today I am going to use Weighted least squares to fit curves to my neher and
 # leitner analysis. In this file, I am going to fit all of the data at once.
 
@@ -34,15 +33,19 @@ def neher_leitner(c0, c1, c2, dDeltaT):
     """The function Neher and Leitner fit to determine recombination rate"""
     return (c0 + (c1 * (1 - np.exp(-c2 * dDeltaT))))
 
-def residual(params, dDeltaT, data, rec_error):
-    c0 = params['c0']
-    c1 = params['c1']
-    c2 = params['c2']
+def residual(x0, dDeltaT, data, rec_error):
+    #Fix C0 
+    c0 = 0.13
+    c1 = x0[0]
+    c2 = x0[1]
 
     #this is the equation we are using for our fit
     model = neher_leitner(c0, c1, c2, dDeltaT)
-
+    # print("*****************************", file = sys.stderr)
+    # print(model, file = sys.stderr)
     resids = data - model
+    # print(data, file = sys.stderr)
+    # print(resids, file = sys.stderr)
     weighted_resids = resids * (1 + rec_error)
     return weighted_resids
 #################################################################################
@@ -54,7 +57,8 @@ fragment_list = ['F1','F2', 'F3', 'F4']
 par_list = ['p1', 'p2','p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
 
 #values to truncate our fits at
-trunc_vals = range(5000, 10000, 5000)
+trunc_vals = list(range(5000, 65000, 5000))
+trunc_vals = [60000]
 
 #distance bins
 BINWIDTH = 250
@@ -62,7 +66,9 @@ MIN_BIN = 0
 MAX_BIN = 60000
 CUTOFF = 0.03
 SUCCESS = 0.01
-RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "fragments1-4_truncating_smaller_ranges_fewervals"
+RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "fragments1-4_c0_fixed"
+#downsample larger distances to get better initial fit.
+DOWNSAMPLE_CUTOFF = 1000
 
 #create lists to store all of the results in
 rec_dfs = []
@@ -152,40 +158,48 @@ all_frequencies_patients = pd.concat(all_frequencies_patients)
 all_frequencies_patients['Mut Error'] = 1 / np.sqrt(all_frequencies_patients['Mutation Tests'])
 all_frequencies_patients['Recomb Error'] =  1/ np.sqrt(all_frequencies_patients['Recombination Tests'])
 
+
 #We are going to try running the fits on truncated 
 fit_df = []
 estimate_df = []
 for curr_trunc in trunc_vals:
     trunc_data = all_frequencies_patients[all_frequencies_patients['window'] < curr_trunc]
-    ########################### Fitting ###########################################
+    ########################### Fitting #######################################
     #start by setting parameters for our fit
-    params = Parameters()
-    params.add('c0', min = 0, max = 1, value = 0.1)
-    params.add('c1', min = 0, max = 1, value = 0.26, vary = False)
-    params.add('c2', min = 0, max = 0.1, value = 0.00005, vary = False)
-    # params.add('c0', min = 0, max = 1, value = 0.1)
-    # params.add('c1', min = 0, max = 1, value = 0.5)
-    # params.add('c2', min = 0, max = 0.1, value = 0.5)
+    #c0 is fixed to be 0.13 which is what our truncation analysis suggested
+    # c0_start = 0.13
+    # c0_min = 0.13
+    # c0_max = 0.13
+    c1_start = 0.1804
+    c1_min = 0
+    c1_max = 1
+    c2_start = 0.000114
+    c2_min = 0
+    c2_max = 1
+    #bounds on varying parameters
+    my_bounds = [[c1_min, c2_min], [c1_max, c2_max]]
+    #initial guess at parameters
+    x0 = [c1_start, c2_start]
+    res_lsq = optimize.least_squares(fun = residual, x0 = x0, bounds = my_bounds, kwargs={'dDeltaT' : trunc_data['window'],
+                                                                                    'data': trunc_data['recomb_frequencies'],
+                                                                                    'rec_error' : trunc_data['Recomb Error']})
 
-    out = minimize(residual, params, args=(all_frequencies_patients['window'], ), kws={'data': trunc_data['recomb_frequencies'],
-                                                                                        'rec_error' : trunc_data['Recomb Error']},
-                                                                                        max_nfev = 200000)
-
-    c0_estimate = out.params['c0']
-    c1_estimate = out.params['c1']
-    c2_estimate = out.params['c2']
+    c0_estimate = 0.13
+    c1_estimate = res_lsq.x[0]
+    c2_estimate = res_lsq.x[1]
     x_vals = list(range(0, max(trunc_data['window'])))
     fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
     fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]
     curr_fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper)), columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper' ])
     curr_fit_data['Trunc_Value'] = curr_trunc
     fit_df.append(curr_fit_data)
-    estimate_df.append([c0_estimate, c1_estimate, c2_estimate, curr_trunc])
-
-    print(fit_report(out), file = sys.stderr)
+    estimate_df.append([c1_estimate, c2_estimate, curr_trunc])
 
 fit_df = pd.concat(fit_df)
-estimate_df = pd.Dataframe(estimate_df)
+estimate_df = pd.DataFrame(estimate_df, columns = ['C1 Estimate', 'C2 Estimate', 'Trunc_Value'])
+
+print(estimate_df, file = sys.stderr)
+
 ########################### Plotting ###########################################
 
 #plot the mutation tests
@@ -208,14 +222,36 @@ plt.savefig(outDir + "allTogether" + RUNNAME + ".jpg")
 plt.close()
 
 # #plot the estimates
+sns.set(rc={'figure.figsize':(20,5)})
+sns.lineplot(x = 'Trunc_Value', y = 'C2 Estimate', data = estimate_df)
+plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+plt.ylim(-0.1,0.6)
+plt.xlabel("Distance x Time [BP X Generation]")
+plt.ylabel("Frequency")
+plt.tight_layout()
+plt.savefig(outDir + "coefficient2_estimates" + RUNNAME + ".jpg")
+plt.close()
+
+
+
+# #plot the estimates
+sns.set(rc={'figure.figsize':(20,5)})
+sns.lineplot(x = 'Trunc_Value', y = 'C1 Estimate', data = estimate_df)
+plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+plt.ylim(-0.1,0.6)
+plt.xlabel("Distance x Time [BP X Generation]")
+plt.ylabel("Frequency")
+plt.tight_layout()
+plt.savefig(outDir + "coefficient1_estimates" + RUNNAME + ".jpg")
+plt.close()
+
+# # #plot the estimates
 # sns.set(rc={'figure.figsize':(20,5)})
-# sns.scatterplot(x = 'Trunc_Value', y = 'C0 Estimate', data = estimate_df)
-# sns.scatterplot(x = 'Trunc_Value', y = 'C1 Estimate', data = estimate_df)
-# sns.scatterplot(x = 'Trunc_Value', y = 'C2 Estimate', data = estimate_df)
+# sns.lineplot(x = 'Trunc_Value', y = 'C0 Estimate', data = estimate_df)
 # plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 # plt.ylim(-0.1,0.6)
 # plt.xlabel("Distance x Time [BP X Generation]")
 # plt.ylabel("Frequency")
 # plt.tight_layout()
-# plt.savefig(outDir + "coefficient_estimates" + RUNNAME + ".jpg")
+# plt.savefig(outDir + "coefficient0_estimates" + RUNNAME + ".jpg")
 # plt.close()

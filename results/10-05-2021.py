@@ -31,6 +31,8 @@ savedData = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neh
 #Next we need to set some things for the run
 fragment_list = ['F1','F2', 'F3', 'F4', 'F5','F6']
 par_list = ['p1', 'p2', 'p3', 'p5', 'p6', 'p8', 'p9', 'p10', 'p11']
+par_list =['p1']
+fragment_list = ['F1']
 available_files_hap = os.listdir(dataDir + "haplotype_dfs/")
 available_files_seg = os.listdir(dataDir + "segregating_Loci/")
 
@@ -59,10 +61,10 @@ for curr_par in par_list:
     for index, row in curr_data.iterrows():
         date = int(row['Days from infection'])
         currLabel = curr_days[curr_days[' Day'] == date]
-        print("****************", file = sys.stderr)
-        print(curr_par, file = sys.stderr)
-        print(currLabel, file = sys.stderr)
-        print(date, file = sys.stderr)
+        # print("****************", file = sys.stderr)
+        # print(curr_par, file = sys.stderr)
+        # print(currLabel, file = sys.stderr)
+        # print(date, file = sys.stderr)
         labels.append(currLabel[' Timepoint'].tolist()[0])
     labeled_current = curr_data.copy()
     labeled_current['Timepoint'] = labels
@@ -94,6 +96,9 @@ for curr_par in par_list:
         if haplotype_df.empty:
             continue
         recombination_df, mutation_df = neher.run_analysis(haplotype_df, verbose = False, success_filt = SUCCESSFILTER)
+
+        print(recombination_df, file = sys.stderr)
+        print(mutation_df, file = sys.stderr)
 
         #label the distances between loci
         recombination_df['dist'] = recombination_df['Locus_2'] - recombination_df['Locus_1']
@@ -149,9 +154,9 @@ for curr_par in par_list:
                 average_vls.append(sum([vl_success, vl_bef])/2)
         recombination_df['Average_vl'] = average_vls
 
-        # write our dataframes to files
-        recombination_df.to_csv(savedData + "Recombination_"+ curr_par + "_" + curr_fragment + ".csv")
-        mutation_df.to_csv(savedData + "Mutation_"+ curr_par + "_" + curr_fragment + ".csv")
+        # # write our dataframes to files
+        # recombination_df.to_csv(savedData + "Recombination_"+ curr_par + "_" + curr_fragment + ".csv")
+        # mutation_df.to_csv(savedData + "Mutation_"+ curr_par + "_" + curr_fragment + ".csv")
 
 #         #continue if there were no tests run
 #         if recombination_df.empty or mutation_df.empty:

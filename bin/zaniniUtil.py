@@ -166,6 +166,12 @@ def filter_genotype_df(genotypeDF, segregatingLoci, allele_cutoff,  hap_cutoff):
             check_1 = (freqDict[locus1])[allele1]
             check_2 = (freqDict[locus2])[allele2]
             if check_1 > allele_cutoff and check_2 > allele_cutoff:
+                if check_1 < 0.5:
+                    check_1 = 1 - check_1
+                if check_2 < 0.5:
+                    check_2 = 1-check_2
+                row['pA'] = check_1
+                row['pB'] = check_2
                 filtered_genotypes.append(row)
     filtered_genotypes = pd.DataFrame(filtered_genotypes)
 

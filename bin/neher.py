@@ -71,6 +71,8 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
 
             #get the number of reads at the locus at this time point
             supporting_reads = curr_haps_df['Count'].sum()
+            p_A = curr_haps_df['pA']
+            p_B = curr_haps_df['pB']
 
             first_time_haps = set()
             #see if there are any haplotypes we haven't observed yet
@@ -108,17 +110,17 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                     if success_freq < success_filt:
                         recombination_df.append([name[0], name[1], False, 
                                         "-", curr_time, time_list[i-1],
-                                        supporting_reads, float('inf')])
+                                        supporting_reads, float('inf'), p_A, p_B])
                     else:
                         recombination_df.append([name[0], name[1], True, 
                                         passed_3_haps[0], curr_time, time_list[i-1],
-                                        supporting_reads, success_freq])
+                                        supporting_reads, success_freq, p_A, p_B])
                         observed_successes.add(passed_3_haps[0])
                 #save failures so we can calculate frequency
                 else:
                     recombination_df.append([name[0], name[1], False, 
                                         "-", curr_time, time_list[i-1],
-                                        supporting_reads, float('inf')])
+                                        supporting_reads, float('inf'), p_A, p_B])
                 #reset test
                 passed_3_haps = False
             
@@ -146,15 +148,15 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                         #check the frequency of the haplotype that triggered the success is high enough
                         if success_freq < success_filt:
                             mutation_df.append([name[0], name[1], False, curr_time,
-                                time_list[i-1], supporting_reads, float('inf')])
+                                time_list[i-1], supporting_reads, float('inf'), p_A, p_B])
                         else:
                             mutation_df.append([name[0], name[1], True, curr_time,
-                                    time_list[i-1], supporting_reads, success_freq])
+                                    time_list[i-1], supporting_reads, success_freq, p_A, p_B])
                             mut_found = True
                 #if our test did not find any mutations
                 if not mut_found:
                     mutation_df.append([name[0], name[1], False, curr_time,
-                     time_list[i-1], supporting_reads, float('inf')])
+                     time_list[i-1], supporting_reads, float('inf'), p_A, p_B])
 
 
             #now we need to check if there are three haplotypes that we can use
@@ -168,11 +170,11 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
     recombination_df = pd.DataFrame(recombination_df, columns = ["Locus_1", "Locus_2",
                                             "Test_Passed", "Haplotype","Curr_Timepoint", 
                                             "Last_Timepoint", "Supporting_Reads",
-                                            "Success_Freq"])
+                                            "Success_Freq", 'pA', 'pB'])
     mutation_df = pd.DataFrame(mutation_df, columns = ["Locus_1", "Locus_2",
                                         "Test_Passed", "Curr_Timepoint", 
                                         "Last_Timepoint", "Supporting_Reads",
-                                        "Success_Freq"])
+                                        "Success_Freq", 'pA', 'pB'])
     return recombination_df, mutation_df
 
 ############################ Helper Functions #################################
