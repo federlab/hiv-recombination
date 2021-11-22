@@ -39,9 +39,11 @@ def make_vl_df(loadDataDir):
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
 vlDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/'
 outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/paper_filtering/fits/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/poster/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/researchReports/'
 dataFiles = os.listdir(dataDir + 'RandD/' )
 print(dataFiles, file = sys.stderr)
+#just making a representative plot for research reports
+# dataFiles = ['RandD_p3_F1.csv']
 
 WINSIZE = 20
 WINSTEP = 5
@@ -75,6 +77,7 @@ for currFile in dataFiles:
     #perform the fit separately for each timepoint
     for date in unique_dates:
         timepoint_df = currData[currData['date'] == date]
+
 
         #start by setting parameters for our fit
         params = Parameters()
@@ -118,29 +121,32 @@ for currFile in dataFiles:
                 ave_r = curr_window['r_squared'].mean()
                 center = winStart + (WINSIZE/2)
                 current_aves.append([center, winStart, winEnd, ave_r])
-        
+    
 
-        current_aves = pd.DataFrame(current_aves, columns = ['center','window_start', 'window_end', 'average'])
+    current_aves = pd.DataFrame(current_aves, columns = ['center','window_start', 'window_end', 'average'])
 
-        #plot the results for the current participant and fragment
-        sns.set(rc={'figure.figsize':(15,5)})
-        myplot = sns.scatterplot(x = 'dist', y = 'r_squared', data = timepoint_df, alpha = 0.5)
-        sns.lineplot(x = 'center', y = 'average', data = current_aves, linewidth = 3)
-        sns.lineplot(x = 'x_vals', y = 'fitted_vals', data = fit_df, linewidth = 3)
-        plt.ylim(-0.1,1.1)
-        plt.xlim(-10,max(timepoint_df['dist']))
-        plt.xlabel("Distance Between Loci")
-        plt.ylabel("R^2 Value")
-        plt.tight_layout()
-        plt.savefig(outDir + currFile.split('_')[1] + "_window_" + str(WINSIZE) + (currFile.split('_')[2]).split('.')[0] + "_time_"+ str(date))
-        plt.close()
+    # #plot the results for the current participant and fragment
+    # sns.set(rc={'figure.figsize':(15,5)}, font_scale = 2)
+    # myplot = sns.scatterplot(x = 'dist', y = 'r_squared', data = timepoint_df, alpha = 0.5)
+    # sns.lineplot(x = 'center', y = 'average', data = current_aves, linewidth = 3, color = 'black', label = "Average r^2")
+    # sns.lineplot(x = 'x_vals', y = 'fitted_vals', data = fit_df, linewidth = 3, color = 'red', label = "Hill Weir Fit")
+    # plt.legend()
+    # plt.ylim(-0.1,1.1)
+    # plt.xlim(-10,max(timepoint_df['dist']))
+    # plt.xlabel("Distance Between Loci")
+    # plt.ylabel("R^2 Value")
+    # plt.tight_layout()
+    # plt.savefig(outDir + currFile.split('_')[1] + "_window_" + str(WINSIZE) + (currFile.split('_')[2]).split('.')[0] + "_time_"  + str(date))
+    # plt.close()
 
 
 #get the viral load and rho estimates
 allStats = pd.DataFrame(allStats, columns = ['viral_load', 'rho', 'n_snps', 'date', 'participant', 'fragment'])
 #plot rho vs viral load color by participant
+sns.set(rc={'figure.figsize':(15,5)}, font_scale = 2)
 myplot = sns.scatterplot(x = 'viral_load', y = 'rho', hue = 'participant', data = allStats, alpha = 0.5)
 myplot.set(xscale="log")
+plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.xlim(1000,1000000)
 plt.xlabel("Viral Load [Virions/ml]")
 plt.ylabel("Estimated Rho")

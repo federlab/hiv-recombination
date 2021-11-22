@@ -12,6 +12,10 @@ import neher
 import zaniniUtil as zu
 import os
 
+###########################IMPORTANT WARNING###############################################
+#If you save data with this file you also need to run 11-01-2021.py, to make sure the viral
+#loads are matched up properly
+
 #In this file I am going to conduct the neher analysis, but group the datapoints by viral load.
 #To do this we will use the average viral load between the timepoints at which the test
 #was conducted.

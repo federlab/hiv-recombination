@@ -1,8 +1,8 @@
 import sys
-#for cluster run
-sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
-# #for running on desktop
-# sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
+# #for cluster run
+# sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+#for running on desktop
+sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
 import numpy as np
 import pandas as pd
@@ -13,15 +13,15 @@ import neher
 import os
 from scipy import optimize
 
-#directories for cluster run
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neher/'
-dayDir =  '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/fits/'
+# #directories for cluster run
+# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neher/'
+# dayDir =  '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
+# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/researchReports/'
 
-# # for running on desktop
-# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neher/'
-# dayDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
-# outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/neher_analysis/fits/'
+# for running on desktop
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neher/'
+dayDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/researchReports/'
 
 # This file is the same as 11-03-2021.py, but I am going to try to use a different
 # package since lmfit initializations are giving me trouble.
@@ -53,7 +53,7 @@ def residual(x0, dDeltaT, data, rec_error):
 
 #Next we need to set some things for the run
 #We are only using fragments 1-4
-fragment_list = ['F1','F2', 'F3', 'F4']
+fragment_list = ['F5']
 par_list = ['p1', 'p2','p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
 
 #values to truncate our fits at
@@ -66,13 +66,15 @@ MIN_BIN = 0
 MAX_BIN = 60000
 CUTOFF = 0.03
 SUCCESS = 0.01
-RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "fragments1-4_c0_fixed"
+RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "fragment5_c0_fixed_no_fits"
 #downsample larger distances to get better initial fit.
 DOWNSAMPLE_CUTOFF = 1000
 
 #create lists to store all of the results in
 rec_dfs = []
 mut_dfs = []
+
+
 
 #Loop through all of the files and get their information.
 for currfile in os.listdir(dataDir):
@@ -105,8 +107,12 @@ recombination_df['Dist_x_Time'] = 0.5 * recombination_df['Dist_x_Time']
 mutation_df['Dist_x_Time'] = 0.5 * mutation_df['Dist_x_Time']
 
 #create our bins
-for bin_start in range(MIN_BIN, MAX_BIN, BINWIDTH):
-    bin_end = bin_start + BINWIDTH
+custom_bins = [(0,250), (250, 500), (500, 750), (750, 1000), (1000, 2000), (2000, 3000), (3000, 4000), 
+(4000, 5000), (5000, 7500), (7500, 10000), (10000, 15000), (15000, 20000), (20000, 30000), (30000, 40000), (40000, 50000) ,(50000, 60000)]
+
+for currBin in custom_bins:
+    bin_start = currBin[0]
+    bin_end = currBin[1]
 
     #make a place to store the frequencies of observing events
     mut_frequencies = []
@@ -166,7 +172,7 @@ for curr_trunc in trunc_vals:
     trunc_data = all_frequencies_patients[all_frequencies_patients['window'] < curr_trunc]
     ########################### Fitting #######################################
     #start by setting parameters for our fit
-    #c0 is fixed to be 0.13 which is what our truncation analysis suggested
+    # c0 is fixed to be 0.13 which is what our truncation analysis suggested
     # c0_start = 0.13
     # c0_min = 0.13
     # c0_max = 0.13
@@ -190,7 +196,8 @@ for curr_trunc in trunc_vals:
     x_vals = list(range(0, max(trunc_data['window'])))
     fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
     fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]
-    curr_fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper)), columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper' ])
+    equal_bins_fit = [neher_leitner(0.13, 0.240201, 0.000163, x) for x in x_vals]
+    curr_fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper, equal_bins_fit)), columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper' , 'equal bins'])
     curr_fit_data['Trunc_Value'] = curr_trunc
     fit_df.append(curr_fit_data)
     estimate_df.append([c1_estimate, c2_estimate, curr_trunc])
@@ -199,51 +206,55 @@ fit_df = pd.concat(fit_df)
 estimate_df = pd.DataFrame(estimate_df, columns = ['C1 Estimate', 'C2 Estimate', 'Trunc_Value'])
 
 print(estimate_df, file = sys.stderr)
+print("The estimated recombination rate is")
+print(neher.estimate_recombination_rate(c0 = 0.13, c1 = c1_estimate, c2 = c2_estimate))
+print(neher.estimate_recombination_rate(c0 = 0.1, c1 = 0.26, c2 = 0.0000439))
 
 ########################### Plotting ###########################################
 
-#plot the mutation tests
-sns.set(rc={'figure.figsize':(20,5)})
+#Plot our frequencies with fits
+sns.set(rc={'figure.figsize':(20,5)}, font_scale = 2)
 plt.errorbar(x = all_frequencies_patients['window'], y = all_frequencies_patients['mut_frequencies'],
-         yerr = all_frequencies_patients['Mut Error'], xerr = None, ls = 'none', ecolor = 'gray')
-sns.lineplot(x = 'window', y = 'mut_frequencies', data = all_frequencies_patients, color = 'gray')    
+        yerr = all_frequencies_patients['Mut Error'], xerr = None, ls = 'none', ecolor = 'gray')
+sns.lineplot(x = 'window', y = 'mut_frequencies', data = all_frequencies_patients, color = 'gray', label = 'Mutation Tests')    
 plt.errorbar(x = all_frequencies_patients['window'], y = all_frequencies_patients['recomb_frequencies'],
-         yerr = all_frequencies_patients['Recomb Error'], xerr = None, ls = 'none', ecolor = 'red')
-sns.lineplot(x = 'window', y = 'recomb_frequencies', data = all_frequencies_patients, color = 'red')  
-sns.lineplot(x = 'x_vals', y = 'fitted_vals_paper', data = fit_df, color = 'cyan', label = 'Neher Fit')
+        yerr = all_frequencies_patients['Recomb Error'], xerr = None, ls = 'none', ecolor = 'red')
+sns.lineplot(x = 'window', y = 'recomb_frequencies', data = all_frequencies_patients, color = 'red', label = 'Recombination Tests')  
+sns.lineplot(x = 'x_vals', y = 'fitted_vals_paper', data = fit_df, color = 'cyan', label = 'Neher Fit', linewidth = 2)
+# # sns.lineplot(x = 'x_vals', y = 'equal bins', data = fit_df, color = 'orange', label = 'Equal Bins')
 for curr_trunc in trunc_vals:
-    sns.lineplot(x = 'x_vals', y = 'fitted_vals', data = fit_df[fit_df['Trunc_Value'] == curr_trunc], color = 'black', label = curr_trunc)
+    sns.lineplot(x = 'x_vals', y = 'fitted_vals', data = fit_df[fit_df['Trunc_Value'] == curr_trunc], color = 'black', label = 'Our Fit',linewidth = 2)
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.ylim(-0.1,0.6)
 plt.xlabel("Distance x Time [BP X Generation]")
 plt.ylabel("Frequency")
 plt.tight_layout()
-plt.savefig(outDir + "allTogether" + RUNNAME + ".jpg")
+plt.savefig(outDir + "allTogether_" + RUNNAME + ".jpg")
 plt.close()
 
-# #plot the estimates
-sns.set(rc={'figure.figsize':(20,5)})
-sns.lineplot(x = 'Trunc_Value', y = 'C2 Estimate', data = estimate_df)
-plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-plt.ylim(-0.1,0.6)
-plt.xlabel("Distance x Time [BP X Generation]")
-plt.ylabel("Frequency")
-plt.tight_layout()
-plt.savefig(outDir + "coefficient2_estimates" + RUNNAME + ".jpg")
-plt.close()
+# # #plot the estimates
+# sns.set(rc={'figure.figsize':(20,5)})
+# sns.lineplot(x = 'Trunc_Value', y = 'C2 Estimate', data = estimate_df)
+# plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+# plt.ylim(-0.1,0.6)
+# plt.xlabel("Distance x Time [BP X Generation]")
+# plt.ylabel("Frequency")
+# plt.tight_layout()
+# plt.savefig(outDir + "coefficient2_estimates" + RUNNAME + ".jpg")
+# plt.close()
 
 
 
-# #plot the estimates
-sns.set(rc={'figure.figsize':(20,5)})
-sns.lineplot(x = 'Trunc_Value', y = 'C1 Estimate', data = estimate_df)
-plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-plt.ylim(-0.1,0.6)
-plt.xlabel("Distance x Time [BP X Generation]")
-plt.ylabel("Frequency")
-plt.tight_layout()
-plt.savefig(outDir + "coefficient1_estimates" + RUNNAME + ".jpg")
-plt.close()
+# # #plot the estimates
+# sns.set(rc={'figure.figsize':(20,5)})
+# sns.lineplot(x = 'Trunc_Value', y = 'C1 Estimate', data = estimate_df)
+# plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+# plt.ylim(-0.1,0.6)
+# plt.xlabel("Distance x Time [BP X Generation]")
+# plt.ylabel("Frequency")
+# plt.tight_layout()
+# plt.savefig(outDir + "coefficient1_estimates" + RUNNAME + ".jpg")
+# plt.close()
 
 # # #plot the estimates
 # sns.set(rc={'figure.figsize':(20,5)})

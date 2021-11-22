@@ -102,6 +102,7 @@ mutation_df['Dist_x_Time'] = 0.5 * mutation_df['Dist_x_Time']
 for bin_start in range(MIN_BIN, MAX_BIN, BINWIDTH):
     bin_end = bin_start + BINWIDTH
 
+
     #make a place to store the frequencies of observing events
     mut_frequencies = []
     mut_successes = []

@@ -228,3 +228,23 @@ def check_three_haps(hap_list):
     if return_haps == []:
         return False
     else: return np.unique(np.array(return_haps))
+
+def estimate_recombination_rate(c0, c1, c2):
+    """ Takes in the coefficients from fitting the curve to our data. Then
+    returns our estimate of the recombination rate
+    ----------------------------------------------------------------------------
+    Params
+    ------------
+    c0 : float, the intercept of our curve fit
+    c1 : float, coefficient for second term
+    c2 : float, coefficient in the exp
+
+    Returns
+    -------------
+    rec_rate : the per virus recombination rate
+    """
+    numerator = c1 * c2 
+    denominator = np.log(1/(1-c0))
+    denominator = np.log(1/(1 - c0 - c1)) - denominator
+    denominator = (1-c0) * denominator
+    return numerator/ denominator

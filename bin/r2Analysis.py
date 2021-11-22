@@ -1,35 +1,35 @@
 import pysam
-import allel
+# import allel
 import sys
 import numpy as np
 import pandas as pd
 import math
 
 
-def get_VCF_Loci(vcfFile):
-    """ Open a vcf file and save the variants in it to a dataframe 
-    ---------------------------------------------------------------------------
-    Params
-    -------
-    vcfFile     str, path to the vcf file 
-    Returns
-    -------
-    vcfDat   pd.dataframe, containing each variant for the current dataset
-    """
-    #load our data into a dataframe
-    vcfDat = allel.read_vcf(vcfFile)
-    #make sure our dictionary isn't empty
-    if not vcfDat:
-        print('No variants detected in ' + vcfFile, file = sys.stderr)
-        return None
+# def get_VCF_Loci(vcfFile):
+#     """ Open a vcf file and save the variants in it to a dataframe 
+#     ---------------------------------------------------------------------------
+#     Params
+#     -------
+#     vcfFile     str, path to the vcf file 
+#     Returns
+#     -------
+#     vcfDat   pd.dataframe, containing each variant for the current dataset
+#     """
+#     #load our data into a dataframe
+#     vcfDat = allel.read_vcf(vcfFile)
+#     #make sure our dictionary isn't empty
+#     if not vcfDat:
+#         print('No variants detected in ' + vcfFile, file = sys.stderr)
+#         return None
 
-    vcfDat = pd.DataFrame({'POS': vcfDat['variants/POS'], 
-            'REF': vcfDat['variants/REF'] ,
-             'ALT1': (vcfDat['variants/ALT'])[:,0], 
-             'ALT2': (vcfDat['variants/ALT'])[:,1], 
-             'ALT3': (vcfDat['variants/ALT'])[:,2]})
+#     vcfDat = pd.DataFrame({'POS': vcfDat['variants/POS'], 
+#             'REF': vcfDat['variants/REF'] ,
+#              'ALT1': (vcfDat['variants/ALT'])[:,0], 
+#              'ALT2': (vcfDat['variants/ALT'])[:,1], 
+#              'ALT3': (vcfDat['variants/ALT'])[:,2]})
 
-    return vcfDat
+#     return vcfDat
 
 def get_sam_reads(vcfDF, bamfile):
     """ Loop through a vcf file and use it to generate a dataframe of 
