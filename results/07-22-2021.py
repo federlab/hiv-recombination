@@ -1,5 +1,7 @@
 import sys
-sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+# sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+#for running on desktop
+sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
 import r2Analysis as r2
 import numpy as np
@@ -35,11 +37,20 @@ def make_vl_df(loadDataDir):
 
 ###############################################################################
 
-#Today we are going to fit equations to our data to try and estimate rho 
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
-vlDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/paper_filtering/fits/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/researchReports/'
+# #Today we are going to fit equations to our data to try and estimate rho 
+# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
+# vlDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/'
+# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/paper_filtering/fits/'
+# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/researchReports/'
+# dataOut = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/rho/'
+
+# for running on desktop
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/'
+vlDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/researchReports/'
+dataOut = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/rho/'
+
+
 dataFiles = os.listdir(dataDir + 'RandD/' )
 print(dataFiles, file = sys.stderr)
 #just making a representative plot for research reports
@@ -142,27 +153,29 @@ for currFile in dataFiles:
 
 #get the viral load and rho estimates
 allStats = pd.DataFrame(allStats, columns = ['viral_load', 'rho', 'n_snps', 'date', 'participant', 'fragment'])
-#plot rho vs viral load color by participant
-sns.set(rc={'figure.figsize':(15,5)}, font_scale = 2)
-myplot = sns.scatterplot(x = 'viral_load', y = 'rho', hue = 'participant', data = allStats, alpha = 0.5)
-myplot.set(xscale="log")
-plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-plt.xlim(1000,1000000)
-plt.xlabel("Viral Load [Virions/ml]")
-plt.ylabel("Estimated Rho")
-plt.ylim(-0.1,1.1)
-plt.tight_layout()
-plt.savefig(outDir + "Rho_vs_ViralLoad_Participant")
-plt.close()
+allStats.to_csv(dataOut + "rho_predictions.csv")
 
-#plot rho vs viral load color by fragment
-myplot = sns.scatterplot(x = 'viral_load', y = 'rho', hue = 'fragment', data = allStats, alpha = 0.5)
-myplot.set(xscale="log")
-plt.xlabel("Viral Load [Virions/ml]")
-plt.ylabel("Estimated Rho")
-plt.ylim(-0.1,1.1)
-plt.tight_layout()
-plt.savefig(outDir + "Rho_vs_ViralLoad_Fragment")
-plt.close()
+# #plot rho vs viral load color by participant
+# sns.set(rc={'figure.figsize':(15,5)}, font_scale = 2)
+# myplot = sns.scatterplot(x = 'viral_load', y = 'rho', hue = 'participant', data = allStats, alpha = 0.5)
+# myplot.set(xscale="log")
+# plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+# plt.xlim(1000,1000000)
+# plt.xlabel("Viral Load [Virions/ml]")
+# plt.ylabel("Estimated Rho")
+# plt.ylim(-0.1,1.1)
+# plt.tight_layout()
+# plt.savefig(outDir + "Rho_vs_ViralLoad_Participant")
+# plt.close()
+
+# #plot rho vs viral load color by fragment
+# myplot = sns.scatterplot(x = 'viral_load', y = 'rho', hue = 'fragment', data = allStats, alpha = 0.5)
+# myplot.set(xscale="log")
+# plt.xlabel("Viral Load [Virions/ml]")
+# plt.ylabel("Estimated Rho")
+# plt.ylim(-0.1,1.1)
+# plt.tight_layout()
+# plt.savefig(outDir + "Rho_vs_ViralLoad_Fragment")
+# plt.close()
 
 

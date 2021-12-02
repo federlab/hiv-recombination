@@ -178,6 +178,7 @@ allStats = pd.DataFrame(allStats, columns = ['viral_load', 'rho', 'n_snps', 'dat
 
 
 
+
 # #fit linear models for each of the fragments
 # for curr_frag in np.unique(allStats['fragment']):
 #     frag_data = allStats[allStats['fragment'] == curr_frag]

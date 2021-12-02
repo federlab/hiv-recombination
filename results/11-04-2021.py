@@ -53,6 +53,7 @@ def residual(x0, dDeltaT, data, rec_error):
 #We are only using fragments 1-4
 fragment_list = ['F1','F2', 'F3', 'F4']
 par_list = ['p1', 'p2','p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
+fragment_list = ['F5', 'F6']
 
 #values to truncate our fits at
 trunc_vals = list(range(5000, 65000, 5000))
@@ -66,13 +67,15 @@ VL_BIN_WIDTH = 1.25
 #filtering values to indicate
 CUTOFF = 0.03
 SUCCESS = 0.01
-RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "vl_binned_custom"
+RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "vl_binned_custom_improved_f5-6"
 #downsample larger distances to get better initial fit.
 DOWNSAMPLE_CUTOFF = 1000
 
 #create our distance bins
 CUSTOM_BINS = [(0,250), (250, 500), (500, 750), (750, 1000), (1000, 2000), (2000, 3000), (3000, 4000), 
 (4000, 5000), (5000, 7500), (7500, 10000), (10000, 15000), (15000, 20000), (20000, 30000), (30000, 40000), (40000, 50000) ,(50000, 60000)]
+CUSTOM_BINS = [(0, 1000), (1000, 2000), (2000, 3000), (3000,4000), (4000,5000), (5000, 7500), (7500, 10000), (10000, 15000),
+ (15000, 20000), (20000, 30000), (30000, 40000), (40000, 50000) ,(50000, 60000)]
 
 #create lists to store all of the results in
 rec_dfs = []
@@ -173,7 +176,7 @@ for vl_bin_start in vl_groups:
         all_frequencies['Recombination Tests'] = recomb_tests
         all_frequencies['Mutation Successes'] = mut_successes
         all_frequencies['Recombination Successes'] = recomb_successes
-        all_frequencies['AvgViral Load'] = vl_bin_start
+        all_frequencies['Avg Viral Load'] = vl_bin_start
         all_frequencies_patients.append(all_frequencies)
 
 #now we can make a dataframe with all our results to plot
@@ -183,19 +186,26 @@ all_frequencies_patients['Mut Error'] = 1 / np.sqrt(all_frequencies_patients['Mu
 all_frequencies_patients['Recomb Error'] =  1/ np.sqrt(all_frequencies_patients['Recombination Tests'])
 
 print(all_frequencies_patients.columns)
+lowVL = all_frequencies_patients[all_frequencies_patients['Avg Viral Load'] == 3.0]
+highVL = all_frequencies_patients[all_frequencies_patients['Avg Viral Load'] == 4.25]
+print(lowVL, file = sys.stderr)
+print(highVL, file = sys.stderr)
 
 #plot our results
-colors = ['Red', 'Cyan']
-sns.set_palette(sns.color_palette(colors))
-sns.set(rc={'figure.figsize':(20,5)}, font_scale = 2)
-myplot = sns.FacetGrid(all_frequencies_patients, col="Fragment")
-myplot.map_dataframe(plt.errorbar, x = 'window', y = 'mut_frequencies', yerr = 'Mut Error', xerr = None, ls = 'none', ecolor = 'gray')
-myplot.map_dataframe(sns.lineplot, x = 'window', y = 'mut_frequencies', hue = 'Avg Viral Load')    
+sns.set(rc={'figure.figsize':(20,10)}, font_scale = 2)
+plt.errorbar(x = lowVL['window'], y = lowVL['mut_frequencies'], yerr = lowVL['Mut Error'], xerr = None, ls = 'none', ecolor = 'blue')
+sns.lineplot(x = lowVL['window'], y = lowVL['mut_frequencies'], color = 'blue', linestyle = 'dashed', label = "Mutation Low VL")   
+plt.errorbar(x = highVL['window'], y = highVL['mut_frequencies'], yerr = highVL['Mut Error'], xerr = None, ls = 'none', ecolor = 'red')
+sns.lineplot(x = highVL['window'], y = highVL['mut_frequencies'], color = 'red', linestyle = 'dashed', label = "Mutation High VL")  
+plt.errorbar(x = lowVL['window'], y = lowVL['recomb_frequencies'], yerr = lowVL['Recomb Error'], xerr = None, ls = 'none', ecolor = 'blue')
+sns.lineplot(x = lowVL['window'], y = lowVL['recomb_frequencies'], color = 'blue', label = "Recombination Low VL")    
+plt.errorbar(x = highVL['window'], y = highVL['recomb_frequencies'], yerr = highVL['Recomb Error'], xerr = None, ls = 'none', ecolor = 'red')
+sns.lineplot(x = highVL['window'], y = highVL['recomb_frequencies'], color = 'red', label = "Recombination High VL")    
 
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-plt.ylim(-0.1,1.1)
+plt.ylim(0,0.6)
 plt.xlabel("Distance Between Loci X Days Between Timepoints")
 plt.ylabel("Frequency")
 plt.tight_layout()
-plt.savefig(outDir + "mutation_tests" + RUNNAME + ".jpg")
+plt.savefig(outDir + "vl_groups" + RUNNAME + ".jpg")
 plt.close()
