@@ -248,3 +248,33 @@ def estimate_recombination_rate(c0, c1, c2):
     denominator = np.log(1/(1 - c0 - c1)) - denominator
     denominator = (1-c0) * denominator
     return numerator/ denominator
+
+def fit_neher_equation():
+    """ 
+    """
+
+######################### Helper Functions for Fitting#########################
+def neher_leitner(c0, c1, c2, dDeltaT):
+    """The function Neher and Leitner fit to determine recombination rate"""
+    return (c0 + (c1 * (1 - np.exp(-c2 * dDeltaT))))
+
+def residual(x0, dDeltaT, data, rec_error, C0):
+    """ Calculate the residuals for our fit
+    Params
+    ------------
+    x0 :      list, initial guesses at parameters c1 and c2
+    dDeltaT : pd.df column, the 'window' column of our dataframe
+              
+
+    Returns
+    -------------
+    rec_rate : the per virus recombination rate
+    """
+    c1 = x0[0]
+    c2 = x0[1]
+
+    #this is the equation we are using for our fit
+    model = neher_leitner(C0, c1, c2, dDeltaT)
+    resids = data - model
+    weighted_resids = resids * (1 + rec_error)
+    return weighted_resids
