@@ -2,6 +2,7 @@ import sys
 import random
 import pandas as pd
 import numpy as np
+from scipy import optimize
 
 #utilize analysis proposed by Neher and Leitner to investigate how viral load
 #affects recombination
@@ -177,7 +178,51 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                                         "Success_Freq", 'pA', 'pB'])
     return recombination_df, mutation_df
 
-############################ Helper Functions #################################
+def fit_neher_equation(c1_bounds, c2_bounds, c0, data_to_fit):
+    """ Fits the equation from Neher and Leitner 2010 to data. Returns fitted
+    values and an estimate of parameters.
+    ---------------------------------------------------------------------------
+    Params
+    ------------
+    c1_bounds :    list, three values [lower bound, initial guess, upper bound]
+    c2_bounds :    list, three values [lower bound, initial guess, upper bound]
+    c0 :           float, initial guess for parameter c0
+    data_to_fit:   pd.df, our dataframe with the data on recombination tests
+                   needs the columns, dDeltaT, window, data, recomb_frequencies
+                   and Recomb Error
+
+    Returns
+    -------------
+    curr_fit_data: pd.df, dataframe containing the fitted values and also the
+                   fitted values for the Neher and Leitner paper
+    estimate:      list, estimated values for [c0, c1, c2]
+    ---------------------------------------------------------------------------
+    """
+    c1_start = c1_bounds[1]
+    c1_min = c1_bounds[0]
+    c1_max = c1_bounds[2]
+    c2_start = c2_bounds[1]
+    c2_min = c2_bounds[0]
+    c2_max = c2_bounds[2]
+    #bounds on varying parameters
+    my_bounds = [[c1_min, c2_min], [c1_max, c2_max]]
+    #initial guess at parameters
+    x0 = [c1_start, c2_start]
+    res_lsq = optimize.least_squares(fun = residual, x0 = x0, bounds = my_bounds, kwargs={'dDeltaT' : data_to_fit['window'],
+                                                                                    'data': data_to_fit['recomb_frequencies'],
+                                                                                    'rec_error' : data_to_fit['Recomb Error']})
+
+    c0_estimate = c0
+    c1_estimate = res_lsq.x[0]
+    c2_estimate = res_lsq.x[1]
+    x_vals = list(range(0, max(data_to_fit['window'])))
+    fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
+    fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]
+    curr_fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper)), columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper' , 'equal bins'])
+    estimate = [c0, c1_estimate, c2_estimate]
+    return curr_fit_data, estimate
+
+##################### Helper Functions for Running Tests ######################
 #Test cases for check_three_haps(hap_list)
 #return 1 = CG
 testCase1 = ['AG', 'AT', 'CT']
@@ -232,7 +277,7 @@ def check_three_haps(hap_list):
 def estimate_recombination_rate(c0, c1, c2):
     """ Takes in the coefficients from fitting the curve to our data. Then
     returns our estimate of the recombination rate
-    ----------------------------------------------------------------------------
+    ---------------------------------------------------------------------------
     Params
     ------------
     c0 : float, the intercept of our curve fit
@@ -249,32 +294,36 @@ def estimate_recombination_rate(c0, c1, c2):
     denominator = (1-c0) * denominator
     return numerator/ denominator
 
-def fit_neher_equation():
-    """ 
-    """
 
-######################### Helper Functions for Fitting#########################
+######################### Helper Functions for Fitting ########################
 def neher_leitner(c0, c1, c2, dDeltaT):
     """The function Neher and Leitner fit to determine recombination rate"""
     return (c0 + (c1 * (1 - np.exp(-c2 * dDeltaT))))
 
-def residual(x0, dDeltaT, data, rec_error, C0):
+def residual(x0, dDeltaT, data, rec_error, c0 = 0.13):
     """ Calculate the residuals for our fit
+    ---------------------------------------------------------------------------
     Params
     ------------
     x0 :      list, initial guesses at parameters c1 and c2
     dDeltaT : pd.df column, the 'window' column of our dataframe
-              
+    data :    pd.df column, the column our our data with the frequency of test
+              success for our recombination tests
+    rec_error:pd.df column, the column with the weights for the fit (based
+              on the number of tests run)
+    c0 :      float, the constant c0 in our neher equation, determined by fitting
+              the truncated data
+
 
     Returns
     -------------
-    rec_rate : the per virus recombination rate
+    weighted_resids : np.array the residuals taking into account the model
     """
     c1 = x0[0]
     c2 = x0[1]
 
     #this is the equation we are using for our fit
-    model = neher_leitner(C0, c1, c2, dDeltaT)
+    model = neher_leitner(c0, c1, c2, dDeltaT)
     resids = data - model
     weighted_resids = resids * (1 + rec_error)
     return weighted_resids
