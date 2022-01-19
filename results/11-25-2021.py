@@ -19,7 +19,7 @@ from scipy import optimize
 
 # for running on desktop
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/analysis/neher/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/researchReports/largeBins/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/testingBinning/'
 
 # This file is the same as 11-03-2021.py, but I am going to try to use a different
 # package since lmfit initializations are giving me trouble.
@@ -32,12 +32,12 @@ def neher_leitner(c0, c1, c2, dDeltaT):
     return (c0 + (c1 * (1 - np.exp(-c2 * dDeltaT))))
 
 def residual(x0, dDeltaT, data, rec_error):
-    # c0 = x0[0]
-    c1 = x0[0]
-    c2 = x0[1]
+    c0 = x0[0]
+    c1 = x0[1]
+    c2 = x0[2]
 
     #this is the equation we are using for our fit
-    model = neher_leitner(C0, c1, c2, dDeltaT)
+    model = neher_leitner(c0, c1, c2, dDeltaT)
     # print("*****************************", file = sys.stderr)
     # print(model, file = sys.stderr)
     resids = data - model
@@ -59,8 +59,7 @@ par_list = ['p1', 'p2','p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
 trunc_vals = list(range(5000, 65000, 5000))
 trunc_vals = [60000]
 
-#test with neher and leitner bins replicated
-C0 = 0.227
+
 # #value estimated from truncation analysis
 # C0 = 0.13
 #distance bins
@@ -120,6 +119,9 @@ custom_bins = [(0,5000), (5000, 12500), (12500, 22500), (22500, 30000), (30000, 
 for currBin in custom_bins:
     bin_start = currBin[0]
     bin_end = currBin[1]
+    #added 1/14/22 plot the bins at the center instead of the start
+    bin_center = int((currBin[1] - currBin[0])/2) + bin_start
+    print(bin_center)
 
     #make a place to store the frequencies of observing events
     mut_frequencies = []
@@ -180,10 +182,10 @@ for curr_trunc in trunc_vals:
     trunc_data = all_frequencies_patients[all_frequencies_patients['window'] < curr_trunc]
     ########################### Fitting #######################################
     #start by setting parameters for our fit
-    # c0 is fixed to be 0.13 which is what our truncation analysis suggested
-    # c0_start = 0.13
-    # c0_min = 0
-    # c0_max = 1
+    #c0 is fixed to be 0.13 which is what our truncation analysis suggested
+    c0_start = 0.13
+    c0_min = 0
+    c0_max = 1
     c1_start = 0.1804
     c1_min = 0
     c1_max = 1
@@ -191,16 +193,16 @@ for curr_trunc in trunc_vals:
     c2_min = 0
     c2_max = 1
     #bounds on varying parameters
-    my_bounds = [[c1_min, c2_min], [c1_max, c2_max]]
+    my_bounds = [[c0_min, c1_min, c2_min], [c0_max, c1_max, c2_max]]
     #initial guess at parameters
-    x0 = [c1_start, c2_start]
+    x0 = [c0_start, c1_start, c2_start]
     res_lsq = optimize.least_squares(fun = residual, x0 = x0, bounds = my_bounds, kwargs={'dDeltaT' : trunc_data['window'],
                                                                                     'data': trunc_data['recomb_frequencies'],
                                                                                     'rec_error' : trunc_data['Recomb Error']})
 
-    c0_estimate = C0
-    c1_estimate = res_lsq.x[0]
-    c2_estimate = res_lsq.x[1]
+    c0_estimate = res_lsq.x[0]
+    c1_estimate = res_lsq.x[1]
+    c2_estimate = res_lsq.x[2]
     x_vals = list(range(0, max(trunc_data['window'])))
     fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
     fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]
@@ -208,14 +210,14 @@ for curr_trunc in trunc_vals:
     curr_fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper, equal_bins_fit)), columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper' , 'equal bins'])
     curr_fit_data['Trunc_Value'] = curr_trunc
     fit_df.append(curr_fit_data)
-    estimate_df.append([C0, c1_estimate, c2_estimate, curr_trunc])
+    estimate_df.append([c0_estimate, c1_estimate, c2_estimate, curr_trunc])
 
 fit_df = pd.concat(fit_df)
 estimate_df = pd.DataFrame(estimate_df, columns = ['C0 Estimate', 'C1 Estimate', 'C2 Estimate', 'Trunc_Value'])
 
 print(estimate_df, file = sys.stderr)
 print("The estimated recombination rate is")
-print(neher.estimate_recombination_rate(c0 = C0, c1 = c1_estimate, c2 = c2_estimate))
+print(neher.estimate_recombination_rate(c0 = c0_estimate, c1 = c1_estimate, c2 = c2_estimate))
 print(neher.estimate_recombination_rate(c0 = 0.1, c1 = 0.26, c2 = 0.0000439))
 
 ########################### Plotting ###########################################

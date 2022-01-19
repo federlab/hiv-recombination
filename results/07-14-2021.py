@@ -1,5 +1,7 @@
 import sys
-sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+# sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+#For running on Desktop
+sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
 import r2Analysis as r2
 import numpy as np
@@ -11,6 +13,10 @@ import zaniniUtil as zu
 #Now that we can do analysis using the diagonal scanning method, we can plot
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/snpPairs/'
 outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/'
+
+#for running on desktop
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/snpPairs/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/'
 
 #parameters for our moving median
 #how much to advance the window start by
@@ -66,6 +72,7 @@ for curr_fragment in fragment_list:
         for curr_file in participant_files[par_frag]:
             #load our current counts
             coCounts_arr = np.load(dataDir + curr_file)
+
             #find the segregating sites
             segregatingLoci = zu.find_segregating_diagonal(coCounts_arr)
 
