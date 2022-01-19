@@ -25,6 +25,7 @@ def find_segregating_diagonal(coCounts_arr, all_seg = False):
     for i in range(fragmentLen):
         #I think this is the diagonal which is just counts with itself
         currObs = coCounts_arr[:,:,i,i]
+        print(currObs)
         #!!!!!!! we can use the diagonal to find segregating loci
         #the first item is the a count, the second is the c count and so on
         acgt_counts = np.array(
