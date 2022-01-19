@@ -4,7 +4,7 @@ require(foreach)
 
 source('process_slim_scripts.r')
 
-path_to_hxb2_env <- "~/Dropbox/active/hiv_recombination_rate/dat/hxb2/hxb2_env.fa"
+path_to_hxb2_env <- "../../data/reference/hxb2/hxb2_env.fa"
 
 mu <- 1e-5
 rho <- 1e-5 * seq(1, 20, length.out = 3)
