@@ -178,49 +178,49 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                                         "Success_Freq", 'pA', 'pB'])
     return recombination_df, mutation_df
 
-def fit_neher_equation(c1_bounds, c2_bounds, c0, data_to_fit):
-    """ Fits the equation from Neher and Leitner 2010 to data. Returns fitted
-    values and an estimate of parameters.
-    ---------------------------------------------------------------------------
-    Params
-    ------------
-    c1_bounds :    list, three values [lower bound, initial guess, upper bound]
-    c2_bounds :    list, three values [lower bound, initial guess, upper bound]
-    c0 :           float, initial guess for parameter c0
-    data_to_fit:   pd.df, our dataframe with the data on recombination tests
-                   needs the columns, dDeltaT, window, data, recomb_frequencies
-                   and Recomb Error
+# def fit_neher_equation(c1_bounds, c2_bounds, c0, data_to_fit):
+#     """ Fits the equation from Neher and Leitner 2010 to data. Returns fitted
+#     values and an estimate of parameters.
+#     ---------------------------------------------------------------------------
+#     Params
+#     ------------
+#     c1_bounds :    list, three values [lower bound, initial guess, upper bound]
+#     c2_bounds :    list, three values [lower bound, initial guess, upper bound]
+#     c0 :           float, initial guess for parameter c0
+#     data_to_fit:   pd.df, our dataframe with the data on recombination tests
+#                    needs the columns, dDeltaT, window, data, recomb_frequencies
+#                    and Recomb Error
 
-    Returns
-    -------------
-    curr_fit_data: pd.df, dataframe containing the fitted values and also the
-                   fitted values for the Neher and Leitner paper
-    estimate:      list, estimated values for [c0, c1, c2]
-    ---------------------------------------------------------------------------
-    """
-    c1_start = c1_bounds[1]
-    c1_min = c1_bounds[0]
-    c1_max = c1_bounds[2]
-    c2_start = c2_bounds[1]
-    c2_min = c2_bounds[0]
-    c2_max = c2_bounds[2]
-    #bounds on varying parameters
-    my_bounds = [[c1_min, c2_min], [c1_max, c2_max]]
-    #initial guess at parameters
-    x0 = [c1_start, c2_start]
-    res_lsq = optimize.least_squares(fun = residual, x0 = x0, bounds = my_bounds, kwargs={'dDeltaT' : data_to_fit['window'],
-                                                                                    'data': data_to_fit['recomb_frequencies'],
-                                                                                    'rec_error' : data_to_fit['Recomb Error']})
+#     Returns
+#     -------------
+#     curr_fit_data: pd.df, dataframe containing the fitted values and also the
+#                    fitted values for the Neher and Leitner paper
+#     estimate:      list, estimated values for [c0, c1, c2]
+#     ---------------------------------------------------------------------------
+#     """
+#     c1_start = c1_bounds[1]
+#     c1_min = c1_bounds[0]
+#     c1_max = c1_bounds[2]
+#     c2_start = c2_bounds[1]
+#     c2_min = c2_bounds[0]
+#     c2_max = c2_bounds[2]
+#     #bounds on varying parameters
+#     my_bounds = [[c1_min, c2_min], [c1_max, c2_max]]
+#     #initial guess at parameters
+#     x0 = [c1_start, c2_start]
+#     res_lsq = optimize.least_squares(fun = residual, x0 = x0, bounds = my_bounds, kwargs={'dDeltaT' : data_to_fit['window'],
+#                                                                                     'data': data_to_fit['recomb_frequencies'],
+#                                                                                     'rec_error' : data_to_fit['Recomb Error']})
 
-    c0_estimate = c0
-    c1_estimate = res_lsq.x[0]
-    c2_estimate = res_lsq.x[1]
-    x_vals = list(range(0, max(data_to_fit['window'])))
-    fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
-    fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]
-    curr_fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper)), columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper' , 'equal bins'])
-    estimate = [c0, c1_estimate, c2_estimate]
-    return curr_fit_data, estimate
+#     c0_estimate = c0
+#     c1_estimate = res_lsq.x[0]
+#     c2_estimate = res_lsq.x[1]
+#     x_vals = list(range(0, max(data_to_fit['window'])))
+#     fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
+#     fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]
+#     curr_fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper)), columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper' , 'equal bins'])
+#     estimate = [c0, c1_estimate, c2_estimate]
+#     return curr_fit_data, estimate
 
 ##################### Helper Functions for Running Tests ######################
 #Test cases for check_three_haps(hap_list)
@@ -295,35 +295,111 @@ def estimate_recombination_rate(c0, c1, c2):
     return numerator/ denominator
 
 
-######################### Helper Functions for Fitting ########################
+######################### Functionality for Fitting ###########################
 def neher_leitner(c0, c1, c2, dDeltaT):
     """The function Neher and Leitner fit to determine recombination rate"""
+    print([c0,c1,c2], file = sys.stderr)
     return (c0 + (c1 * (1 - np.exp(-c2 * dDeltaT))))
 
-def residual(x0, dDeltaT, data, rec_error, c0 = 0.13):
+def residual(x0, dDeltaT, data, rec_error, fixed_c0 = None):
     """ Calculate the residuals for our fit
     ---------------------------------------------------------------------------
     Params
     ------------
-    x0 :      list, initial guesses at parameters c1 and c2
+    x0 :      list, initial guesses at parameters c1 and c2. Also contains c0
+              if it is not fixed
     dDeltaT : pd.df column, the 'window' column of our dataframe
     data :    pd.df column, the column our our data with the frequency of test
               success for our recombination tests
     rec_error:pd.df column, the column with the weights for the fit (based
               on the number of tests run)
-    c0 :      float, the constant c0 in our neher equation, determined by fitting
-              the truncated data
-
+    fixed_c0: float, the value of c0 if c0 is fixed rather than being fitted.
+              If c0 is fitted, then this should be None.
 
     Returns
     -------------
     weighted_resids : np.array the residuals taking into account the model
     """
-    c1 = x0[0]
-    c2 = x0[1]
+    #set the values depending on whether c0 is fixed or not
+    if fixed_c0 is not None and len(x0) == 2:
+        c0 = fixed_c0
+        c1 = x0[0]
+        c2 = x0[1]
+    elif len(x0) == 3:
+        c0 = x0[0]
+        c1 = x0[1]
+        c2 = x0[2]
+    else:
+        raise ValueError('Specification of c0, c1, c2 was not correct.')
 
     #this is the equation we are using for our fit
     model = neher_leitner(c0, c1, c2, dDeltaT)
     resids = data - model
     weighted_resids = resids * (1 + rec_error)
     return weighted_resids
+
+def run_neher_fit(c0_fixed, lower_bounds, upper_bounds, initial, test_results):
+    """ Performs fitting of data to a curve using the functional form described
+    by Neher and Leitner. Returns one list containing the estimates for 
+    the coefficients and a dataframe with fitted values for plotting.
+    ---------------------------------------------------------------------------
+    Params
+    ------------
+    c0_fixed :      bool, whether the constant c0 will be fixed or fitted
+    lower_bounds :  list, A list of floats containing the minimum values to try
+                    for c0, c1 and c2. (c0 not included if it is fixed)
+    upper_bounds :  list, A list of floats containing the maximum values to try
+                    for c0, c1 and c2. (c0 not included if it is fixed)
+    initial :       list, Initial guesses for each of the parameters. If c) is
+                    fixed, then the initial guess will be used as the fixed 
+                    value. [c0, c1, c2]
+    test_results :  pd.DF, A dataframe containing the test results from the
+                    the recombination tests that were run. 
+    
+    Returns
+    -------------
+    [c0, c1, c2] :  list, the estimated coefficients (c0 will be fixed value
+                    if it was fixed)
+    fit_data :      pd.DF, dataframe containing the relevant fitted values
+                    also contains the fitted values for the neher paper
+
+    """
+    #Check that we received the correct amount of bounds
+    if c0_fixed:
+        correctLen = 2
+    else: correctLen = 3
+    print(len)
+    if len(upper_bounds)!= correctLen or len(lower_bounds) != correctLen:
+        raise ValueError('Too many or too few bounds given')    
+
+    #Run the fit
+    if c0_fixed:
+        c0_val = initial[0]
+        c1_c2_list = initial[1:]
+        res_lsq = optimize.least_squares(fun = residual, x0 = c1_c2_list, 
+                                        bounds = [lower_bounds, upper_bounds], 
+                                        kwargs={'dDeltaT' : test_results['window'],
+                                                'data': test_results['recomb_frequencies'],
+                                                'rec_error' : test_results['Recomb Error'],
+                                                'fixed_c0' : c0_val}) 
+        c0_estimate = c0_val
+        c1_estimate = res_lsq.x[0]
+        c2_estimate = res_lsq.x[1]
+    else:
+        res_lsq = optimize.least_squares(fun = residual, x0 = initial, 
+                                        bounds = [lower_bounds, upper_bounds], 
+                                        kwargs={'dDeltaT' : test_results['window'],
+                                                'data': test_results['recomb_frequencies'],
+                                                'rec_error' : test_results['Recomb Error']}) 
+        c0_estimate = res_lsq.x[0]
+        c1_estimate = res_lsq.x[1]
+        c2_estimate = res_lsq.x[2]      
+    
+    #Make the dataframe of fitted values
+    x_vals = list(range(0, max(test_results['window'])))
+    fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
+    fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]    
+    fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper)), 
+                    columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper'])
+    
+    return [c0_estimate, c1_estimate, c2_estimate], fit_data
