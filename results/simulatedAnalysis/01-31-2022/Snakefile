@@ -1,0 +1,24 @@
+import numpy as np
+
+#This file is for running our neher and leitner analysis on the filtered genotypes
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_01_25/'
+
+#get the proper names of all the simulated directories
+rho_vals = ['0', '0.000105', '1e-05' ]
+reps = range(1, 6)
+filetypes = ['mutation', 'recombination']
+full_dir_pattern_neher= dataDir + "mu1e-04_rho{rho_val}_Ne1000_M1000_rep{rep}/neher_res/{filetype}"
+full_dir_neher = expand(full_dir_pattern_neher,
+        rho_val = rho_vals, rep = reps, filetype = filetypes)
+
+
+rule all:
+    input:
+     full_dir_neher
+
+rule neher_leitner:
+    input: 
+    output: 
+     dataDir + "mu1e-04_rho{rho_val}_Ne1000_M1000_rep{rep}/neher_res/recombination",
+     dataDir + "mu1e-04_rho{rho_val}_Ne1000_M1000_rep{rep}/neher_res/mutation"
+    script: "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/neher_leitner.py"

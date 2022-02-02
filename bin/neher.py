@@ -46,6 +46,7 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
         #the labels are strings but they need to be ints to be sorted
         time_list = list(map(int, time_list))
         time_list.sort()
+
         time_list = list(map(str, time_list))
 
         #make sure we have multiple timepoints
@@ -149,11 +150,11 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                         #check the frequency of the haplotype that triggered the success is high enough
                         if success_freq < success_filt:
                             mutation_df.append([name[0], name[1], False, curr_time,
-                                time_list[i-1], supporting_reads, float('inf'), p_A, p_B])
+                                time_list[i-1], supporting_reads, float('inf'), p_A, p_B]) 
                         else:
                             mutation_df.append([name[0], name[1], True, curr_time,
                                     time_list[i-1], supporting_reads, success_freq, p_A, p_B])
-                            mut_found = True
+                        mut_found = True
                 #if our test did not find any mutations
                 if not mut_found:
                     mutation_df.append([name[0], name[1], False, curr_time,
@@ -177,50 +178,6 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                                         "Last_Timepoint", "Supporting_Reads",
                                         "Success_Freq", 'pA', 'pB'])
     return recombination_df, mutation_df
-
-# def fit_neher_equation(c1_bounds, c2_bounds, c0, data_to_fit):
-#     """ Fits the equation from Neher and Leitner 2010 to data. Returns fitted
-#     values and an estimate of parameters.
-#     ---------------------------------------------------------------------------
-#     Params
-#     ------------
-#     c1_bounds :    list, three values [lower bound, initial guess, upper bound]
-#     c2_bounds :    list, three values [lower bound, initial guess, upper bound]
-#     c0 :           float, initial guess for parameter c0
-#     data_to_fit:   pd.df, our dataframe with the data on recombination tests
-#                    needs the columns, dDeltaT, window, data, recomb_frequencies
-#                    and Recomb Error
-
-#     Returns
-#     -------------
-#     curr_fit_data: pd.df, dataframe containing the fitted values and also the
-#                    fitted values for the Neher and Leitner paper
-#     estimate:      list, estimated values for [c0, c1, c2]
-#     ---------------------------------------------------------------------------
-#     """
-#     c1_start = c1_bounds[1]
-#     c1_min = c1_bounds[0]
-#     c1_max = c1_bounds[2]
-#     c2_start = c2_bounds[1]
-#     c2_min = c2_bounds[0]
-#     c2_max = c2_bounds[2]
-#     #bounds on varying parameters
-#     my_bounds = [[c1_min, c2_min], [c1_max, c2_max]]
-#     #initial guess at parameters
-#     x0 = [c1_start, c2_start]
-#     res_lsq = optimize.least_squares(fun = residual, x0 = x0, bounds = my_bounds, kwargs={'dDeltaT' : data_to_fit['window'],
-#                                                                                     'data': data_to_fit['recomb_frequencies'],
-#                                                                                     'rec_error' : data_to_fit['Recomb Error']})
-
-#     c0_estimate = c0
-#     c1_estimate = res_lsq.x[0]
-#     c2_estimate = res_lsq.x[1]
-#     x_vals = list(range(0, max(data_to_fit['window'])))
-#     fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
-#     fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]
-#     curr_fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper)), columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper' , 'equal bins'])
-#     estimate = [c0, c1_estimate, c2_estimate]
-#     return curr_fit_data, estimate
 
 ##################### Helper Functions for Running Tests ######################
 #Test cases for check_three_haps(hap_list)
@@ -298,7 +255,6 @@ def estimate_recombination_rate(c0, c1, c2):
 ######################### Functionality for Fitting ###########################
 def neher_leitner(c0, c1, c2, dDeltaT):
     """The function Neher and Leitner fit to determine recombination rate"""
-    print([c0,c1,c2], file = sys.stderr)
     return (c0 + (c1 * (1 - np.exp(-c2 * dDeltaT))))
 
 def residual(x0, dDeltaT, data, rec_error, fixed_c0 = None):
@@ -368,7 +324,7 @@ def run_neher_fit(c0_fixed, lower_bounds, upper_bounds, initial, test_results):
     if c0_fixed:
         correctLen = 2
     else: correctLen = 3
-    print(len)
+
     if len(upper_bounds)!= correctLen or len(lower_bounds) != correctLen:
         raise ValueError('Too many or too few bounds given')    
 

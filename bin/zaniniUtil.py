@@ -25,12 +25,12 @@ def find_segregating_diagonal(coCounts_arr, all_seg = False):
     for i in range(fragmentLen):
         #I think this is the diagonal which is just counts with itself
         currObs = coCounts_arr[:,:,i,i]
-        print(currObs)
+
         #!!!!!!! we can use the diagonal to find segregating loci
         #the first item is the a count, the second is the c count and so on
         acgt_counts = np.array(
             [currObs[0][0], currObs[1][1], currObs[2][2], currObs[3][3]])
-        
+
         #If there are multiple alleles check for frequency >1%
         if np.count_nonzero(acgt_counts) > 1:
             total = np.sum(acgt_counts)
@@ -67,7 +67,6 @@ def find_segregating_diagonal(coCounts_arr, all_seg = False):
         segregatingLoci = pd.DataFrame(segregatingLoci,
                             columns= ["position", "allele_1", "freq_1",
                                     "allele_2", "freq_2"])
-    
     return segregatingLoci
 
 def make_genotype_df(segregatingLoci, coCounts_arr):
@@ -141,6 +140,7 @@ def filter_genotype_df(genotypeDF, segregatingLoci, allele_cutoff,  hap_cutoff):
     for curr_timepoint in timepoint_list:
         curr_seg = segregatingLoci[segregatingLoci['timepoint'] == curr_timepoint]
         curr_gen = genotypeDF[genotypeDF['timepoint'] == curr_timepoint]
+
         #put all of the allele frequencies into a dictionary of dictionaries
         #the first key is the locus and the second key is the allele
         freqDict = {}
@@ -152,6 +152,7 @@ def filter_genotype_df(genotypeDF, segregatingLoci, allele_cutoff,  hap_cutoff):
             allele_dict[row.get('allele_3')] = row.get('freq_3')
             allele_dict[row.get('allele_4')] = row.get('freq_4')
             freqDict[locus] = allele_dict
+
 
         #now use the dictionary to check the frequency of each allele is above
         #the cutoff
