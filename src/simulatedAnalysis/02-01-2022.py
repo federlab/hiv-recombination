@@ -10,7 +10,6 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from sklearn.metrics import mean_squared_error
 
 
 #Today I am continuing work with the Slim Dataset.
@@ -206,23 +205,40 @@ plt.close()
 # plt.close()
 
 # #Plot our estimates against each other 
-rhoDict = {"rho0" : 0,
+#make the rho values ints rather than strings
+rhoDict = {"rho0" : 1e-20,
             "rho0.000105" : 0.000105,
             "rho1e-05" : 0.00001}
 intRhoList = []
 for entry in estimate_df['Sim_Rho']:
     intRhoList.append(rhoDict[entry])
 estimate_df['Sim_int_rho'] = intRhoList
+binning_dict = { 0: "Finer",
+                1 : "Coarser"}
+bin_name_list = []
+for entry in estimate_df["Binning"]:
+    bin_name_list.append(binning_dict[entry])
+estimate_df['Bin Name'] = bin_name_list
+#add jitter to the rho values
+x_vals = np.linspace(0.00001, 0.000105, 10)
+def jitter(values,j):
+    return values + np.random.normal(j,0.1,values.shape)
+estimate_df['Sim_int_rho']
 
 print(estimate_df)
-sns.set(rc={'figure.figsize':(20,5)}, font_scale = 1)
-myplot = sns.FacetGrid(estimate_df, col = 'Sim_int_rho', row = 'Binning', sharex = False, sharey = False)
-myplot.map_dataframe(sns.scatterplot, x = 'Sim_int_rho', y = 'Estimate', hue = 'rep')    
-# myplot = sns.scatterplot(x = 'Sim_int_rho', y = 'Estimate', data = estimate_df, hue = 'Binning')
+sns.set(rc={'figure.figsize':(10,5)}, font_scale = 1)
+
+not_zeros = estimate_df[estimate_df['Sim_int_rho'] != 1e-20]
+# myplot = sns.FacetGrid(estimate_df, col = 'Sim_int_rho', row = 'Binning', sharex = False, sharey = False)
+# myplot.map_dataframe(sns.scatterplot, x = 'Sim_int_rho', y = 'Estimate', hue = 'rep')    
+myplot = sns.stripplot(x = 'Sim_Rho', y = 'Estimate', data = not_zeros, hue = 'Bin Name', jitter = True)
+sns.pointplot(x = 'Sim_Rho', y = 'Sim_int_rho', data = not_zeros, capsize = 0.7, ci = 0, scale = 0, color = 'black')
+# plt.plot(x_vals, x_vals, '-r', label = 'y=x')
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+myplot.set(yscale = "log")
 plt.xlabel("Simulation Value of Rho")
 plt.ylabel("Estimated Value of Rho")
 plt.tight_layout()
-plt.savefig(outDir + enclosing_dir + "/comparedEstimates_sepreps.jpg")
+plt.savefig(outDir + enclosing_dir + "/comparedEstimates_stripplot.jpg")
 plt.close()
 
