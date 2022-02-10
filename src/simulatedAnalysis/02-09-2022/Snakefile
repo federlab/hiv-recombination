@@ -2,6 +2,7 @@ import numpy as np
 
 #This file is for running our neher and leitner analysis on the filtered genotypes
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_01_25/'
+ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 
 #get the proper names of all the simulated directories
 rho_vals = ['0', '0.000105', '1e-05' ]
@@ -13,14 +14,20 @@ full_dir_neher = expand(full_dir_pattern_neher,
 
 
 #Targets are outputs and dependencies are inputs
-
 rule all:
     input:
      full_dir_neher
 
+rule filter_genotypes:
+    input: dataDir +  "mu1e-04_rho{rho_val}_Ne1000_M1000_rep{rep}/timepoint_info.tsv"
+    output:
+     dataDir + "mu1e-04_rho{rho_val}_Ne1000_M1000_rep{rep}/analysis/FilteredGenotypes"
+    script: ruleScriptDir + "filter_genotypes.py"
+
 rule neher_leitner:
     input: 
+     dataDir + "mu1e-04_rho{rho_val}_Ne1000_M1000_rep{rep}/analysis/FilteredGenotypes"
     output: 
      dataDir + "mu1e-04_rho{rho_val}_Ne1000_M1000_rep{rep}/neher_res/recombination",
      dataDir + "mu1e-04_rho{rho_val}_Ne1000_M1000_rep{rep}/neher_res/mutation"
-    script: "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/neher_leitner.py"
+    script: ruleScriptDir + "neher_leitner.py"
