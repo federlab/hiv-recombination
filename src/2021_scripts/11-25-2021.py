@@ -68,7 +68,7 @@ MIN_BIN = 0
 MAX_BIN = 60000
 CUTOFF = 0.03
 SUCCESS = 0.01
-RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "both_fit_f1-4_neher_bins_end"
+RUNNAME = str(CUTOFF) + '_' + str(SUCCESS) +  "both_fit_f1-4_finer_bins_no_mut"
 #downsample larger distances to get better initial fit.
 DOWNSAMPLE_CUTOFF = 1000
 
@@ -112,9 +112,9 @@ mutation_df['Dist_x_Time'] = 0.5 * mutation_df['Dist_x_Time']
 
 #create our bins
 custom_bins = [(0,250), (250, 500), (500, 750), (750, 1000), (1000, 2000), (2000, 3000), (3000, 4000), 
-(4000, 5000), (5000, 7500), (7500, 10000), (10000, 15000), (15000, 20000), (20000, 30000), (30000, 40000), (40000, 50000) ,(50000, 60000)]
+(4000, 5000), (5000, 7500), (7500, 10000), (10000, 15000), (15000, 20000), (20000, 30000), (30000, 40000), (40000, 50000)]
 #bins that neher and leitner approximately used
-custom_bins = [(0,5000), (5000, 12500), (12500, 22500), (22500, 30000), (30000, 37500), (37500, 45000), (45000, 52500)]
+# custom_bins = [(0,5000), (5000, 12500), (12500, 20000), (20000, 27500), (27500, 35000), (35000, 42500), (42500, 50000)]
 
 for currBin in custom_bins:
     bin_start = currBin[0]
@@ -168,7 +168,7 @@ for currBin in custom_bins:
     all_frequencies_patients.append(all_frequencies)
 
 #now we can make a dataframe with all our results to plot
-all_frequencies_patients = pd.concat(all_frequencies_patients)
+all_frequencies_patients = pd.concat(all_frequencies_patients, ignore_index= True)
 print(all_frequencies_patients['window'].unique())
 #get the error bars for each set of tests
 all_frequencies_patients['Mut Error'] = 1 / np.sqrt(all_frequencies_patients['Mutation Tests'])
@@ -220,13 +220,15 @@ print("The estimated recombination rate is")
 print(neher.estimate_recombination_rate(c0 = c0_estimate, c1 = c1_estimate, c2 = c2_estimate))
 print(neher.estimate_recombination_rate(c0 = 0.1, c1 = 0.26, c2 = 0.0000439))
 
+print(all_frequencies_patients, file = sys.stderr)
+
 ########################### Plotting ###########################################
 
 #Plot our frequencies with fits
 sns.set(rc={'figure.figsize':(20,5)}, font_scale = 2)
-plt.errorbar(x = all_frequencies_patients['window'], y = all_frequencies_patients['mut_frequencies'],
-        yerr = all_frequencies_patients['Mut Error'], xerr = None, ls = 'none', ecolor = 'gray')
-sns.lineplot(x = 'window', y = 'mut_frequencies', data = all_frequencies_patients, color = 'gray', label = 'Mutation Tests')    
+# plt.errorbar(x = all_frequencies_patients['window'], y = all_frequencies_patients['mut_frequencies'],
+#         yerr = all_frequencies_patients['Mut Error'], xerr = None, ls = 'none', ecolor = 'gray')
+# sns.lineplot(x = 'window', y = 'mut_frequencies', data = all_frequencies_patients, color = 'gray', label = 'Mutation Tests')    
 plt.errorbar(x = all_frequencies_patients['window'], y = all_frequencies_patients['recomb_frequencies'],
         yerr = all_frequencies_patients['Recomb Error'], xerr = None, ls = 'none', ecolor = 'red')
 sns.lineplot(x = 'window', y = 'recomb_frequencies', data = all_frequencies_patients, color = 'red', label = 'Recombination Tests')  
