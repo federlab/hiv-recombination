@@ -42,94 +42,90 @@ for curr_dataset in os.listdir(dataDir + enclosing_dir):
     recombination_df = pd.read_pickle(currDir + "recombination")
 
     #create our bins
-    bin_option1 = [(0,250), (250, 500), (500, 750), (750, 1000), (1000, 2000), (2000, 3000), (3000, 4000), 
-    (4000, 5000), (5000, 7500), (7500, 10000), (10000, 15000), (15000, 20000), (20000, 30000), (30000, 40000), (40000, 50000) ,(50000, 60000)]
-    bin_option1 = [(0, 500), (500, 750), (750, 1000), (1000, 2000), (2000, 3000), (3000, 4000), 
-    (4000, 5000), (5000, 7500), (7500, 10000), (10000, 15000), (15000, 20000), (20000, 30000), (30000, 40000), (40000, 50000) ,(50000, 60000)]
-    #bins that neher and leitner approximately used
-    bin_option2 = [(0,5000), (5000, 12500), (12500, 22500), (22500, 30000), (30000, 37500), (37500, 45000), (45000, 52500)]
-    bin_lists = [bin_option1, bin_option2]
-    bin_lists [[(0, 50), (50, 100), (100, 150), (150, 200), (200, 250), (250, 300), (300, 350), (350, 400), (400, 450), (450, 500) ]]
-
-    for i in range(len(bin_lists)):
-        custom_bins = bin_lists[i]
-        #Get the test results for the relevant bins
-        all_frequencies = []
+    bin_set = [(0, 50), (50, 100), (100, 150), (150, 200), (200, 250), (250, 300), (300, 350), (350, 400), (400, 450), (450, 500) ]
 
 
-        for currBin in custom_bins:
-            bin_start = currBin[0]
-            bin_end = currBin[1]
-            #added 1/14/22 plot the bins at the center instead of the start
-            bin_center = int((currBin[1] - currBin[0])/2) + bin_start
-
-            #make a place to store the frequencies of observing events
-            mut_frequencies = []
-            mut_successes = []
-            recomb_frequencies = []
-            recomb_successes = []
-            mut_tests = []
-            recomb_tests = []
-
-            #get all of the datapoints in our bin
-            curr_recomb = recombination_df[recombination_df['dist'].between(bin_start, bin_end)]
-            curr_mut = mutation_df[mutation_df['dist'].between(bin_start, bin_end)]
+    all_frequencies = []
 
 
-            #Calculate the frequencies in each bin
-            if curr_recomb.shape[0] > 0:
-                recomb_true = curr_recomb[curr_recomb['Test_Passed'] == True]
-                recomb_frequencies.append(recomb_true.shape[0]/curr_recomb.shape[0])
-                recomb_successes.append(recomb_true.shape[0])
-                recomb_tests.append(curr_recomb.shape[0])
+    for currBin in bin_set:
+        print(currBin)
+        bin_start = currBin[0]
+        bin_end = currBin[1]
+        #added 1/14/22 plot the bins at the center instead of the start
+        bin_center = int((currBin[1] - currBin[0])/2) + bin_start
 
-            else: 
-                recomb_frequencies.append(0)
-                recomb_successes.append(0)
-                recomb_tests.append(0)
+        #make a place to store the frequencies of observing events
+        mut_frequencies = []
+        mut_successes = []
+        recomb_frequencies = []
+        recomb_successes = []
+        mut_tests = []
+        recomb_tests = []
 
-            if curr_mut.shape[0] > 0:
-                mut_true = curr_mut[curr_mut['Test_Passed'] == True]
-                mut_frequencies.append(mut_true.shape[0]/curr_mut.shape[0])
-                mut_successes.append(mut_true.shape[0])
-                mut_tests.append(curr_mut.shape[0])
-            else: 
-                mut_frequencies.append(0)
-                mut_successes.append(0)
-                mut_tests.append(0)
+        #get all of the datapoints in our bin
+        curr_recomb = recombination_df[recombination_df['dist'].between(bin_start, bin_end)]
+        curr_mut = mutation_df[mutation_df['dist'].between(bin_start, bin_end)]
 
-            curr_frequencies = pd.DataFrame(list(zip(mut_frequencies,recomb_frequencies)),
-                                columns = ['mut_frequencies', 'recomb_frequencies'])
-            curr_frequencies['window'] = bin_end
-            curr_frequencies['Mutation Tests'] = mut_tests
-            curr_frequencies['Recombination Tests'] = recomb_tests
-            curr_frequencies['Mutation Successes'] = mut_successes
-            curr_frequencies['Recombination Successes'] = recomb_successes
-            all_frequencies.append(curr_frequencies)
 
-        all_frequencies = pd.concat(all_frequencies)
-        all_frequencies['Sim_Rho'] = curr_dataset.split("_")[1]
-        all_frequencies['bin'] = i
-        all_frequencies['rep'] = curr_dataset.split("_")[-1]
-        all_frequencies = all_frequencies.reset_index()
+        #Calculate the frequencies in each bin
+        if curr_recomb.shape[0] > 0:
+            recomb_true = curr_recomb[curr_recomb['Test_Passed'] == True]
+            recomb_frequencies.append(recomb_true.shape[0]/curr_recomb.shape[0])
+            recomb_successes.append(recomb_true.shape[0])
+            recomb_tests.append(curr_recomb.shape[0])
 
-        #Plot our frequencies with fits
-        sns.set(rc={'figure.figsize':(20,5)}, font_scale = 2)
-        plt.errorbar(x = all_frequencies['window'], y = all_frequencies['mut_frequencies'],
-                yerr = all_frequencies['Mut Error'], xerr = None, ls = 'none', ecolor = 'gray')
-        sns.lineplot(x = 'window', y = 'mut_frequencies', data = all_frequencies, color = 'gray', label = 'Mutation Tests')    
-        plt.errorbar(x = all_frequencies['window'], y = all_frequencies['recomb_frequencies'],
-                yerr = all_frequencies['Recomb Error'], xerr = None, ls = 'none', ecolor = 'red')
-        sns.lineplot(x = 'window', y = 'recomb_frequencies', data = all_frequencies, color = 'red', label = 'Recombination Tests')  
-        # sns.lineplot(x = 'x_vals', y = 'fitted_vals_paper', data = fit_df, color = 'blue', label = 'Neher Fit', linewidth = 2, linestyle = '--')
-        # sns.lineplot(x = 'x_vals', y = 'fitted_vals', data = fit_df, color = 'black', label = 'Our Fit',linewidth = 2)
-        plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-        plt.ylim(-0.1,0.6)
-        plt.xlabel("Distance x Time [BP X Generation]")
-        plt.ylabel("Frequency")
-        plt.tight_layout()
-        plt.savefig(outDir + enclosing_dir + curr_dataset + "/neherResults_nofit_dist_" + str(i) +  ".jpg")
-        plt.close()
+        else: 
+            recomb_frequencies.append(0)
+            recomb_successes.append(0)
+            recomb_tests.append(0)
+
+        if curr_mut.shape[0] > 0:
+            mut_true = curr_mut[curr_mut['Test_Passed'] == True]
+            mut_frequencies.append(mut_true.shape[0]/curr_mut.shape[0])
+            mut_successes.append(mut_true.shape[0])
+            mut_tests.append(curr_mut.shape[0])
+        else: 
+            mut_frequencies.append(0)
+            mut_successes.append(0)
+            mut_tests.append(0)
+
+        curr_frequencies = pd.DataFrame(list(zip(mut_frequencies,recomb_frequencies)),
+                            columns = ['mut_frequencies', 'recomb_frequencies'])
+        curr_frequencies['window'] = bin_end
+        curr_frequencies['Mutation Tests'] = mut_tests
+        curr_frequencies['Recombination Tests'] = recomb_tests
+        curr_frequencies['Mutation Successes'] = mut_successes
+        curr_frequencies['Recombination Successes'] = recomb_successes
+    
+        all_frequencies.append(curr_frequencies)
+
+    all_frequencies = pd.concat(all_frequencies)
+    all_frequencies['Sim_Rho'] = curr_dataset.split("_")[1]
+    all_frequencies['rep'] = curr_dataset.split("_")[-1]
+    all_frequencies = all_frequencies.reset_index()
+
+    #get the error bars for each set of tests
+    all_frequencies['Mut Error'] = 1 / np.sqrt(all_frequencies['Mutation Tests'])
+    all_frequencies['Recomb Error'] =  1/ np.sqrt(all_frequencies['Recombination Tests'])
+
+    #Plot our frequencies with fits
+    sns.set(rc={'figure.figsize':(20,5)}, font_scale = 2)
+    plt.errorbar(x = all_frequencies['window'], y = all_frequencies['mut_frequencies'],
+            yerr = all_frequencies['Mut Error'], xerr = None, ls = 'none', ecolor = 'gray')
+    sns.lineplot(x = 'window', y = 'mut_frequencies', data = all_frequencies, color = 'gray', label = 'Mutation Tests')    
+    plt.errorbar(x = all_frequencies['window'], y = all_frequencies['recomb_frequencies'],
+            yerr = all_frequencies['Recomb Error'], xerr = None, ls = 'none', ecolor = 'red')
+    sns.lineplot(x = 'window', y = 'recomb_frequencies', data = all_frequencies, color = 'red', label = 'Recombination Tests')  
+    # sns.lineplot(x = 'x_vals', y = 'fitted_vals_paper', data = fit_df, color = 'blue', label = 'Neher Fit', linewidth = 2, linestyle = '--')
+    # sns.lineplot(x = 'x_vals', y = 'fitted_vals', data = fit_df, color = 'black', label = 'Our Fit',linewidth = 2)
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.ylim(-0.1,0.6)
+    plt.xlabel("Distance x Time [BP X Generation]")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+    plt.savefig(outDir + enclosing_dir + curr_dataset + "/neherResults_nofit_dist.jpg")
+    plt.close()
 
     break
 

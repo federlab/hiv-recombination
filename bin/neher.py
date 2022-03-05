@@ -1,13 +1,12 @@
 import sys
 import random
+from time import time
 import pandas as pd
 import numpy as np
 from scipy import optimize
 
 #utilize analysis proposed by Neher and Leitner to investigate how viral load
 #affects recombination
-
-#I need to get started here by putting the data into a dataframe of genotypes.
 
 def run_analysis(genotypeDF, verbose = False, success_filt = 0):
     """Takes a long format dataframe of genotypes at different timepoints. 
@@ -30,7 +29,7 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                     Additionally it has two columns indicating what timepoints these
                     were observed between. The final column indicates the support of
                     the test. 
-    mutation_df : pd.dataframe, dataframe similart to recombination df. Indicates
+    mutation_df : pd.dataframe, dataframe similar to recombination df. Indicates
                     when a test has been conducted to see if a new mutation 
                     has been observed. Also indicates the results and support
                     of the test.
@@ -179,6 +178,90 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                                         "Success_Freq", 'pA', 'pB'])
     return recombination_df, mutation_df
 
+def mutation_analysis(segregatingLoci, fragmentLength, necessary_freq):
+    """Takes a long format dataframe of genotypes at different timepoints. 
+    Creates a mutation dataframe to calculate the mutation line for the Neher
+    and Leitner analysis.
+    ----------------------------------------------------------------------------
+    Params
+    ------------
+    segregatingLoci : pd.df, dataframe with the position of each segregating
+                 site as well as the frequencies of all alleles at that
+                 site.
+    fragmentLength : int, the length of the sequenced fragments. This number is
+                 incredibly important because it is used to calculate the 
+                 number of mutation tests that would be run. (mono-allelic
+                 tests are not run explicitely and are counted as failures
+                 to save time)
+    necessary_freq : float, the frequency necessary for an allele to be counted 
+                 as newly observed
+
+    Returns
+    -------------
+    mutation_df : pd.dataframe, dataframe similar to recombination df. Indicates
+                    when a test has been conducted to see if a new mutation 
+                    has been observed. Also indicates the results and support
+                    of the test. Includes an additional column of test numbers 
+                    since the denominator tests are just counted as one entry
+                    for multiple tests to save time and space.
+    """    
+    all_suc_df = []
+    #get the timepoints to loop throught
+    total_time_list = segregatingLoci['timepoint'].unique()
+    success_count = 0
+
+    #make sure that the times are integers before sorting
+    total_time_list = list(map(int, total_time_list))
+    total_time_list.sort()
+    first_time = total_time_list[0]
+
+    #loop through the loci
+    loci_list = segregatingLoci['position']
+    for curr_loc in loci_list:
+        #get the data for this locus
+        curr_seg = segregatingLoci[segregatingLoci['position'] == curr_loc]
+        curr_times = curr_seg['timepoint'].unique
+        curr_times = list(map(int, total_time_list))
+        curr_times.sort()
+
+        #make a place to store alleles we have observed
+        observed_alleles = set()
+
+        #loop through the timepoints
+        for i in range(len(curr_times)):
+            curr_time = curr_times[i]
+            curr_alleles = curr_seg[curr_seg['timepoint'] == curr_time]
+            if curr_alleles.empty:
+                continue
+            present_alleles = \
+                get_present_alleles(curr_alleles, necessary_freq)
+
+            #check for new alleles if if isn't the first timepoint
+            if curr_time != first_time:
+                new_alleles = present_alleles - observed_alleles
+                #if we are going to have test successes
+                if new_alleles: 
+                    #get all the pairwise distances
+                    distances = list(range(1, curr_loc)) + \
+                        list(range(1, fragmentLength - curr_loc))
+                    
+                    #make a dataframe of test successes at these distances
+                    curr_suc_df = pd.DataFrame(distances, columns=['dist'])
+                    curr_suc_df['Locus'] = curr_loc
+                    curr_suc_df['Test_Passed'] = True
+                    curr_suc_df["Curr_Timepoint"] = curr_time
+                    curr_suc_df["Last_Timepoint"] = curr_times[i-1]
+                    all_suc_df.append(curr_suc_df)
+                else: pass
+            
+            #add all new alleles to our observations
+            observed_alleles = observed_alleles.union(present_alleles)
+
+    all_suc_df = pd.concat(all_suc_df, ignore_index=True)    
+
+    # return mutation_df
+    print(all_suc_df)
+
 ##################### Helper Functions for Running Tests ######################
 #Test cases for check_three_haps(hap_list)
 #return 1 = CG
@@ -250,6 +333,47 @@ def estimate_recombination_rate(c0, c1, c2):
     denominator = np.log(1/(1 - c0 - c1)) - denominator
     denominator = (1-c0) * denominator
     return numerator/ denominator
+
+def get_present_alleles(allele_freqs, necessary_freq):
+    """ Takes in a series in the form of a row from the segregating loci df.
+    Returns a set of the alleles that are segregating in that row if they
+    are above the necessary frequency
+    """
+    allele_set = set()
+    #loop through the four alleles
+    for i in range(1,5):
+        curr_freq = allele_freqs['freq_' + str(i)].tolist()[0]
+        if curr_freq > necessary_freq:
+            allele_set.add(allele_freqs['allele_' + str(i)].tolist()[0])
+        #break if the current allele has frequency 0
+        #since the frequencies are sorted, the others will all be 0
+        else:
+            break
+    return allele_set
+
+def total_mut_tests(fragmentLength):
+    """ Calculates the denominator for the mutation test line by determining
+    the total number of tests that would be run at what distances if we 
+    compared every single pair of loci in a test.
+    ---------------------------------------------------------------------------
+    Params
+    ------------
+    fragmentLength : int, the length of the sequenced fragments. 
+
+    Returns
+    ------------
+    mut_denom_df : pd.df, a pandas dataframe of distances where each distance 
+                has a given number of tests associated with it.
+    """
+    #A variable for the current number of tests
+    num_tests = 1
+    mut_denoms = []
+    #loop through all possible distances
+    for curr_dist in range(fragmentLength -1, 0, -1):
+        mut_denoms.append([curr_dist, num_tests])
+        num_tests += 1
+    mut_denom_df = pd.DataFrame(mut_denoms, columns= ['dist', 'num_tests'])
+    return mut_denom_df
 
 
 ######################### Functionality for Fitting ###########################
