@@ -188,7 +188,7 @@ def mutation_analysis(segregatingLoci, fragmentLength, necessary_freq):
     fragmentLength : int, the length of the sequenced fragments. This number is
                  incredibly important because it is used to calculate the 
                  number of mutation tests that would be run. (mono-allelic
-                 tests are not run explicitely and are counted as failures
+                 tests are not run explicitly and are counted as failures
                  to save time)
     necessary_freq : float, the frequency necessary for an allele to be counted 
                  as newly observed

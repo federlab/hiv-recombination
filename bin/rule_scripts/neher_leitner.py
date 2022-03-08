@@ -11,14 +11,21 @@ print(dataDir, file = sys.stderr)
 dataDir = dataDir.split('/')[:-2]
 dataDir = "/".join(dataDir)
 
-#This script takes in the filtered genotypes and conducts + saves the neher analysis
-currFile = dataDir + "/analysis/FilteredGenotypes"
+#The frequency alleles need to be at to be counted as mutation successes
+CUTOFF = 0.03
 
-filtered_genotypes = pd.read_pickle(currFile)
+#This script takes in the filtered genotypes and conducts + saves the neher analysis
+currFile_gen = dataDir + "/analysis/FilteredGenotypes"
+currFile_loc = dataDir + "/analysis/FilteredLoci"
+
+filtered_genotypes = pd.read_pickle(currFile_gen)
+filtered_loci = pd.read_pickle(currFile_loc)
 #need to make timepoints strings for compatibility with neher analysis file
 filtered_genotypes['timepoint'] = list(map(str, filtered_genotypes['timepoint']))
+filtered_loci['timepoint'] = list(map(str, filtered_genotypes['timepoint']))
 
-recombination_df, mutation_df = neher.run_analysis(filtered_genotypes)
+recombination_df = neher.run_analysis(filtered_genotypes)
+mutation_df = neher.mutation_analysis(filtered_loci, filtered_loci['frag_len'].unique()[0], CUTOFF)
 
 #convert the distance and time columns into what we need
 recombination_df['Curr_Timepoint'] = list(map(int, recombination_df['Curr_Timepoint']))
@@ -34,7 +41,7 @@ mutation_df['Dist_x_Time'] = (mutation_df['Curr_Timepoint'] - mutation_df['Last_
 
 print(recombination_df['Dist_x_Time'])
 
-outputDir = currFile.split("/")[:-2]
+outputDir = currFile_gen.split("/")[:-2]
 outputDir = "/".join(outputDir)
 print(outputDir, file = sys.stderr)
 recombination_df.to_pickle(dataDir + "/neher_res/recombination")

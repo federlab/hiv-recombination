@@ -47,6 +47,7 @@ for currfile in os.listdir(timepoint_dir):
     #find the segregating sites
     segregatingLoci = zu.find_segregating_diagonal(coCounts_arr, all_seg = True)  
     segregatingLoci['timepoint'] = timepoint_df[timepoint_df['name'] == int(timepoint[-1])]['generation'].tolist()[0]
+    segregatingLoci['frag_len'] = coCounts_arr.shape[-1]
     all_seg.append(segregatingLoci)
 
     #make our dataframe of genotypes
