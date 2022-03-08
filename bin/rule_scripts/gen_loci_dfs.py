@@ -2,13 +2,12 @@ import sys
 #for running on cluster
 sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
 import os
-import neher
 import numpy as np
 import pandas as pd
 import zaniniUtil as zu
 
 #This script takes in the cocount arrays and makes a dataframe of 
-#filtered genotypes
+#segregating Loci
 #I am going to use the same filtering as our previous analysis
 #These parameters are used when processing the data
 CUTOFF = 0.03
@@ -27,7 +26,8 @@ timepoint_dir = dataDir + "/numpy/"
 timepoint_df = pd.read_csv(dataDir + '/timepoint_info.tsv', sep = ' ',
                 header= None, names = ['name', 'generation'], index_col = False)
 
-#a dataframe to save all of the timepoints in
+#dataframes to save all of the timepoints in
+all_seg = []
 all_timepoint_genotypes = []
 
 #Loop through all of the files and get their information.
@@ -43,12 +43,11 @@ for currfile in os.listdir(timepoint_dir):
 
     #load the array
     coCounts_arr = np.load(timepoint_dir  + currfile)
-    frag_len = coCounts_arr.shape[-1]
 
     #find the segregating sites
     segregatingLoci = zu.find_segregating_diagonal(coCounts_arr, all_seg = True)  
     segregatingLoci['timepoint'] = timepoint_df[timepoint_df['name'] == int(timepoint[-1])]['generation'].tolist()[0]
-    segregatingLoci['frag_len'] = frag_len
+    all_seg.append(segregatingLoci)
 
     #make our dataframe of genotypes
     genotype_df = zu.make_genotype_df(segregatingLoci, coCounts_arr)
@@ -58,7 +57,9 @@ for currfile in os.listdir(timepoint_dir):
     filtered_genotypes = zu.filter_genotype_df(genotype_df, segregatingLoci, allele_cutoff= CUTOFF, hap_cutoff= SUCCESS)
     all_timepoint_genotypes.append(filtered_genotypes)
 
+all_seg = pd.concat(all_seg, ignore_index=True)
+all_seg.to_pickle(dataDir + '/analysis/FilteredLoci')
 
-all_timepoint_genotypes = pd.concat(all_timepoint_genotypes)
+all_timepoint_genotypes = pd.concat(all_timepoint_genotypes, ignore_index=True)
 all_timepoint_genotypes.to_pickle(dataDir + '/analysis/FilteredGenotypes')
-print(all_timepoint_genotypes, file = sys.stderr)
+
