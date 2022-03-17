@@ -22,7 +22,7 @@ filtered_genotypes = pd.read_pickle(currFile_gen)
 filtered_loci = pd.read_pickle(currFile_loc)
 #need to make timepoints strings for compatibility with neher analysis file
 filtered_genotypes['timepoint'] = list(map(str, filtered_genotypes['timepoint']))
-filtered_loci['timepoint'] = list(map(str, filtered_genotypes['timepoint']))
+filtered_loci['timepoint'] = list(map(str, filtered_loci['timepoint']))
 
 recombination_df = neher.run_analysis(filtered_genotypes)
 mutation_df = neher.mutation_analysis(filtered_loci, filtered_loci['frag_len'].unique()[0], CUTOFF)
@@ -34,7 +34,7 @@ mutation_df['Curr_Timepoint'] = list(map(int, mutation_df['Curr_Timepoint']))
 mutation_df['Last_Timepoint'] = list(map(int, mutation_df['Last_Timepoint']))
 
 recombination_df['dist'] = recombination_df['Locus_2'] - recombination_df['Locus_1']
-mutation_df['dist'] = mutation_df['Locus_2'] - mutation_df['Locus_1']
+#The mutation dataframe already has the distance calculated
 
 recombination_df['Dist_x_Time'] = (recombination_df['Curr_Timepoint'] - recombination_df['Last_Timepoint']) * recombination_df['dist']
 mutation_df['Dist_x_Time'] = (mutation_df['Curr_Timepoint'] - mutation_df['Last_Timepoint']) * mutation_df['dist']

@@ -80,9 +80,6 @@ def get_sam_reads(vcfDF, bamfile):
     filteredGenotypes = pd.concat(dfList)
 
     return filteredGenotypes
-    
-
-
 
 
 def r2_all_loci(genDF):

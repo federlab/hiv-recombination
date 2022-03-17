@@ -1,6 +1,5 @@
 import sys
 import random
-from time import time
 import pandas as pd
 import numpy as np
 from scipy import optimize
@@ -88,14 +87,17 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
                     print("***********************\n Possible Successes")
                     print(passed_3_haps)
                     print(curr_haps_df)
+
                 #randomly select a success haplotype
                 if len(passed_3_haps) > 1:
                     #get only the successes that haven't been previously observed
                     passed_3_haps = [x for x in passed_3_haps if x not in observed_successes]
                     if len(passed_3_haps) >= 1:
                         passed_3_haps = [random.choice(passed_3_haps)]
-                    else: passed_3_haps = False
-                     
+                    else: 
+                        passed_3_haps = False
+                        continue
+
                 #check for the fourth haplotype and mark its distance we dont
                 #want any repeat successes either
                 if passed_3_haps[0] in first_time_haps and \
@@ -227,12 +229,9 @@ def mutation_analysis(segregatingLoci, fragmentLength, necessary_freq):
         #make a place to store alleles we have observed
         observed_alleles = set()
 
-
-
-
         #loop through the timepoints
         for i in range(len(curr_times)):
-            curr_time = curr_times[i]
+            curr_time = str(curr_times[i])
             curr_alleles = curr_seg[curr_seg['timepoint'] == curr_time]
             if curr_alleles.empty:
                 continue
@@ -241,14 +240,13 @@ def mutation_analysis(segregatingLoci, fragmentLength, necessary_freq):
             new_alleles = present_alleles - observed_alleles
 
             #check for new alleles if if isn't the first timepoint
-            if curr_time != first_time:
+            if int(curr_time) != first_time:
                 success_allele = nucs - observed_alleles
                 if not success_allele:
                     no_suc_count += 1
                     continue
 
                 success_allele = random.choice(list(success_allele))
-
 
                 if curr_alleles.empty:
                     continue
@@ -261,15 +259,15 @@ def mutation_analysis(segregatingLoci, fragmentLength, necessary_freq):
                 #make a dataframe of test successes at these distances
                 curr_suc_df = pd.DataFrame(distances, columns=['dist'])
                 curr_suc_df['Locus'] = curr_loc
-                curr_suc_df["Curr_Timepoint"] = curr_time
-                curr_suc_df["Last_Timepoint"] = curr_times[i-1]
+                curr_suc_df["Curr_Timepoint"] = int(curr_time)
+                curr_suc_df["Last_Timepoint"] = int(curr_times[i-1])
 
                 #if we are going to have test successes
                 if success_allele in new_alleles: 
                     curr_suc_df['Test_Passed'] = True
                     all_suc_df.append(curr_suc_df) 
                     observed_alleles = observed_alleles.union(present_alleles) 
-                    break
+                    # break
                 else:
                     curr_suc_df['Test_Passed'] = False
                     all_suc_df.append(curr_suc_df)  
@@ -281,7 +279,7 @@ def mutation_analysis(segregatingLoci, fragmentLength, necessary_freq):
 
     #add tests for non-segregating loci to the dataframe
     #loop through the timepoints
-    for i in range(len(curr_times)):
+    for i in range(1, len(total_time_list)):
         non_seg = set(range(fragmentLength))
         non_seg = non_seg - set(curr_alleles['position'])
         non_seg = list(non_seg)
@@ -294,28 +292,16 @@ def mutation_analysis(segregatingLoci, fragmentLength, necessary_freq):
             curr_suc_df = pd.DataFrame(distances, columns=['dist'])
             curr_suc_df['Locus'] = curr_loc
             curr_suc_df['Test_Passed'] = False
-            curr_suc_df["Curr_Timepoint"] = curr_time
-            curr_suc_df["Last_Timepoint"] = curr_times[i-1]
+            curr_suc_df["Curr_Timepoint"] = int(curr_times[i])
+            curr_suc_df["Last_Timepoint"] = int(curr_times[i-1])
+
             all_suc_df.append(curr_suc_df)
 
 
     #make a column for distance times time
     all_suc_df = pd.concat(all_suc_df, ignore_index=True) 
-    all_suc_df["Dist_x_Time"] = all_suc_df["Curr_Timepoint"] - all_suc_df["Last_Timepoint"]
-    all_suc_df["Dist_x_Time"] = all_suc_df["Dist_x_Time"] * all_suc_df['dist']
-    print(all_suc_df[all_suc_df['Test_Passed'] == True])
 
-
-    # #get the denominator
-    # all_tests_df = total_mut_tests(fragmentLength, total_time_list)
-    # all_tests_df["Dist_x_Time"] = all_tests_df["Curr_Timepoint"] - all_tests_df["Last_Timepoint"]
-    # all_tests_df["Dist_x_Time"] = all_tests_df["Dist_x_Time"] * all_tests_df['dist']
-
-    print(no_suc_count)
-    #tests are run between each pair of timepoints
-    #so once they are returned they need to be multiplied by the num of 
-    #timepoints, and the dist column needs to be converted to distance X time
-    return all_suc_df #, all_tests_df
+    return all_suc_df 
 
 ##################### Helper Functions for Running Tests ######################
 #Test cases for check_three_haps(hap_list)
@@ -405,48 +391,6 @@ def get_present_alleles(allele_freqs, necessary_freq):
         else:
             break
     return allele_set
-
-# def total_mut_tests(fragmentLength, time_list):
-#     """ Calculates the denominator for the mutation test line by determining
-#     the total number of tests that would be run at what distances if we 
-#     compared every single pair of loci in a test for one timepoint.
-#     ---------------------------------------------------------------------------
-#     Params
-#     ------------
-#     fragmentLength : int, the length of the sequenced fragments. 
-#     time_list : list, a list of timepoints (in days or generations) that tests 
-#                      will be conducted at. Used to create the distance x time 
-#                      column
-
-#     Returns
-#     ------------
-#     mut_denom_df : pd.df, a pandas dataframe of distances where each distance 
-#                 has a given number of tests associated with it.
-#     """
-#     #A variable for the current number of tests
-#     num_tests = 1
-#     mut_denoms = []
-
-#     #loop through all possible distances
-#     for curr_dist in range(fragmentLength -1, 0, -1):
-#         mut_denoms.append([curr_dist, num_tests])
-#         num_tests += 1
-#     mut_denom_df = pd.DataFrame(mut_denoms, columns= ['dist', 'num_tests'])
-#     print(mut_denom_df['num_tests'].sum())
-#     time_tests = []
-#     #loop through the timepoints and copy the dataframe
-#     for i in range(1, len(time_list)):
-#         curr_time = time_list[i]
-#         curr_df = mut_denom_df.copy()
-
-#         #label the timepoints
-#         curr_df['Curr_Timepoint'] = curr_time
-#         curr_df['Last_Timepoint'] = time_list[i-1]
-#         time_tests.append(curr_df)
-    
-#     time_tests = pd.concat(time_tests, ignore_index=True)
-
-#     return time_tests
 
 
 ######################### Functionality for Fitting ###########################

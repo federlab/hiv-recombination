@@ -24,7 +24,7 @@ outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/'
 
 estimate_df = []
 
-enclosing_dir = '2022_02_08/'
+enclosing_dir = '2022_02_24/'
 
 # all_datasets_freqs = []
 
