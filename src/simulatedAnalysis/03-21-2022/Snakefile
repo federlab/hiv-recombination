@@ -50,6 +50,7 @@ rule process_slim:
      (dataDir + "mu1e-05_rho{rho_val}_Ne10000_M20_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list)
     script: ruleScriptDir + "process_slim.py"
 
+
 rule gen_loci_dfs:
     input: 
      dataDir +  "mu1e-05_rho{rho_val}_Ne10000_M20_rep{rep}/timepoint_info.tsv",
@@ -58,6 +59,7 @@ rule gen_loci_dfs:
      dataDir + "mu1e-05_rho{rho_val}_Ne10000_M20_rep{rep}/analysis/FilteredGenotypes",
      dataDir + "mu1e-05_rho{rho_val}_Ne10000_M20_rep{rep}/analysis/FilteredLoci"
     script: ruleScriptDir + "gen_loci_dfs.py"
+
 
 rule neher_leitner:
     input: 

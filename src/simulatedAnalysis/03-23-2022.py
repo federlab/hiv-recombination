@@ -1,94 +1,113 @@
+import sys
+sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+#for running on desktop
+sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plot_neher as plne
 from scipy import optimize
 
-#Today I am going to take one of the linkage files and try to plot the 
-#autocorrelation of the D statistic
+#I tried measuring the autocorrelation of the D statistic, but it looks like we
+#are getting a lot of noise. So I am going to try setting up an an initial 
+#thresholding value to only run tests after high linkage is initially seen.
+THRESHOLDS = [0.2, 0.3, 0.4, 0.5, 0.6]
 
 #For running on cluster
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
 outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
 
-# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
-# outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
 
 estimate_df = [] 
 
-for curr_data in os.listdir(dataDir):
-    #only get the data directories, not hidden files
-    if curr_data[0] == '.':
-        continue
-    run_info = curr_data.split('_')
-    sim_rho = run_info[1]
-    sim_rho = sim_rho[3:]
-    rep = run_info[-1]
+for curr_thresh in THRESHOLDS:
+    for curr_data in os.listdir(dataDir):
+        print(curr_data, file = sys.stderr)
+        #only get the data directories, not hidden files
+        if curr_data[0] == '.':
+            continue
+        run_info = curr_data.split('_')
+        sim_rho = run_info[1]
+        sim_rho = sim_rho[3:]
+        rep = run_info[-1]
 
-    #make a place to store our output
-    currOut = outDir + curr_data
-    if not os.path.exists(currOut):
-        os.mkdir(currOut)
+        #make a place to store our output
+        currOut = outDir + curr_data
+        if not os.path.exists(currOut):
+            os.mkdir(currOut)
+        
+        linkage_file = dataDir + curr_data + "/linkage/r2_and_D"
+
+        #first just try and print the array
+        rd_arr = pd.read_pickle(linkage_file)
+        rd_arr.dropna(inplace = True)
+        rd_arr['support'] = rd_arr['AB_obs'] + rd_arr['Ab_obs'] + rd_arr['aB_obs'] + rd_arr['ab_obs']
+
+        #group by the pair of loci
+        grouped_loci = rd_arr.groupby(['Locus_1', 'Locus_2'])
+
+        #make a dataframe to save the results in
+        stat_df = []
+
+        #loop over the pairs of loci to calculate -log(D_(t_i+1)/D_(t_i))
+        for name, group in grouped_loci:
+            #loop over the timepoints
+            group_times = group['timepoint'].unique()
+            group_times.sort()
+            for i in range(len(group_times) - 1):
+                curr_time = group_times[i]
+                next_time = group_times[i+1]
+
+                d_i = group[group['timepoint'] == curr_time]
+                d_i = d_i['d_prime'].tolist()[0]
+                d_i_1 = group[group['timepoint'] == next_time]
+                d_i_1 = (d_i_1['d_prime']).tolist()[0]
+
+                if d_i < curr_thresh:
+                    # print('D_i is zero')
+                    continue
+                curr_val = -np.log(d_i_1/d_i)
+                stat_df.append([curr_val, name[0], name[1], next_time - curr_time, d_i])
+
+
+        stat_df = pd.DataFrame(stat_df, columns = ['d_ratio', 'Locus_1', 'Locus_2', 'Time_Diff', 'd_i'])
+        stat_df['Dist_X_Time'] = (stat_df['Locus_2'] - stat_df['Locus_1']) * stat_df['Time_Diff']
+        stat_df = stat_df[stat_df['d_ratio'].between(-10,10)]
+        stat_df = stat_df[stat_df['Dist_X_Time'].between(0, 15000)]
+        stat_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        stat_df.dropna(inplace = True)
+        def line_func(x, m):
+            return m*x 
+        
+
+
+        # coeffs, covs = optimize.curve_fit(line_func, stat_df['Dist_X_Time'], stat_df['d_ratio'])
+        coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, stat_df['Dist_X_Time'], stat_df['d_ratio'], p0 = [0.1, 0.26, .0000439])
+        x_vals = stat_df['Dist_X_Time'].unique()
+        fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2]) for x in x_vals]
+        # sns.scatterplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, alpha = 0.05, hue = 'd_i')
+        # sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, estimator = np.mean)
+        sns.lineplot(x = x_vals, y = fit_vals)
+        print(coeffs)
+        print(coeffs[1] * coeffs[2])
+
+        estimate_df.append([coeffs[1], coeffs[2], coeffs[1] * coeffs[2], curr_data, sim_rho])
+        break
+
+
+plt.savefig(currOut + "/auto_plot_thresh_list.jpg")
+plt.close()
+
+estimate_df.append([coeffs[1], coeffs[2], coeffs[1] * coeffs[2], curr_data, sim_rho])
+ 
     
-    linkage_file = dataDir + curr_data + "/linkage/r2_and_D"
-
-    #first just try and print the array
-    rd_arr = pd.read_pickle(linkage_file)
-    rd_arr.dropna(inplace = True)
-    rd_arr['support'] = rd_arr['AB_obs'] + rd_arr['Ab_obs'] + rd_arr['aB_obs'] + rd_arr['ab_obs']
-
-    #group by the pair of loci
-    grouped_loci = rd_arr.groupby(['Locus_1', 'Locus_2'])
-
-    #make a dataframe to save the results in
-    stat_df = []
-
-    #loop over the pairs of loci to calculate -log(D_(t_i+1)/D_(t_i))
-    for name, group in grouped_loci:
-        #loop over the timepoints
-        group_times = group['timepoint'].unique()
-        group_times.sort()
-        for i in range(len(group_times) - 1):
-            curr_time = group_times[i]
-            next_time = group_times[i+1]
-
-            d_i = group[group['timepoint'] == curr_time]
-            d_i = d_i['d_prime'].tolist()[0]
-            d_i_1 = group[group['timepoint'] == next_time]
-            d_i_1 = (d_i_1['d_prime']).tolist()[0]
-
-            if d_i == 0:
-                # print('D_i is zero')
-                continue
-            curr_val = -np.log(d_i_1/d_i)
-            stat_df.append([curr_val, name[0], name[1], next_time - curr_time])
 
 
-    stat_df = pd.DataFrame(stat_df, columns = ['d_ratio', 'Locus_1', 'Locus_2', 'Time_Diff'])
-    stat_df['Dist_X_Time'] = (stat_df['Locus_2'] - stat_df['Locus_1']) * stat_df['Time_Diff']
-    stat_df = stat_df[stat_df['d_ratio'].between(-10,10)]
-    stat_df = stat_df[stat_df['Dist_X_Time'].between(0, 100000)]
-    stat_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    stat_df.dropna(inplace = True)
-    def line_func(x, m):
-        return m*x 
-
-    coeffs, covs = optimize.curve_fit(line_func, stat_df['Dist_X_Time'], stat_df['d_ratio'])
-    x_vals = stat_df['Dist_X_Time'].unique()
-    fit_vals = [line_func(x, coeffs[0]) for x in x_vals]
-    print(coeffs)
-
-    sns.scatterplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, alpha = 0.05)
-    sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, estimator = np.mean)
-    sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
-    plt.savefig(currOut + "/auto_plot.jpg")
-    plt.close()
-
-    estimate_df.append([coeffs[0], curr_data, sim_rho])
-
-
-estimate_df = pd.DataFrame(estimate_df, columns=["Est_Rho", 'Dataset', 'Sim_Rho'] )
+estimate_df = pd.DataFrame(estimate_df, columns=["C1", "C2", "Est_Rho", 'Dataset', 'Sim_Rho'] )
 print(estimate_df)
 ############################# Plotting Estimate Accuracy ######################
 # #Plot our estimates against each other 
@@ -138,5 +157,5 @@ plt.ylabel("Estimated Value of Rho")
 plt.ylim(0.000000001, 0.1)
 plt.yscale('log')
 plt.tight_layout()
-plt.savefig(outDir + "autocorr_comparedEstimates_stripplot_all_rhos.jpg")
+plt.savefig(outDir + "autocorr_comparedEstimates_stripplot_thresh_test.jpg")
 plt.close()

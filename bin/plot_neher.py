@@ -123,7 +123,7 @@ def estimate_recombination_rate(c0, c1, c2):
     return numerator/ denominator
 
 ######################### Functionality for Fitting ###########################
-def neher_leitner(c0, c1, c2, dDeltaT):
+def neher_leitner(dDeltaT, c0, c1, c2):
     """The function Neher and Leitner fit to determine recombination rate"""
     return (c0 + (c1 * (1 - np.exp(-c2 * dDeltaT))))
 
@@ -159,7 +159,7 @@ def residual(x0, dDeltaT, data, rec_error, fixed_c0 = None):
         raise ValueError('Specification of c0, c1, c2 was not correct.')
 
     #this is the equation we are using for our fit
-    model = neher_leitner(c0, c1, c2, dDeltaT)
+    model = neher_leitner(dDeltaT, c0, c1, c2)
     resids = data - model
     weighted_resids = resids * (1 + rec_error)
     return weighted_resids
@@ -223,8 +223,8 @@ def run_neher_fit(c0_fixed, lower_bounds, upper_bounds, initial, test_results):
     
     #Make the dataframe of fitted values
     x_vals = list(range(0, max(test_results['window'])))
-    fitted_vals = [neher_leitner(c0_estimate, c1_estimate, c2_estimate, x) for x in x_vals]
-    fitted_vals_paper = [neher_leitner(0.1, 0.26, .0000439, x) for x in x_vals]    
+    fitted_vals = [neher_leitner(x, c0_estimate, c1_estimate, c2_estimate) for x in x_vals]
+    fitted_vals_paper = [neher_leitner(x, 0.1, 0.26, .0000439) for x in x_vals]    
     fit_data = pd.DataFrame(list(zip(x_vals, fitted_vals, fitted_vals_paper)), 
                     columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper'])
     
