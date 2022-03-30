@@ -1,0 +1,54 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\begin{document}
+\title{Recombination Rate Estimation}
+\maketitle
+\section*{Methods}
+\subsection*{Data}
+    Data from populations of HIV with known recombination rates was simulated using SLiM with a mutation rate $\mu = 1 \times10^-5$ and effective population size $N_e = 1 \times 10^4$ (Haller \& Messer, 2019). Different datasets were generated using all combinations of recombination rate values seen in Table 1 and sample sizes $M \in [20, 800]$.
+\begin{table}[htb]
+\caption{Simulated Dataset Parameters}
+\centering
+\begin{tabular}{c}
+\noalign{\smallskip} \hline \hline \noalign{\smallskip}
+Recombinations per base pair and generation ($\rho$) \\
+\hline
+$2 \times 10^{-6}$ \\
+$1 \times 10^{-5}$ \\
+$2 \times 10^{-5}$ \\
+$1 \times 10^{-4}$ \\
+$2 \times 10^{-4}$ \\
+$1 \times 10^{-3}$ \\
+\end{tabular}
+\centering
+\end{table}
+
+    In vivo data from Zanini et al. 2018 was used for recombination rate estimation.
+
+
+
+    Haplotypes from individual sequences (simulated data) or fully contained within a sequencing read (in vivo) are recorded. To reduce noise, SNPs were filtered based on a minor allele frequency $>3\%$.
+
+\subsection*{Recombination Rate Estimation}
+\subsubsection*{Haplotype Discovery Method}
+The haplotype discovery method estimates recombination rates through observing the emergence of recombinant haplotypes over time (Neher \& Leitner, 2010). Between each set of consecutive timepoints, a recombination test is conducted if a set of three haplotypes is present that is nearly the full enumeration of haplotypes containing two segregating alleles across a pair of loci (see Fig). If the fourth haplotype appears at the next consecutive timepoint, then the test succeeds as this was likely the result of recombination. For a test to succeed, the success haplotype had to be at a frequency $>1\%$.  However, undersampling and mutation cannot be ruled out as possible causes. Therefore, a baseline of tests for the appearance of new alleles that were not present at previous timepoints serves as a control to account for the effects of mutation and undersampling. Since these effects do not show a strong dependence on the distance between the two loci and the time between samples, the trend of the recombination tests across distance can be used to estimate the recombination rate (Neher \& Leitner, 2010).
+
+\subsubsection*{Autocorrelation Method}
+\textbf{Need to potentially cite Zanini for D' analysis, and also say as suggested by Neher and Leitner?}
+    This method estimates recombination rates using the decay of linkage over time. First linkage at each time point was quantified for each pair of segregating loci, $(x_1, x_2)$, using the D’ statistic (Eq. 1). 
+ \begin{equation}
+ D' = \frac{|p_{12} - p_1p_2|}{D_{max}}
+ \end{equation}
+     Where $p_1$ and $p_2$ are the frequencies of the majority nucleotide at the corresponding locus, $p_{12}$ is the frequency of the haplotype made up by the majority nucleotide at each locus, and $D_{max}$ is given by
+\[
+    D_{max} = \begin{cases}
+    \text{min}(p_1p_2, (1-p_1)(1-p_2)) & \text{if }p_{12} < p_1p_2\\
+    \text{min}(p_1(1-p_2), (1-p_1)p_2) & \text{if }p_{12} > p_1p_2
+    \end{cases}
+\]
+Then, linkage is compared across all pairs of segregating loci for all consecutive pairs of timepoints. For a given set of timepoints $i$ and $i+1$, the ratio of $D'$ values is given by
+
+
+
+
+\end{document}
