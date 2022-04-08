@@ -200,8 +200,12 @@ def run_neher_fit(c0_fixed, lower_bounds, upper_bounds, initial, test_results):
 
     #Run the fit
     if c0_fixed:
-        c0_val = initial[0]
-        c1_c2_list = initial[1:]
+        c0_val = c0_fixed
+        c1_c2_list = initial
+        print(lower_bounds)
+        print(upper_bounds)
+        print(c0_val)
+        print(c1_c2_list)
         res_lsq = optimize.least_squares(fun = residual, x0 = c1_c2_list, 
                                         bounds = [lower_bounds, upper_bounds], 
                                         kwargs={'dDeltaT' : test_results['window'],
@@ -211,6 +215,9 @@ def run_neher_fit(c0_fixed, lower_bounds, upper_bounds, initial, test_results):
         c0_estimate = c0_val
         c1_estimate = res_lsq.x[0]
         c2_estimate = res_lsq.x[1]
+        print(c0_estimate)
+        print(c1_estimate)
+        print(c2_estimate)
     else:
         res_lsq = optimize.least_squares(fun = residual, x0 = initial, 
                                         bounds = [lower_bounds, upper_bounds], 

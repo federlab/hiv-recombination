@@ -1,7 +1,7 @@
 import sys
-sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+# sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
 # #For running on Desktop
-# sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
+sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
 import numpy as np
 import pandas as pd
@@ -13,12 +13,12 @@ import zaniniUtil as zu
 #I am going to use this script to make figures for the Harris Lab Meeting
 
 #For running on cluster
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_03_17/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_03_17/'
 
-# #For running on desktop
-# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
-# outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
+#For running on desktop
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_03_17/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_03_17/'
 
 if not os.path.isdir(outDir):
     os.mkdir(outDir)
@@ -56,15 +56,6 @@ for curr_dataset in os.listdir(dataDir):
     dt_freqs['Rho'] = curr_rho
     all_dt_freqs.append(dt_freqs)
 
-    ###### Plot by dist ######    
-    #make the set of bins
-    dbinset = [(x, x + 50) for x in range(0, 500, 50)]
-    d_freqs = plne.bin_curve(
-        recombination_df, mutation_df, dbinset, 'dist')
-    d_freqs['Dataset'] = curr_dataset
-    d_freqs['Rho'] = curr_rho
-    all_d_freqs.append(d_freqs)
-
     # ########################### Fitting #######################################
     #perform our fitting
     try:
@@ -79,6 +70,20 @@ for curr_dataset in os.listdir(dataDir):
 
     curr_estimate = plne.estimate_recombination_rate(c0 = coeffs[0], c1 = coeffs[1], c2 = coeffs[2])
     estimate_df.append([curr_estimate, curr_dataset, curr_rho])
+
+    #Plot our frequencies with fits
+    sns.set(rc={'figure.figsize':(20,5)}, font_scale = 2) 
+    plt.errorbar(x = dt_freqs['window'], y = dt_freqs['recomb_frequencies'],
+            yerr = dt_freqs['Recomb Error'], xerr = None, ls = 'none', ecolor = 'red')
+    sns.lineplot(x = 'window', y = 'recomb_frequencies', data = dt_freqs, color = 'red', label = 'Recombination Tests')  
+    sns.lineplot(x = 'x_vals', y = 'fitted_vals', data = fit_df, color = 'black', label = 'Our Fit',linewidth = 2)
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.ylim(-0.1,0.6)
+    plt.xlabel("Distance x Time [BP X Generation]")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+    plt.savefig(outDir + curr_dataset + "/neherResults.jpg")
+    plt.close()
 
 #Concatenate all of the frequencies together
 all_d_freqs = pd.concat(all_d_freqs, ignore_index = True )

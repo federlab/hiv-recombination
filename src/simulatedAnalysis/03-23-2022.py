@@ -1,7 +1,7 @@
 import sys
 sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
-#for running on desktop
-sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
+# #for running on desktop
+# sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
 import pandas as pd
 import numpy as np
@@ -13,14 +13,14 @@ from scipy import optimize
 #I tried measuring the autocorrelation of the D statistic, but it looks like we
 #are getting a lot of noise. So I am going to try setting up an an initial 
 #thresholding value to only run tests after high linkage is initially seen.
-THRESHOLDS = [0.2, 0.3, 0.4, 0.5, 0.6]
+THRESHOLDS = [0.2]
 
 #For running on cluster
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_03_17/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_03_17/'
 
-dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
+# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_03_17/'
+# outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_03_17/'
 
 estimate_df = [] 
 
@@ -89,18 +89,19 @@ for curr_thresh in THRESHOLDS:
         coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, stat_df['Dist_X_Time'], stat_df['d_ratio'], p0 = [0.1, 0.26, .0000439])
         x_vals = stat_df['Dist_X_Time'].unique()
         fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2]) for x in x_vals]
-        # sns.scatterplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, alpha = 0.05, hue = 'd_i')
-        # sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, estimator = np.mean)
+        sns.scatterplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, alpha = 0.05, hue = 'd_i')
+        sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, estimator = np.mean)
         sns.lineplot(x = x_vals, y = fit_vals)
+        plt.savefig(currOut + "/auto_plot_thresh_list.jpg")
+        plt.close()
         print(coeffs)
         print(coeffs[1] * coeffs[2])
 
         estimate_df.append([coeffs[1], coeffs[2], coeffs[1] * coeffs[2], curr_data, sim_rho])
-        break
+        # break
 
 
-plt.savefig(currOut + "/auto_plot_thresh_list.jpg")
-plt.close()
+
 
 estimate_df.append([coeffs[1], coeffs[2], coeffs[1] * coeffs[2], curr_data, sim_rho])
  
@@ -108,7 +109,7 @@ estimate_df.append([coeffs[1], coeffs[2], coeffs[1] * coeffs[2], curr_data, sim_
 
 
 estimate_df = pd.DataFrame(estimate_df, columns=["C1", "C2", "Est_Rho", 'Dataset', 'Sim_Rho'] )
-print(estimate_df)
+print(estimate_df, file = sys.stderr)
 ############################# Plotting Estimate Accuracy ######################
 # #Plot our estimates against each other 
 #make the rho values ints rather than strings
@@ -130,9 +131,9 @@ estimate_df['Sim_int_rho'] = intRhoList
 #     return values + np.random.normal(j,0.1,values.shape)
 estimate_df['Sim_int_rho']
 
-print(estimate_df)
+# print(estimate_df)
 sns.set(rc={'figure.figsize':(10,5)}, font_scale = 1)
-print(estimate_df['Sim_int_rho'])
+# print(estimate_df['Sim_int_rho'])
 
 
 ax = sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, jitter = True,
