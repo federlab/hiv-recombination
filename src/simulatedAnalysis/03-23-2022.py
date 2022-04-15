@@ -16,17 +16,18 @@ from scipy import optimize
 THRESHOLDS = [0.2]
 
 #For running on cluster
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_03_17/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_03_17/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
 
-# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_03_17/'
-# outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_03_17/'
+# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_02_24/'
+# outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_02_24/'
 
 estimate_df = [] 
 
 for curr_thresh in THRESHOLDS:
     for curr_data in os.listdir(dataDir):
         print(curr_data, file = sys.stderr)
+
         #only get the data directories, not hidden files
         if curr_data[0] == '.':
             continue
@@ -46,6 +47,7 @@ for curr_thresh in THRESHOLDS:
         rd_arr = pd.read_pickle(linkage_file)
         rd_arr.dropna(inplace = True)
         rd_arr['support'] = rd_arr['AB_obs'] + rd_arr['Ab_obs'] + rd_arr['aB_obs'] + rd_arr['ab_obs']
+        rd_arr = rd_arr.loc[(rd_arr['AB_obs'] > 0) & (rd_arr['aB_obs'] > 0)  & (rd_arr['Ab_obs'] > 0)  & (rd_arr['ab_obs'] > 0) ]
 
         #group by the pair of loci
         grouped_loci = rd_arr.groupby(['Locus_1', 'Locus_2'])
@@ -77,7 +79,7 @@ for curr_thresh in THRESHOLDS:
         stat_df = pd.DataFrame(stat_df, columns = ['d_ratio', 'Locus_1', 'Locus_2', 'Time_Diff', 'd_i'])
         stat_df['Dist_X_Time'] = (stat_df['Locus_2'] - stat_df['Locus_1']) * stat_df['Time_Diff']
         stat_df = stat_df[stat_df['d_ratio'].between(-10,10)]
-        stat_df = stat_df[stat_df['Dist_X_Time'].between(0, 15000)]
+        stat_df = stat_df[stat_df['Dist_X_Time'].between(0, 50000)]
         stat_df.replace([np.inf, -np.inf], np.nan, inplace=True)
         stat_df.dropna(inplace = True)
         def line_func(x, m):
@@ -92,13 +94,13 @@ for curr_thresh in THRESHOLDS:
         sns.scatterplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, alpha = 0.05, hue = 'd_i')
         sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df, estimator = np.mean)
         sns.lineplot(x = x_vals, y = fit_vals)
-        plt.savefig(currOut + "/auto_plot_thresh_list.jpg")
+        plt.savefig(currOut + "/auto_plot_50k.jpg")
         plt.close()
         print(coeffs)
         print(coeffs[1] * coeffs[2])
 
         estimate_df.append([coeffs[1], coeffs[2], coeffs[1] * coeffs[2], curr_data, sim_rho])
-        # break
+
 
 
 
@@ -158,5 +160,5 @@ plt.ylabel("Estimated Value of Rho")
 plt.ylim(0.000000001, 0.1)
 plt.yscale('log')
 plt.tight_layout()
-plt.savefig(outDir + "autocorr_comparedEstimates_stripplot_thresh_test.jpg")
+plt.savefig(outDir + "autocorr_comparedEstimates_stripplot_50k.jpg")
 plt.close()

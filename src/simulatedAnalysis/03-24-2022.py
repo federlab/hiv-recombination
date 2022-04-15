@@ -44,7 +44,19 @@ for curr_data in os.listdir(dataDir):
     rd_arr = pd.read_pickle(linkage_file)
     rd_arr.dropna(inplace = True)
     rd_arr['support'] = rd_arr['AB_obs'] + rd_arr['Ab_obs'] + rd_arr['aB_obs'] + rd_arr['ab_obs']
+    rd_arr['max_freq'] = rd_arr[['p_A','p_B']].max(axis=1)
+
+
+
+    rd_arr = rd_arr.loc[(rd_arr['AB_obs'] > 0) & (rd_arr['aB_obs'] > 0)  & (rd_arr['Ab_obs'] > 0)  & (rd_arr['ab_obs'] > 0) ]
+    
+
 
     sns.histplot(x = 'd_prime', data = rd_arr)
-    plt.savefig(currOut + "/d_hist.jpg")
+    plt.savefig(currOut + "/d_suss_hist.jpg")
     plt.close()
+
+    sns.scatterplot(x = 'd_prime', y = 'max_freq', data = rd_arr, alpha = 0.05)
+    plt.savefig(currOut + "/d_freq_scatter.jpg")
+    plt.close()
+    break

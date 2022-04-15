@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -102,7 +103,7 @@ def bin_curve(recombination_df, mutation_df, bins, bin_type):
 
     return dataset_freqs
 
-def estimate_recombination_rate(c0, c1, c2):
+def estimate_recombination_rate(c0, c1, c2, empirical = False, MpApB = 0):
     """ Takes in the coefficients from fitting the curve to our data. Then
     returns our estimate of the recombination rate
     ---------------------------------------------------------------------------
@@ -111,21 +112,32 @@ def estimate_recombination_rate(c0, c1, c2):
     c0 : float, the intercept of our curve fit
     c1 : float, coefficient for second term
     c2 : float, coefficient in the exp
+    empirical : bool, whether to use the empirical MpApB
+    MpApB : float, value of empirical MpApB to use
 
     Returns
     -------------
     rec_rate : the per virus recombination rate
     """
     numerator = c1 * c2 
-    denominator = np.log(1/(1-c0))
-    denominator = np.log(1/(1 - c0 - c1)) - denominator
-    denominator = (1-c0) * denominator
+    if empirical:
+        if MpApB == 0:
+            raise ValueError("Must specify MpApB")
+        denominator = MpApB - c0  
+    else:
+        denominator = np.log(1/(1-c0))
+        denominator = np.log(1/(1 - c0 - c1)) - denominator
+        denominator = (1-c0) * denominator
     return numerator/ denominator
 
 ######################### Functionality for Fitting ###########################
 def neher_leitner(dDeltaT, c0, c1, c2):
     """The function Neher and Leitner fit to determine recombination rate"""
     return (c0 + (c1 * (1 - np.exp(-c2 * dDeltaT))))
+
+def neher_leitner_c0_fixed(dDeltaT, c1, c2):
+    """The function Neher and Leitner fit to determine recombination rate"""
+    return ((c1 * (1 - np.exp(-c2 * dDeltaT))))
 
 def residual(x0, dDeltaT, data, rec_error, fixed_c0 = None):
     """ Calculate the residuals for our fit

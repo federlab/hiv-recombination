@@ -31,7 +31,6 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
     """
     groupedGenDF = genotypeDF.groupby(['Locus_1', 'Locus_2'])
     recombination_df = []
-    mutation_df = []
     
     #iterate through pairs of loci
     for name, group in groupedGenDF:
@@ -69,6 +68,7 @@ def run_analysis(genotypeDF, verbose = False, success_filt = 0):
             supporting_reads = curr_haps_df['Count'].sum()
             p_A = curr_haps_df['pA']
             p_B = curr_haps_df['pB']
+            mpApB = supporting_reads * p_A * p_B
 
             first_time_haps = set()
             #see if there are any haplotypes we haven't observed yet
