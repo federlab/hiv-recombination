@@ -1,0 +1,7 @@
+__default__:
+    h_rt: 120:0:0
+    mfree: 10G
+
+neher_leitner:
+    h_rt: 120:0:0
+    mfree: 20G
