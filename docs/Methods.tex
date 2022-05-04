@@ -32,9 +32,9 @@ $1 \times 10^{-3}$ \\
 \subsection*{Recombination Rate Estimation}
 \subsubsection*{Haplotype Discovery Method}
 The haplotype discovery method estimates recombination rates through observing the emergence of recombinant haplotypes over time (Neher \& Leitner, 2010). Between each set of consecutive timepoints, a recombination test is conducted if a set of three haplotypes is present that is nearly the full enumeration of haplotypes containing two segregating alleles across a pair of loci (see Fig). If the fourth haplotype appears at the next consecutive timepoint, then the test succeeds as this was likely the result of recombination. For a test to succeed, the success haplotype had to be at a frequency $>1\%$.  However, undersampling and mutation cannot be ruled out as possible causes. Therefore, a baseline of tests for the appearance of new alleles that were not present at previous timepoints serves as a control to account for the effects of mutation and undersampling. Since these effects do not show a strong dependence on the distance between the two loci and the time between samples, the trend of the recombination tests across distance can be used to estimate the recombination rate (Neher \& Leitner, 2010).
-
+\newpage
 \subsubsection*{Autocorrelation Method}
-\textbf{Need to potentially cite Zanini for D' analysis, and also say as suggested by Neher and Leitner?}
+
     This method estimates recombination rates using the decay of linkage over time. First linkage at each time point was quantified for each pair of segregating loci, $(x_1, x_2)$, using the D’ statistic (Eq. 1). 
  \begin{equation}
  D' = \frac{|p_{12} - p_1p_2|}{D_{max}}
@@ -48,7 +48,12 @@ The haplotype discovery method estimates recombination rates through observing t
 \]
 Then, linkage is compared across all pairs of segregating loci for all consecutive pairs of timepoints. For a given set of timepoints $i$ and $i+1$, the ratio of $D'$ values is given by
 
+\[ \langle D(t_i)D(t_{i+1}) \rangle = \langle D(t_i)^2 \rangle e^{-\rho d \Delta t}\]
 
+Which can be simplified to
+\begin{equation}
+-\log \left(\frac{D_{i+1}}{D_i}\right) = \rho d \Delta t
+\end{equation}
 
 
 \end{document}
