@@ -37,8 +37,8 @@ def calculate_d_ratios(linkage_file, THRESHOLD = 0.2):
         group_times = group['timepoint'].unique()
         group_times.sort()
         for i in range(len(group_times) - 1):
-            curr_time = group_times[i]
-            next_time = group_times[i+1]
+            curr_time = float(group_times[i])
+            next_time = float(group_times[i+1])
 
             d_i = group[group['timepoint'] == curr_time]
             d_i = d_i['d_prime'].tolist()[0]

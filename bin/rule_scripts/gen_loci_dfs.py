@@ -25,7 +25,7 @@ timepoint_dir = dataDir + "/numpy/"
 #make a dictionary for the timepoint labels
 timepoint_df = pd.read_csv(dataDir + '/timepoint_info.tsv', sep = ' ',
                 header= None, names = ['name', 'generation'], index_col = False)
-
+print(timepoint_df, file = sys.stderr)
 #dataframes to save all of the timepoints in
 all_seg = []
 all_timepoint_genotypes = []
@@ -40,13 +40,14 @@ for currfile in os.listdir(timepoint_dir):
     #get the timepoint label
     timepoint = currfile.split('_')[-1]
     timepoint = timepoint.split('.')[0]
+    print(int(timepoint[1:]), file = sys.stderr)
 
     #load the array
     coCounts_arr = np.load(timepoint_dir  + currfile)
 
     #find the segregating sites
     segregatingLoci = zu.find_segregating_diagonal(coCounts_arr, all_seg = True)  
-    segregatingLoci['timepoint'] = timepoint_df[timepoint_df['name'] == int(timepoint[-1])]['generation'].tolist()[0]
+    segregatingLoci['timepoint'] = timepoint_df[timepoint_df['name'] == int(timepoint[1:])]['generation'].tolist()[0]
     segregatingLoci['frag_len'] = coCounts_arr.shape[-1]
     all_seg.append(segregatingLoci)
 
@@ -54,9 +55,11 @@ for currfile in os.listdir(timepoint_dir):
     genotype_df = zu.make_genotype_df(segregatingLoci, coCounts_arr)
 
     #filter the dataframe 
-    genotype_df['timepoint'] = timepoint_df[timepoint_df['name'] == int(timepoint[-1])]['generation'].tolist()[0]
-    filtered_genotypes = zu.filter_genotype_df(genotype_df, segregatingLoci, allele_cutoff= CUTOFF, hap_cutoff= SUCCESS)
-    all_timepoint_genotypes.append(filtered_genotypes)
+    genotype_df['timepoint'] = timepoint_df[timepoint_df['name'] == int(timepoint[1:])]['generation'].tolist()[0]
+    print(genotype_df, file = sys.stderr)
+    if not genotype_df.empty:
+        filtered_genotypes = zu.filter_genotype_df(genotype_df, segregatingLoci, allele_cutoff= CUTOFF, hap_cutoff= SUCCESS)
+        all_timepoint_genotypes.append(filtered_genotypes)
 
 all_seg = pd.concat(all_seg, ignore_index=True)
 all_seg.to_pickle(dataDir + '/analysis/FilteredLoci')

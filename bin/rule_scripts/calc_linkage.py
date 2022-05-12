@@ -17,7 +17,7 @@ dataDir = "/".join(dataDir)
 #make a dictionary for the timepoint labels
 timepoint_df = pd.read_csv(dataDir + '/timepoint_info.tsv', sep = ' ',
                 header= None, names = ['name', 'generation'], index_col = False)
-
+print(timepoint_df, file = sys.stderr)
 #The directories for our data
 coCounts_dir = dataDir + "/numpy/"
 loci_dir = dataDir + "/analysis/FilteredLoci"

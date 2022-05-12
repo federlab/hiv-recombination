@@ -20,3 +20,7 @@ d_ratio_out =  dataDir + "/linkage/d_ratio"
 
 stat_df = autocorr.calculate_d_ratios(linkage_file, THRESHOLD)
 stat_df.to_pickle(d_ratio_out)
+print(os.listdir(dataDir + "/linkage/"))
+if 'd_ratio' not in os.listdir(dataDir + "/linkage/"):
+    print(stat_df, file = sys.stderr)
+    stat_df.to_pickle(d_ratio_out)
