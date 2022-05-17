@@ -265,47 +265,6 @@ import math
 
 ################# Functions Written to Work with Zanini Dataset ###############
 
-#This functionality has moved to zaniniUtil.py
-# def get_Zanini_SNP_Loci(snp_file):
-#     """ 
-#     ---------------------------------------------------------------------------
-#     Params
-#     ---------
-#     snp_file : a file from the Zanini dataset indicating the genomewide SNPs
-#                 that they called.
-#     Returns
-#     ---------
-#     snp_df :  pd.dataframe, a dataframe with the segregating sites and their 
-#               allele frequencies.
-#     """
-#     #read the counts of different nucleotide types into a dataframe
-#     snp_df = pd.read_csv(snp_file, sep = "\t", comment = "#", names = 
-#                ["A", "C", "G", "T" ], usecols= [0,1,2,3] )
-#     #add a column which is the sum of each row
-#     snp_df['total_count'] = snp_df.sum(axis = 1)
-
-#     #check how many nucleotides have frequency >1%
-#     snp_df['A_freq'] = snp_df["A"]/snp_df["total_count"]
-#     snp_df['C_freq'] = snp_df["C"]/snp_df["total_count"]
-#     snp_df['G_freq'] = snp_df["G"]/snp_df["total_count"]
-#     snp_df['T_freq'] = snp_df["T"]/snp_df["total_count"]
-
-#     checkPercent = lambda x : 1 if (x > 0.01) else 0
-
-#     #make a dataframe where each row indicates the nucleotide 
-#     #frequencies with a 0 if they are less than 1% and a 1 otherwise
-#     num_seg = pd.DataFrame(list(zip(
-#         list(map(checkPercent, snp_df['A_freq'])),
-#         list(map(checkPercent, snp_df['C_freq'])),
-#         list(map(checkPercent, snp_df['G_freq'])),
-#         list(map(checkPercent, snp_df['T_freq']))
-#     )))
-
-#     #now make a column labeling the number of alleles at the site
-#     snp_df["num_seg"] = num_seg.sum(axis = 1)
-
-#     return snp_df
-
 def calculate_R2_pairCounts(coCounts_arr, segregating_loci, verbose = False, statistic = 'r2',
                             saveData = False):
     """ Takes an array of snps at specific loci with counts of the number of 

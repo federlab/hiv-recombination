@@ -1,6 +1,8 @@
 import sys
+# #for running on cluster
+# sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
 #for running on cluster
-sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
 import numpy as np
 import pandas as pd
