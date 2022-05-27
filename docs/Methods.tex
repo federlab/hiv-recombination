@@ -46,9 +46,11 @@ The haplotype discovery method estimates recombination rates through observing t
     \text{min}(p_1(1-p_2), (1-p_1)p_2) & \text{if }p_{12} > p_1p_2
     \end{cases}
 \]
-Then, linkage is compared across all pairs of segregating loci for all consecutive pairs of timepoints. For a given set of timepoints $i$ and $i+1$, the ratio of $D'$ values is given by
+Then, linkage is compared across all pairs of segregating loci for all consecutive pairs of timepoints. For a given set of timepoints $i$ and $i+1$, the decay of $D'$ described by
 
-\[ \langle D(t_i)D(t_{i+1}) \rangle = \langle D(t_i)^2 \rangle e^{-\rho d \Delta t}\]
+\begin{equation}
+\langle D(t_i)D(t_{i+1}) \rangle = \langle D(t_i)^2 \rangle e^{-\rho d \Delta t}
+\end{equation}
 
 Which can be simplified to
 \begin{equation}

@@ -207,6 +207,8 @@ def make_viral_load_df(viralLoadDir):
 
     #loop through the files to add to our dataframe
     for curr_file in available_files:
+        if curr_file[0] == '.':
+            continue
         curr_par = curr_file.split('_')[1]
         curr_par = curr_par.split('.')[0]
         
@@ -216,6 +218,6 @@ def make_viral_load_df(viralLoadDir):
 
         viralLoadData.append(curr_vls)
 
-    viralLoadData = pd.concat(viralLoadData)
+    viralLoadData = pd.concat(viralLoadData, ignore_index= True)
 
     return viralLoadData

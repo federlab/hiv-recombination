@@ -3,17 +3,17 @@ import sys
 #for running on desktop
 sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy.stats import binned_statistic
 import plot_neher as plne
 import autocorrelation as autocorr
 from scipy import optimize
-from scipy import stats
 
-#Downsample the simulated data to a given quartile and estimate recombination 
-#rates
+
+#This script makes figure 1 for my general exam proposal
 
 #This script just makes a basic plot of autoccorelation estimates for simulated data against
 #the actual values in the simulation
@@ -31,7 +31,6 @@ outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/20
 estimate_df = [] 
 
 for curr_data in os.listdir(dataDir):
-    print(curr_data)
     #only get the data directories, not hidden files
     if curr_data[0] == '.':
         continue
@@ -53,7 +52,6 @@ for curr_data in os.listdir(dataDir):
     else:
         stat_df = autocorr.calculate_d_ratios(linkage_file, THRESHOLD)
         stat_df.to_pickle(d_ratio_file)
-    print(stat_df)
     
     #make a list of all the segregating loci
     all_seg_loc_1 = set(stat_df["Locus_1"].unique())
@@ -97,48 +95,93 @@ for entry in estimate_df['Sim_Rho']:
     intRhoList.append(rhoDict[entry])
 estimate_df['Sim_int_rho'] = intRhoList
 
-ax = sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, jitter = True, color = 'tab:blue',
-    order = ["0.001", "2e-04", "1e-04", "2e-05", "1e-05", "2e-06"])
+fig, ax = plt.subplots(2)
+sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, jitter = True, color = 'k', s = 4, alpha = 0.5,
+    order = ["0.001", "2e-04", "1e-04", "2e-05", "1e-05", "2e-06"], ax = ax[0])
 
 # distance across the "X" or "Y" stipplot column to span, in this case 40%
 label_width = 0.4
 
-for tick, text in zip(ax.get_xticks(), ax.get_xticklabels()):
+for tick, text in zip(ax[0].get_xticks(), ax[0].get_xticklabels()):
     sample_name = text.get_text()  # "X" or "Y"
 
     # calculate the median value for all replicates of either X or Y
     rho_val = rhoDict[sample_name]
 
     # plot horizontal lines across the column, centered on the tick
-    ax.plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
+    ax[0].plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
             lw=2, color='k')
 
-plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-plt.xlabel(r'Simulation Value of $\rho$')
-plt.ylabel(r'Estimated Value of $\rho$')
-plt.ylim(0.000000001, 0.1)
-plt.yscale('log')
+ax[0].legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+ax[0].set_xlabel(r'Simulation Value of $\rho$')
+ax[0].set_ylabel(r'Estimated Value of $\rho$')
+ax[0].set_ylim(0.000001, 0.01)
+ax[0].set_yscale('log')
+
+#I'm going to plot d ratios over the length of the paired end reads
+
+dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
+vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/05-23-2022/"
+
+#loop through the files and plot the numbers of segregating loci
+all_d_rats = []
+
+#loop through all of the directories with linkage files
+for curr_dir in os.listdir(dataDir):
+    if curr_dir[0] == '.':
+        continue
+    for curr_file in os.listdir(dataDir + curr_dir):
+        #get the participant and timepoint
+        curr_par = curr_dir.split('_')[0]
+        curr_frag = curr_dir.split('_')[1]
+
+        #get the timepoint dictionary for the current participant
+        curr_seg = pd.read_pickle(dataDir + curr_dir + "/linkage/d_ratio")
+        curr_seg['Participant'] = curr_par
+        curr_seg['Fragment'] = curr_frag
+        all_d_rats.append(curr_seg)
+
+#put all the ratios together
+all_d_rats = pd.concat(all_d_rats, ignore_index= True)
+all_d_rats['d_i'] = all_d_rats['d_i'].to_numpy().astype(float)
+all_d_rats['d_ratio'] = all_d_rats['d_ratio'].to_numpy().astype(float)
+all_d_rats.sort_values('Dist_X_Time', inplace= True)
+all_d_rats['d_i_1'] = all_d_rats['d_i'] * np.exp(np.negative(all_d_rats['d_ratio']))
+
+all_d_rats = all_d_rats[all_d_rats['Participant'] != 'p10']
+print(all_d_rats)
+all_bins = []
+for curr_par in all_d_rats['Participant'].unique():
+    curr_d_rats = all_d_rats[all_d_rats['Participant'] == curr_par]
+    #don't include samples from time points too close together (we previously noted noise issue)
+    #with simulated data
+    curr_d_rats = curr_d_rats[curr_d_rats['Time_Diff'].gt(50)]
+    dist_time_vals = curr_d_rats['Dist_X_Time'].to_numpy().astype(float)
+    d_i_vals = curr_d_rats['d_i']
+    d_i_1_vals = curr_d_rats['d_i_1']
+    all_d_vals = np.concatenate((d_i_1_vals, d_i_vals))
+    all_dist_time = np.concatenate((dist_time_vals, dist_time_vals))
+    dist_time_vals = curr_d_rats['Dist_X_Time'].to_numpy().astype(float)
+    rolling_ave, bin_edges, binnumber = binned_statistic(all_dist_time, all_d_vals, bins = 25, statistic = 'mean')
+
+    #plot things at the center of bins
+    bin_edges = pd.Series(bin_edges)
+    bin_edges = bin_edges.rolling(2).mean()
+    bin_edges = bin_edges.to_numpy()[1:]
+    par_bin_data = pd.DataFrame(zip(rolling_ave, bin_edges), columns = ['average', 'edges'])
+    par_bin_data['Participant'] = curr_par
+    all_bins.append(par_bin_data)
+all_bins = pd.concat(all_bins, ignore_index=True)
+
+
+# sns.scatterplot(x = 'Dist_X_Time', y = 'd_i', data = all_d_rats, alpha = 0.007, ax = ax[1], hue = 'Participant')
+sns.lineplot(y = 'average', x = 'edges', data = all_bins, linewidth = 4, ax = ax[1], hue = 'Participant')
+ax[1].set_xlabel('Distance x Time (bp x generations)' )
+ax[1].set_ylabel('D\' Value')
 plt.tight_layout()
-plt.savefig(outDir + "autocorr_comparedEstimates_stripplot_sampled_" + str(SEG_LOCI)+ ".jpg", dpi = 300)
+plt.legend(bbox_to_anchor=(1.3,0.3), loc="lower right")
+# plt.subplots_adjust(left=0.1, bottom=0.1, right=0.75)
+
+plt.savefig(outDir + "figure_1_mean.jpg", dpi = 300)
 plt.close()
-
-
-# ax = sns.stripplot(x = 'Sim_Rho', y = 'C1', data = estimate_df, jitter = True,
-#     order = ["0.001", "2e-04", "1e-04", "2e-05", "1e-05", "2e-06"])
-# plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-# # plt.ylim(0,1)
-# plt.xlabel("Simulation Value of Rho")
-# plt.ylabel("Estimated Value of C1")
-# plt.tight_layout()
-# plt.savefig(outDir + "autocorr_c1_stripplot_sampled_" + str(SEG_LOCI)+ ".jpg")
-# plt.close()
-
-# ax = sns.stripplot(x = 'Sim_Rho', y = 'C2', data = estimate_df, jitter = True,
-#     order = ["0.001", "2e-04", "1e-04", "2e-05", "1e-05", "2e-06"])
-# plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-# plt.xlabel("Simulation Value of Rho")
-# plt.ylabel("Estimated Value of C2")
-# plt.tight_layout()
-# plt.savefig(outDir + "autocorr_c2_stripplot_sampled_" + str(SEG_LOCI)+ ".jpg")
-# plt.close()
-
