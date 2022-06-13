@@ -46,15 +46,18 @@ The haplotype discovery method estimates recombination rates through observing t
     \text{min}(p_1(1-p_2), (1-p_1)p_2) & \text{if }p_{12} > p_1p_2
     \end{cases}
 \]
-Then, linkage is compared across all pairs of segregating loci for all consecutive pairs of timepoints. For a given set of timepoints $i$ and $i+1$, the decay of $D'$ described by
+Then, linkage is compared across all pairs of segregating loci for all consecutive pairs of timepoints.\\
+
+
+\noindent For a given set of timepoints $i$ and $i+1$, the decay of $D'$ described by
 
 \begin{equation}
-\langle D(t_i)D(t_{i+1}) \rangle = \langle D(t_i)^2 \rangle e^{-\rho d \Delta t}
+D'(t_{i+1}) =  D'(t_i)  e^{-\rho d \Delta t}
 \end{equation}
 
-Which can be simplified to
+\noindent Where $d$ is the distance between the loci in the pair and $t$ is the time between timepoints $i$ and $i+1$. Equation 2 can be further simplified to
 \begin{equation}
--\log \left(\frac{D_{i+1}}{D_i}\right) = \rho d \Delta t
+-\log \left(\frac{D'_{i+1}}{D'_i}\right) = \rho d \Delta t
 \end{equation}
 
 

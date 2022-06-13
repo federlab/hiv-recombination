@@ -96,6 +96,7 @@ for entry in estimate_df['Sim_Rho']:
 estimate_df['Sim_int_rho'] = intRhoList
 
 fig, ax = plt.subplots(2)
+
 sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, jitter = True, color = 'k', s = 4, alpha = 0.5,
     order = ["0.001", "2e-04", "1e-04", "2e-05", "1e-05", "2e-06"], ax = ax[0])
 

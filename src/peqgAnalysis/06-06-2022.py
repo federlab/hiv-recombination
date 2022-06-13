@@ -1,6 +1,6 @@
 import sys
 from tkinter import E
-# sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
+sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
 #for running on desktop
 sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
@@ -21,12 +21,18 @@ from scipy import stats
 #thresholding value to only run tests after high linkage is initially seen.
 THRESHOLD = 0.2
 DIST_TIME_MAX = 50000
+GROUP_THRESH = 50000
 
+
+#For running on Cluster
+dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
+vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
+outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/poster_peqg/"
 
 #For running on desktop
 dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/05-26-2022/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/poster_peqg/"
 
 stat_df = []
 
@@ -47,21 +53,26 @@ for curr_data in os.listdir(dataDir):
 
     curr_stat_df = pd.read_pickle(d_ratio_file)
     curr_stat_df['Participant'] = curr_par
+    curr_stat_df['Fragment'] = curr_frag
     stat_df.append(curr_stat_df)
 
 
 #put all the ratios together
 stat_df = pd.concat(stat_df, ignore_index= True)
+print(stat_df.columns)
 stat_df['d_i'] = stat_df['d_i'].to_numpy().astype(float)
 stat_df['d_ratio'] = stat_df['d_ratio'].to_numpy().astype(float)
 stat_df['Dist_X_Time'] = stat_df['Dist_X_Time'].to_numpy().astype(float)
 stat_df['d_i_1'] = stat_df['d_i'] * np.exp(np.negative(stat_df['d_ratio']))
+stat_df = stat_df[stat_df['Fragment'] != 'F5']
 stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
 stat_df = stat_df[stat_df['Participant'] != 'p7']
 stat_df = stat_df[stat_df['Participant'] != 'p4']
 stat_df = stat_df[stat_df['Participant'] != 'p10']
+# stat_df = stat_df[stat_df['Fragment'] == 'F5']
 stat_df = stat_df[stat_df['Dist_X_Time'].between(0, DIST_TIME_MAX)]
-print(stat_df)
+stat_df['Dist'] = stat_df['Locus_2'] - stat_df['Locus_1']
+print("Max dist is: " + str(max(stat_df['Dist'])))
 
 labeled_rats = []
 #label each participants ratios with the corresponding viral loads
@@ -96,9 +107,6 @@ labeled_rats['Ave_VL'] = labeled_rats[['VL_1', 'VL_2']].mean(axis=1)
 stat_df = labeled_rats
 
 
-vlGroup1 = stat_df[stat_df['Ave_VL'].gt(200000)]
-vlGroup2 = stat_df[stat_df['Ave_VL'].lt(200000)]
-
 def bootstrap_rho(d_ratio_df):
     """Takes a d_ratio dataframe and resamples from it to bootstrap a rho estimate"""
     #make a list of all the segregating loci
@@ -123,64 +131,36 @@ def bootstrap_rho(d_ratio_df):
         coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, stat_df_sample['Dist_X_Time'], stat_df_sample['d_ratio'], p0 = [0, 0.26, .0000439])
         estimates.append([coeffs[0], coeffs[1], coeffs[2], coeffs[1] * coeffs[2]])
     estimate_df = pd.DataFrame(estimates, columns = ['c0', 'c1', 'c2', 'Estimated_Rho'])
-    conf_int = (np.quantile(estimate_df['Estimated_Rho'], 0.05), np.quantile(estimate_df['Estimated_Rho'], 0.95))
+    conf_int = (np.quantile(estimate_df['Estimated_Rho'], 0.025), np.quantile(estimate_df['Estimated_Rho'], 0.975))
+    print(np.quantile(estimate_df['Estimated_Rho'], 0.5))
     #get the row at the given quantile
     lower_fit = estimate_df.iloc[(estimate_df['Estimated_Rho']-conf_int[0]).abs().argsort()[:2]]
     lower_fit = lower_fit.head(1)
     upper_fit = estimate_df.iloc[(estimate_df['Estimated_Rho']-conf_int[1]).abs().argsort()[:2]]
     upper_fit = upper_fit.head(1)
-    return lower_fit, upper_fit
+    return lower_fit, upper_fit, estimate_df
 
 final_estimates = []
 
-############# Viral Load Group 1###############################
-x_vals = vlGroup1['Dist_X_Time'].unique()
-binned_rat, binedges, bin_nums = stats.binned_statistic(vlGroup1['Dist_X_Time'].to_numpy(), vlGroup1['d_ratio'].to_numpy(), bins = 100)
+############# Plotting our results###############################
+x_vals = stat_df['Dist_X_Time'].unique()
+binned_rat, binedges, bin_nums = stats.binned_statistic(stat_df['Dist_X_Time'].to_numpy(), stat_df['d_ratio'].to_numpy(), bins = 100)
 
 
 #Fit the data and add our estimate to the dataframe
-coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, vlGroup1['Dist_X_Time'], vlGroup1['d_ratio'], p0 = [0, 0.26, .0000439])
-lower_fit, upper_fit = bootstrap_rho(vlGroup1)
-fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2]) for x in x_vals]
-fit_vals_low = [plne.neher_leitner(x, lower_fit['c0'].to_numpy()[0], lower_fit['c1'].to_numpy()[0], lower_fit['c2'].to_numpy()[0]) for x in x_vals]
-fit_vals_high = [plne.neher_leitner(x, upper_fit['c0'].to_numpy()[0], upper_fit['c1'].to_numpy()[0], upper_fit['c2'].to_numpy()[0]) for x in x_vals]
-my_conf = pd.DataFrame(zip())
-sns.lineplot(x = x_vals, y = fit_vals,  label = "Fit Average VL > 200000 copies/ml", color = 'tab:blue')
-sns.lineplot(x = x_vals, y = fit_vals_low, color = 'Gray')
-sns.lineplot(x = x_vals, y = fit_vals_high, color = 'Gray')
-sns.lineplot(x = binedges[:-1], y = binned_rat, label = "Average VL > 200000 copies/ml", color = 'tab:blue')
-final_estimates.append([coeffs[1] * coeffs[2], lower_fit['Estimated_Rho'].to_numpy()[0], upper_fit['Estimated_Rho'].to_numpy()[0], 'VL > 200000'])
-
-
-############# Viral Load Group 2###############################
-x_vals = vlGroup2['Dist_X_Time'].unique()
-binned_rat, binedges, bin_nums = stats.binned_statistic(vlGroup2['Dist_X_Time'].to_numpy(), vlGroup2['d_ratio'].to_numpy(), bins = 100)
-
-
-#Fit the data and add our estimate to the dataframe
-coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, vlGroup2['Dist_X_Time'], vlGroup2['d_ratio'], p0 = [0, 0.26, .0000439])
-lower_fit, upper_fit = bootstrap_rho(vlGroup2)
+coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, stat_df['Dist_X_Time'], stat_df['d_ratio'], p0 = [0, 0.26, .0000439])
+lower_fit, upper_fit, all_boots2 = bootstrap_rho(stat_df)
 fit_vals_low = [plne.neher_leitner(x, lower_fit['c0'].to_numpy()[0], lower_fit['c1'].to_numpy()[0], lower_fit['c2'].to_numpy()[0]) for x in x_vals]
 fit_vals_high = [plne.neher_leitner(x, upper_fit['c0'].to_numpy()[0], upper_fit['c1'].to_numpy()[0], upper_fit['c2'].to_numpy()[0]) for x in x_vals]
 fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2]) for x in x_vals]
-sns.lineplot(x = x_vals, y = fit_vals,  label = "Fit Average VL < 200000 copies/ml", color = 'tab:orange')
-sns.lineplot(x = binedges[:-1], y = binned_rat, label = "Average VL < 200000 copies/ml", color = 'tab:orange')
+sns.lineplot(x = x_vals, y = fit_vals, color = 'tab:blue', linestyle = 'dashed', linewidth = 3)
+sns.lineplot(x = binedges[:-1], y = binned_rat, color = 'tab:blue')
 sns.lineplot(x = x_vals, y = fit_vals_low, color = 'black')
 sns.lineplot(x = x_vals, y = fit_vals_high, color = 'black')
-final_estimates.append([coeffs[1] * coeffs[2], lower_fit['Estimated_Rho'].to_numpy()[0], upper_fit['Estimated_Rho'].to_numpy()[0], 'VL < 200000'])
-
-final_estimates = pd.DataFrame(final_estimates, columns = ['Estimate', 'Lower', 'Upper', 'Group'])
+final_estimates.append([coeffs[1] * coeffs[2], lower_fit['Estimated_Rho'].to_numpy()[0], upper_fit['Estimated_Rho'].to_numpy()[0]])
+final_estimates = pd.DataFrame(final_estimates, columns = ['Estimate', 'Lower', 'Upper'])
 print(final_estimates)
 plt.ylabel('D\' ratio')
 plt.xlabel('Distance X Time (bp x generations)')
-plt.savefig(outDir + "/auto_plot_binned_vl_groups_" + str(DIST_TIME_MAX) +".jpg")
+plt.savefig(outDir + "auto_plot_binned_vl_except_frag_5_" + str(DIST_TIME_MAX) +".jpg", dpi = 300)
 plt.close()
-
-    # coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, binedges[:-1], binned_rat, p0 = [0, 0.26, .0000439])
-    # fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2]) for x in x_vals]
-    # sns.scatterplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df_curr, alpha = 0.05, hue = 'd_i')
-    # sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = stat_df_curr, estimator = np.mean)
-    # sns.lineplot(x = binedges[:-1], y = binned_rat)
-    # sns.lineplot(x = x_vals, y = fit_vals)
-    # plt.savefig(currOut + "/auto_plot_" + str(i) +".jpg")
-    # plt.close()
