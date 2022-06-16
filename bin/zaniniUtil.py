@@ -276,7 +276,9 @@ def label_vl_drats(stat_df, vlDir):
         #get the ratios for the participant
         participant = curr_file.split('.')[0]
         participant = participant.split('_')[1]
-        curr_d_rats = stat_df[stat_df['Participant'] == participant]
+        par_d_rats = stat_df[stat_df['Participant'] == participant]
+        #make a deep copy so we can set values on it
+        curr_d_rats = par_d_rats.copy()
         curr_d_rats['Day_1'] = curr_d_rats['Time_1'] * 2
         curr_d_rats['Day_2'] = curr_d_rats['Time_2'] * 2
 
@@ -292,15 +294,15 @@ def label_vl_drats(stat_df, vlDir):
     labeled_rats['Ave_VL'] = labeled_rats[['VL_1', 'VL_2']].mean(axis=1)
     return labeled_rats
 
-def combine_drats(d_rat_dir, DIST_TIME_MAX):
+def combine_drats(d_rat_dir):
     """Combines D' ratio dataframes across individuals and fragments.
     ---------------------------------------------------------------------------
     Params
     ------------
     d_rat_dir: str, the path to the directory with the results of the snakemake
                 estimation pipeline. 
-    DIST_TIME_MAX: int, 
     """
+    stat_df = []
     for curr_data in os.listdir(d_rat_dir):
         if curr_data[0] == '.':
             continue
@@ -322,6 +324,5 @@ def combine_drats(d_rat_dir, DIST_TIME_MAX):
     stat_df['d_ratio'] = stat_df['d_ratio'].to_numpy().astype(float)
     stat_df['Dist_X_Time'] = stat_df['Dist_X_Time'].to_numpy().astype(float)
     stat_df['d_i_1'] = stat_df['d_i'] * np.exp(np.negative(stat_df['d_ratio']))
-    stat_df = stat_df[stat_df['Dist_X_Time'].between(0, DIST_TIME_MAX)]
     stat_df['Dist'] = stat_df['Locus_2'] - stat_df['Locus_1']
     return stat_df

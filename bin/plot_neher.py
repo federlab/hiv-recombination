@@ -248,3 +248,55 @@ def run_neher_fit(c0_fixed, lower_bounds, upper_bounds, initial, test_results):
                     columns= ['x_vals', 'fitted_vals', 'fitted_vals_paper'])
     
     return [c0_estimate, c1_estimate, c2_estimate], fit_data
+
+###################### Functionality for Bootstrapping ########################
+def bootstrap_rho(d_ratio_df, num_boots):
+    """ Takes a d_ratio dataframe and resamples from it to bootstrap a rho
+    estimate.
+    ---------------------------------------------------------------------------
+    Params
+    ------------
+    d_ratio_df: pd.DataFrame, containing the d' ratio for a pair of loci
+                also includes d' at the first time point, and information 
+                about the two timepoints of sampling
+    num_boots:  int, the number of bootstrap resamples to perform
+
+    Returns
+    -------------
+    lower_fit:  pd.Series, row of the estimate dataframe containing the fit at
+                the 2.5 percentile
+    upper_fit:  pd.Series, row of the estimate dataframe containing the fit at 
+                the 97.5 percentile
+    estimate_df:pd.DataFrame, the dataframe containing all of the bootstrapped
+                fits in the distribution
+    """
+    #make a list of all the segregating loci
+    all_seg_loc_1 = set(d_ratio_df["Locus_1"].unique())
+    all_seg_loc_2 = set(d_ratio_df["Locus_2"].unique())
+    all_seg_loc = all_seg_loc_1.union(all_seg_loc_2)
+    all_seg_loc = np.array(list(all_seg_loc))
+    num_seg = len(all_seg_loc)
+
+    estimates = []
+
+    #sample with replacement num_boots times
+    for i in range(num_boots):
+        #sample a given number of segregating loci
+        seg_loc_sample = np.random.choice(all_seg_loc, size = num_seg, replace = True)
+        seg_loc_sample = set(seg_loc_sample)
+
+        #get only the autocorrelation of the chosen loci
+        stat_df_sample = d_ratio_df[d_ratio_df["Locus_1"].isin(seg_loc_sample)]
+        stat_df_sample = stat_df_sample[stat_df_sample["Locus_2"].isin(seg_loc_sample)]
+
+        coeffs, fit_dat = optimize.curve_fit(neher_leitner, stat_df_sample['Dist_X_Time'], stat_df_sample['d_ratio'], p0 = [0, 0.26, .0000439])
+        estimates.append([coeffs[0], coeffs[1], coeffs[2], coeffs[1] * coeffs[2]])
+    estimate_df = pd.DataFrame(estimates, columns = ['c0', 'c1', 'c2', 'Estimated_Rho'])
+    conf_int = (np.quantile(estimate_df['Estimated_Rho'], 0.025), np.quantile(estimate_df['Estimated_Rho'], 0.975))
+
+    #get the row at the given quantile
+    lower_fit = estimate_df.iloc[(estimate_df['Estimated_Rho']-conf_int[0]).abs().argsort()[:2]]
+    lower_fit = lower_fit.head(1)
+    upper_fit = estimate_df.iloc[(estimate_df['Estimated_Rho']-conf_int[1]).abs().argsort()[:2]]
+    upper_fit = upper_fit.head(1)
+    return lower_fit, upper_fit, estimate_df
