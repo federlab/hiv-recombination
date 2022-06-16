@@ -15,7 +15,9 @@ def calculate_d_ratios(linkage_file, THRESHOLD = 0.2):
                         value at the first timepoint is > THRESHOLD
     Returns
     -------
-    vcfDat   pd.dataframe, containing each variant for the current dataset
+    stat_df :   pd.DataFrame, containing the d' ratio for a pair of loci
+                also includes d' at the first time point, and information 
+                about the two timepoints of sampling
     """
     #first just try and print the array
     rd_arr = pd.read_pickle(linkage_file)

@@ -60,5 +60,11 @@ D'(t_{i+1}) =  D'(t_i)  e^{-\rho d \Delta t}
 -\log \left(\frac{D'_{i+1}}{D'_i}\right) = \rho d \Delta t
 \end{equation}
 
+If we could distinguish even very small values of $D'$, then this equation would form a line with slope $\rho$
+\[f(x) = \rho x\]
+
+However, since we cannot distinguish between low $D'$ values, we get a saturation effect at large values of $d \Delta t$. Therefore, a better fit is established using the functional form
+\[f(x) = c_0 + c_1(1-e^{-c_2 x})\]
+
 
 \end{document}

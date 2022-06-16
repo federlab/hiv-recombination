@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+import csv
 
 def find_segregating_diagonal(coCounts_arr, all_seg = False):
     """ Takes a numpy array of co-SNP counts from the Zanini et al. data.
@@ -221,3 +222,106 @@ def make_viral_load_df(viralLoadDir):
     viralLoadData = pd.concat(viralLoadData, ignore_index= True)
 
     return viralLoadData
+
+def getPatientList(dir):
+    """ Takes a directory of files with patients and time points. 
+    Generates a dictionary where the keys are patients and the values
+    are lists of the corresponding data files.
+    """
+    participant_files = {}
+    
+    #loop through all of the vcf files and group them by participant
+    for file in os.listdir(dir):
+        #get the participant and the date
+        parDate = file.split('.')[0]
+        #get the participant
+        curr_participant = parDate.split('_')[0]
+
+        #if we have seen files for this participant already add them to entry
+        if curr_participant in participant_files.keys():
+            participant_files[curr_participant] += [parDate]
+        else:
+            participant_files[curr_participant] = [parDate]
+    return participant_files
+
+def label_vl_drats(stat_df, vlDir):
+    """Labels a dataframe of D' ratios each with the average viral load between
+    the two timepoints.
+    ---------------------------------------------------------------------------
+    Params
+    ------------
+    stat_df :   pd.DataFrame, containing the d' ratio for a pair of loci
+                also includes d' at the first time point, and information 
+                about the two timepoints of sampling
+    vlDir :     str, a string containing the path to a directory with the viral
+                load data for each individual in the form of tsv files
+    Returns
+    -------
+    labeled_rats: pd.DataFrame, input dataframe but with the viral loads 
+                labeled
+    """
+    labeled_rats = []
+    #label each participants ratios with the corresponding viral loads
+    for curr_file in os.listdir(vlDir):
+        dict_from_csv = {}
+        if curr_file[0] == '.':
+            continue
+
+        #make a dictionary of timepoints and their viral loads
+        with open(vlDir + curr_file, mode='r') as inp:
+            reader = csv.reader(inp, delimiter= '\t')
+            next(reader)
+            dict_from_csv = {float(rows[0]):float(rows[1]) for rows in reader}
+        
+        #get the ratios for the participant
+        participant = curr_file.split('.')[0]
+        participant = participant.split('_')[1]
+        curr_d_rats = stat_df[stat_df['Participant'] == participant]
+        curr_d_rats['Day_1'] = curr_d_rats['Time_1'] * 2
+        curr_d_rats['Day_2'] = curr_d_rats['Time_2'] * 2
+
+        #label the ratios
+        curr_d_rats = curr_d_rats[curr_d_rats['Day_1'].isin(dict_from_csv.keys())]
+        curr_d_rats = curr_d_rats[curr_d_rats['Day_2'].isin(dict_from_csv.keys())]
+
+        curr_d_rats['VL_1'] = curr_d_rats['Day_1'].map(lambda x: dict_from_csv[x])
+        curr_d_rats['VL_2'] = curr_d_rats['Day_2'].map(lambda x: dict_from_csv[x])
+        labeled_rats.append(curr_d_rats)
+
+    labeled_rats = pd.concat(labeled_rats, ignore_index= True)
+    labeled_rats['Ave_VL'] = labeled_rats[['VL_1', 'VL_2']].mean(axis=1)
+    return labeled_rats
+
+def combine_drats(d_rat_dir, DIST_TIME_MAX):
+    """Combines D' ratio dataframes across individuals and fragments.
+    ---------------------------------------------------------------------------
+    Params
+    ------------
+    d_rat_dir: str, the path to the directory with the results of the snakemake
+                estimation pipeline. 
+    DIST_TIME_MAX: int, 
+    """
+    for curr_data in os.listdir(d_rat_dir):
+        if curr_data[0] == '.':
+            continue
+        run_info = curr_data.split('_')
+        curr_par = run_info[0]
+        curr_frag = run_info[1]
+
+        linkage_file = d_rat_dir + curr_data + "/linkage/r2_and_D"
+        d_ratio_file = d_rat_dir + curr_data + "/linkage/d_ratio"
+
+        curr_stat_df = pd.read_pickle(d_ratio_file)
+        curr_stat_df['Participant'] = curr_par
+        curr_stat_df['Fragment'] = curr_frag
+        stat_df.append(curr_stat_df)
+
+    #put all the ratios together
+    stat_df = pd.concat(stat_df, ignore_index= True)
+    stat_df['d_i'] = stat_df['d_i'].to_numpy().astype(float)
+    stat_df['d_ratio'] = stat_df['d_ratio'].to_numpy().astype(float)
+    stat_df['Dist_X_Time'] = stat_df['Dist_X_Time'].to_numpy().astype(float)
+    stat_df['d_i_1'] = stat_df['d_i'] * np.exp(np.negative(stat_df['d_ratio']))
+    stat_df = stat_df[stat_df['Dist_X_Time'].between(0, DIST_TIME_MAX)]
+    stat_df['Dist'] = stat_df['Locus_2'] - stat_df['Locus_1']
+    return stat_df

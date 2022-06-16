@@ -3,15 +3,15 @@ import os
 
 #I am using this to run the autocorrelation analysis on the Zanini data
 
-# #Directory we'll use to save all of the additional analysis files
-# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/'
+#Directory we'll use to save all of the additional analysis files
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/'
 
-# #Directory with all of the scripts for our additional rules
-# ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
+#Directory with all of the scripts for our additional rules
+ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 
-#For Desktop Dry run
-dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/'
-ruleScriptDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
+# #For Desktop Dry run
+# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/'
+# ruleScriptDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 
 #get the proper names of all the simulated directories
 participant_nums = ['p1','p2','p3','p4','p5','p7','p8','p9','p10','p11']

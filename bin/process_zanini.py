@@ -10,7 +10,6 @@ textDataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/snpPai
 outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 
 
-#Today I am going to be using the data that Alison simulated using SLIM
 #This file will take the text files and make them into numpy arrays that are
 #saved
 #Loop through all of the files and get their information.
