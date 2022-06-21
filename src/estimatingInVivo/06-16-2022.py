@@ -28,48 +28,85 @@ GROUP_THRESH = 50000
 #For running on Cluster
 dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/poster_peqg/"
+outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/06-17-2022/"
 
 #For running on desktop
 dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/poster_peqg/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/06-17-2022/"
 
 #make the dataframe containg D' ratios
 stat_df = zu.combine_drats(dataDir)
 stat_df = zu.label_vl_drats(stat_df, vlDir)
 
 #filter the d' ratio dataframe
-stat_df = stat_df[stat_df['Fragment'] != 'F5']
 stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
-stat_df = stat_df[stat_df['Participant'] != 'p7']
-stat_df = stat_df[stat_df['Participant'] != 'p4']
 stat_df = stat_df[stat_df['Participant'] != 'p10']
 
-lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(stat_df, 1000)
-print(lower_fit)
-
-final_estimates = []
-
-############# Plotting our results###############################
+all_par_ests = []
+all_par_fits = []
 x_vals = stat_df['Dist_X_Time'].unique()
-binned_rat, binedges, bin_nums = stats.binned_statistic(stat_df['Dist_X_Time'].to_numpy(), stat_df['d_ratio'].to_numpy(), bins = 100)
+
+#Estimate Rates Specifically for each individual
+for name, group in stat_df.groupby('Participant'):
+
+    #get estimates for the individual
+    lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(group, 10)
+    estimate_df['Participant'] = name
+    binned_rat, binedges, bin_nums = stats.binned_statistic(
+        group['Dist_X_Time'].to_numpy(), 
+        group['d_ratio'].to_numpy(), bins = 100)
 
 
-#Fit the data and add our estimate to the dataframe
-coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, stat_df['Dist_X_Time'], stat_df['d_ratio'], p0 = [0, 0.26, .0000439])
-lower_fit, upper_fit, all_boots2 = plne.bootstrap_rho(stat_df)
-fit_vals_low = [plne.neher_leitner(x, lower_fit['c0'].to_numpy()[0], lower_fit['c1'].to_numpy()[0], lower_fit['c2'].to_numpy()[0]) for x in x_vals]
-fit_vals_high = [plne.neher_leitner(x, upper_fit['c0'].to_numpy()[0], upper_fit['c1'].to_numpy()[0], upper_fit['c2'].to_numpy()[0]) for x in x_vals]
-fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2]) for x in x_vals]
-sns.lineplot(x = x_vals, y = fit_vals, color = 'tab:blue', linestyle = 'dashed', linewidth = 3)
-sns.lineplot(x = binedges[:-1], y = binned_rat, color = 'tab:blue')
-sns.lineplot(x = x_vals, y = fit_vals_low, color = 'black')
-sns.lineplot(x = x_vals, y = fit_vals_high, color = 'black')
-final_estimates.append([coeffs[1] * coeffs[2], lower_fit['Estimated_Rho'].to_numpy()[0], upper_fit['Estimated_Rho'].to_numpy()[0]])
-final_estimates = pd.DataFrame(final_estimates, columns = ['Estimate', 'Lower', 'Upper'])
-print(final_estimates)
-plt.ylabel('D\' ratio')
-plt.xlabel('Distance X Time (bp x generations)')
-plt.savefig(outDir + "auto_plot_binned_vl_except_frag_5_" + str(DIST_TIME_MAX) +".jpg", dpi = 300)
+    mid_fit = np.quantile(estimate_df['Estimated_Rho'], 0.5)
+    mid_fit = estimate_df.iloc[(estimate_df['Estimated_Rho']-mid_fit).abs().argsort()[:2]]
+
+    fit_vals_low = [plne.neher_leitner(x, lower_fit['c0'].to_numpy()[0], lower_fit['c1'].to_numpy()[0], lower_fit['c2'].to_numpy()[0]) for x in binedges]
+    fit_vals_high = [plne.neher_leitner(x, upper_fit['c0'].to_numpy()[0], upper_fit['c1'].to_numpy()[0], upper_fit['c2'].to_numpy()[0]) for x in binedges]
+    fit_vals_mid = [plne.neher_leitner(x, mid_fit['c0'].to_numpy()[0], mid_fit['c1'].to_numpy()[0], mid_fit['c2'].to_numpy()[0]) for x in binedges]
+
+    par_fits = pd.DataFrame(zip(binned_rat, binedges, fit_vals_low, fit_vals_mid, fit_vals_high),
+                    columns=['ratio_bins', 'bin_edges', 'lower_conf', 'mid_conf', 'high_conf'])
+    par_fits['Participant'] = name
+
+    all_par_fits.append(par_fits)
+    all_par_ests.append(estimate_df)
+
+    
+all_par_ests = pd.concat(all_par_ests, ignore_index=True)
+all_par_fits = pd.concat(all_par_fits, ignore_index=True)
+print(all_par_fits)
+
+########################### Plotting our results ##############################
+myplot = sns.FacetGrid(all_par_fits, col = 'Participant')
+print(stat_df.columns)
+myplot.map_dataframe(sns.scatterplot, x ='bin_edges', y ='ratio_bins')
+myplot.map_dataframe(sns.lineplot, x ='bin_edges', y ='lower_conf', color = 'gray', linestyle = 'dashed')
+myplot.map_dataframe(sns.lineplot, x ='bin_edges', y ='mid_conf', color = 'k')
+myplot.map_dataframe(sns.lineplot, x ='bin_edges', y ='high_conf', color = 'gray', linestyle = 'dashed')
+plt.xlabel(r'Distance X Time (bp/generation)')
+plt.ylabel(r'D\' Ratio')
+plt.savefig(outDir + "fits_by_participant.jpg")
+plt.close()
+
+
+################################ Estimate Plot ################################
+sns.set(rc={'figure.figsize':(15,7.5)}, font_scale = 2)
+sns.set_palette("tab10")
+ax = sns.boxplot(x = 'Participant', y = 'Estimated_Rho', data = all_par_ests)
+ax.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
+ax.axhline(0.000014, color = 'tab:green')
+ax.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
+# distance across the "X" or "Y" stipplot column to span, in this case 40%
+label_width = 0.4
+
+plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+plt.xlabel(r'Participant')
+plt.ylabel(r'Estimated Value of $\rho$')
+plt.tight_layout()
+plt.savefig(outDir + "estimates_by_participant.jpg")
+plt.close()
+
+sns.histplot(x = 'Participant', data = stat_df)
+plt.savefig(outDir + "datapoints_by_participant.jpg")
 plt.close()

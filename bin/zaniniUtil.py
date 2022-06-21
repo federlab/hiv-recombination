@@ -310,7 +310,6 @@ def combine_drats(d_rat_dir):
         curr_par = run_info[0]
         curr_frag = run_info[1]
 
-        linkage_file = d_rat_dir + curr_data + "/linkage/r2_and_D"
         d_ratio_file = d_rat_dir + curr_data + "/linkage/d_ratio"
 
         curr_stat_df = pd.read_pickle(d_ratio_file)

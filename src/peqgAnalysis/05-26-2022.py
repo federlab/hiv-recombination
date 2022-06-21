@@ -215,3 +215,15 @@ plt.savefig(outDir + "figure_4_" + str(GROUP_THRESH) +".jpg", dpi = 300)
     # sns.lineplot(x = x_vals, y = fit_vals)
     # plt.savefig(currOut + "/auto_plot_" + str(i) +".jpg")
     # plt.close()
+plt.close()
+
+
+#make a barplot showing the percentages of data participants incorporate to each group
+
+sns.histplot(x = 'Participant', data = vlGroup1)
+plt.savefig(outDir + "datapoints_by_participant_group_1.jpg")
+plt.close()
+
+sns.histplot(x = 'Participant', data = vlGroup2)
+plt.savefig(outDir + "datapoints_by_participant_group_2.jpg")
+plt.close()
