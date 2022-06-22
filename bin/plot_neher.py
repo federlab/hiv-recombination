@@ -289,7 +289,7 @@ def bootstrap_rho(d_ratio_df, num_boots):
         stat_df_sample = d_ratio_df[d_ratio_df["Locus_1"].isin(seg_loc_sample)]
         stat_df_sample = stat_df_sample[stat_df_sample["Locus_2"].isin(seg_loc_sample)]
 
-        coeffs, fit_dat = optimize.curve_fit(neher_leitner, stat_df_sample['Dist_X_Time'], stat_df_sample['d_ratio'], p0 = [0, 0.26, .0000439])
+        coeffs, fit_dat = optimize.curve_fit(neher_leitner, stat_df_sample['Dist_X_Time'], stat_df_sample['d_ratio'], p0 = [0, 0.26, .0000439], maxfev = 10000)
         estimates.append([coeffs[0], coeffs[1], coeffs[2], coeffs[1] * coeffs[2]])
     estimate_df = pd.DataFrame(estimates, columns = ['c0', 'c1', 'c2', 'Estimated_Rho'])
     conf_int = (np.quantile(estimate_df['Estimated_Rho'], 0.025), np.quantile(estimate_df['Estimated_Rho'], 0.975))
