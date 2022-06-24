@@ -7,9 +7,9 @@ import numpy as np
 datadir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/snpPairs'
 
 #if the files need to be unzipped, uncomment these lines
-#fileList = os.listdir(datadir)
-# for curr_file in fileList:
-    # os.system('unzip ' + datadir + "/" + curr_file)
+fileList = os.listdir(datadir)
+for curr_file in fileList:
+    os.system('unzip ' + datadir + "/" + curr_file)
 
 #loop through the files and convert them to numpy arrays
 fileList = os.listdir(datadir)
