@@ -244,7 +244,7 @@ def getPatientList(dir):
             participant_files[curr_participant] = [parDate]
     return participant_files
 
-def label_vl_drats(stat_df, vlDir):
+def label_vl_drats(stat_df, vlDir, cd4_label = False):
     """Labels a dataframe of D' ratios each with the average viral load between
     the two timepoints.
     ---------------------------------------------------------------------------
@@ -255,6 +255,9 @@ def label_vl_drats(stat_df, vlDir):
                 about the two timepoints of sampling
     vlDir :     str, a string containing the path to a directory with the viral
                 load data for each individual in the form of tsv files
+    cd4_label : bool, if True then the dataframe will be labeled with the CD4
+                counts rather than the viral load measurmeents
+
     Returns
     -------
     labeled_rats: pd.DataFrame, input dataframe but with the viral loads 
@@ -272,11 +275,12 @@ def label_vl_drats(stat_df, vlDir):
             reader = csv.reader(inp, delimiter= '\t')
             next(reader)
             dict_from_csv = {float(rows[0]):float(rows[1]) for rows in reader}
-        
+  
         #get the ratios for the participant
         participant = curr_file.split('.')[0]
         participant = participant.split('_')[1]
         par_d_rats = stat_df[stat_df['Participant'] == participant]
+   
 
         #make a deep copy so we can set values on it
         curr_d_rats = par_d_rats.copy()
@@ -287,21 +291,28 @@ def label_vl_drats(stat_df, vlDir):
         unmatched = curr_d_rats[~curr_d_rats['Day_1'].isin(dict_from_csv.keys()) | ~curr_d_rats['Day_2'].isin(dict_from_csv.keys())]
         if len(unmatched) > 0:
             print("Unmatched timepoints for participant " + participant)
-            dict_from_csv = fix_unmatched_VLs(curr_d_rats, dict_from_csv)
+            dict_from_csv = fix_unmatched_VLs_CD4(curr_d_rats, dict_from_csv)
 
         #label the ratios
         curr_d_rats = curr_d_rats[curr_d_rats['Day_1'].isin(dict_from_csv.keys())]
         curr_d_rats = curr_d_rats[curr_d_rats['Day_2'].isin(dict_from_csv.keys())]
 
-        curr_d_rats['VL_1'] = curr_d_rats['Day_1'].map(lambda x: dict_from_csv[x])
-        curr_d_rats['VL_2'] = curr_d_rats['Day_2'].map(lambda x: dict_from_csv[x])
+        if cd4_label:
+            curr_d_rats['CD4_1'] = curr_d_rats['Day_1'].map(lambda x: dict_from_csv[x])
+            curr_d_rats['CD4_2'] = curr_d_rats['Day_2'].map(lambda x: dict_from_csv[x])
+        else:
+            curr_d_rats['VL_1'] = curr_d_rats['Day_1'].map(lambda x: dict_from_csv[x])
+            curr_d_rats['VL_2'] = curr_d_rats['Day_2'].map(lambda x: dict_from_csv[x])
 
         #Check for viral load measurements between the two timepoints
-        curr_d_rats = check_VL_between(curr_d_rats, dict_from_csv)
+        curr_d_rats = check_VL_between(curr_d_rats, dict_from_csv, cd4_label)
         labeled_rats.append(curr_d_rats)
 
     labeled_rats = pd.concat(labeled_rats, ignore_index= True)
-    labeled_rats['Ave_VL'] = labeled_rats[['VL_1', 'VL_2']].mean(axis=1)
+    if cd4_label:
+        labeled_rats['Ave_CD4'] = labeled_rats[['CD4_1', 'CD4_2']].mean(axis=1)
+    else:
+        labeled_rats['Ave_VL'] = labeled_rats[['VL_1', 'VL_2']].mean(axis=1)
     return labeled_rats
 
 def combine_drats(d_rat_dir):
@@ -337,7 +348,7 @@ def combine_drats(d_rat_dir):
     return stat_df
 
 ########################### Helper Functions ##################################
-def fix_unmatched_VLs(stat_df, vl_dict):
+def fix_unmatched_VLs_CD4(stat_df, label_dict):
     """For participants with no exact matching timepoints, pairs the closest 
     timepoints and labels the d' ratio.
     ---------------------------------------------------------------------------
@@ -346,29 +357,29 @@ def fix_unmatched_VLs(stat_df, vl_dict):
     stat_df :   pd.DataFrame, containing the d' ratio for a pair of loci
                 also includes d' at the first time point, and information 
                 about the two timepoints of sampling
-    vl_dict :   dict, a dictionary where the keys are the measurement 
+    label_dict :   dict, a dictionary where the keys are the measurement 
                 timepoints and the values are the viral loads at those times.
     Returns
     -------
-    vl_dict: dict, a dictionary where the keys are the measurement 
+    label_dict: dict, a dictionary where the keys are the measurement 
                 timepoints and the values are the viral loads at those times.
                 This dictionary has been augmented to include the VL of the 
                 timepoint closest to the timepoint of interest for timepoints
                 without an exact match.
     """
     #make a dataframe with the timepoints and viral loads
-    keylist = vl_dict.keys()
+    keylist = label_dict.keys()
 
     for curr_time in stat_df['Day_1'].unique():
         #get the nearest timepoint
         closest_time = min(keylist, key=lambda x:abs(x-curr_time))
         #make sure the nearest timepoint is within 100 days
         if abs(closest_time - curr_time) < 100:
-            vl_dict[curr_time] = vl_dict[closest_time]
-    return vl_dict
+            label_dict[curr_time] = label_dict[closest_time]
+    return label_dict
 
 
-def check_VL_between(stat_df, vl_dict):
+def check_VL_between(stat_df, label_dict, cd4_label):
     """Checks if there are any viral load samples between timepoints.
     ---------------------------------------------------------------------------
     Params
@@ -376,40 +387,43 @@ def check_VL_between(stat_df, vl_dict):
     stat_df :   pd.DataFrame, containing the d' ratio for a pair of loci
                 also includes d' at the first time point, and information 
                 about the two timepoints of sampling
-    vl_dict :   dict, a dictionary where the keys are the measurement 
+    label_dict :   dict, a dictionary where the keys are the measurement 
                 timepoints and the values are the viral loads at those times.
+    cd4_label : bool, if True then the dataframe will be labeled with the CD4
+                counts rather than the viral load measurmeents
     Returns
     -------
     stat_df: pd.DataFrame, the same dataframe as the input but labeled with 
                 any intermediate viral loads.
     """
     #make a dataframe with the timepoints and viral loads
-    keylist = vl_dict.keys()
-    vlList = [vl_dict[x] for x in keylist]
-    vl_df = pd.DataFrame(zip(keylist, vlList), columns = ['Timepoint', 'VL'])
+    keylist = label_dict.keys()
+    labelList = [label_dict[x] for x in keylist]
+    if cd4_label:
+        label_df = pd.DataFrame(zip(keylist, labelList), columns = ['Timepoint', 'CD4'])
+        curr_label = 'CD4'
+    else:
+        label_df = pd.DataFrame(zip(keylist, labelList), columns = ['Timepoint', 'VL'])
+        curr_label = 'VL'
 
     between_vls = []
     consec = []
     monoton = []
     for index, row in stat_df.iterrows():
         #look for timepoints in between the comparison timepoints
-        row_btwn = vl_df[vl_df['Timepoint'].between(row['Day_1'], row['Day_2'], inclusive='neither')]
+        row_btwn = label_df[label_df['Timepoint'].between(row['Day_1'], row['Day_2'], inclusive='neither')]
 
         #if there are timepoints between check if its monotonic and label the times between
         if len(row_btwn) > 0:
             #record that it's not consecutive and label the viral loads between
-            curr_btwns = list(row_btwn['VL'])
+            curr_btwns = list(row_btwn[curr_label])
             between_vls.append(curr_btwns)
             consec.append(False)
-            # print(curr_btwns)
-            curr_btwns.extend([row['VL_1'], row['VL_2']])
-            curr_vls = {row['VL_1'], row['VL_2']}
+
+            curr_btwns.extend([row[curr_label + '_1'], row[curr_label + '_2']])
+            curr_vls = {row[curr_label + '_1'], row[curr_label + '_2']}
             if min(curr_btwns) in curr_vls \
                 and max(curr_btwns) in curr_vls:
-                    # print(row_btwn)
-                    # print(row)
-                    # print(curr_btwns)
-                    # print('*************************')
                     monoton.append(True)
             else: monoton.append(False)
 
@@ -422,3 +436,4 @@ def check_VL_between(stat_df, vl_dict):
     stat_df['Consecutive'] = consec
     stat_df['Monotonic'] = monoton
     return stat_df
+

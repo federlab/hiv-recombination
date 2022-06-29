@@ -10,8 +10,7 @@ import autocorrelation as autocorr
 
 THRESHOLD = 0.2
 
-#This script uses the coCounts_arr and list of segregatingLoci
-#It takes them and saves a dataframe with the R^2 and D statistics
+#This script uses the linkage data and outputs calculated D' ratios
 dataDir = snakemake.output[0]
 print(dataDir, file = sys.stderr)
 dataDir = dataDir.split('/')[:-2]

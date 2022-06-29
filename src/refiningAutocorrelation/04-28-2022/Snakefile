@@ -14,7 +14,7 @@ ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 # ruleScriptDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 
 #get the proper names of all the simulated directories
-participant_nums = ['p1','p2','p3','p4','p5','p6', 'p7','p8','p9','p10','p11']
+participant_nums = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11']
 fragments = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6']
 filetypes = ['mutation', 'recombination']
 full_dir_pattern_neher= dataDir + "{par}_{frag}/neher_res/{filetype}"
@@ -93,3 +93,4 @@ rule calc_d_rat:
     output:
      dataDir + "{par}_{frag}/linkage/d_ratio"
     script: ruleScriptDir + "calc_d_rat.py"
+

@@ -1,47 +1,31 @@
 import sys
-from tkinter import E
 sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
 #for running on desktop
 sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
-import os
-import csv
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plot_neher as plne
-import autocorrelation as autocorr
 import zaniniUtil as zu
-from scipy import optimize
 from scipy import stats
 
-#In this script I am going to plot the average D' ratio as a function of distance and time
-
-#I tried measuring the autocorrelation of the D statistic, but it looks like we
-#are getting a lot of noise. So I am going to try setting up an an initial 
-#thresholding value to only run tests after high linkage is initially seen.
-THRESHOLD = 0.2
-DIST_TIME_MAX = 50000
-GROUP_THRESH = 50000
 NUM_BOOTSTRAPS = 1000
-
-#For running on Cluster
-dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
-vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/06-17-2022/"
 
 #For running on desktop
 dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/06-17-2022/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig3/"
 
 #make the dataframe containg D' ratios
 stat_df = zu.combine_drats(dataDir)
 stat_df = zu.label_vl_drats(stat_df, vlDir)
 
 #filter the d' ratio dataframe
+stat_df = stat_df[stat_df['Fragment'] != 'F5']
 stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
 stat_df = stat_df[stat_df['Participant'] != 'p10']
+
 
 all_par_ests = []
 all_par_fits = []
@@ -49,7 +33,8 @@ x_vals = stat_df['Dist_X_Time'].unique()
 
 #Estimate Rates Specifically for each individual
 for name, group in stat_df.groupby('Participant'):
-
+    print(group)
+    print(name)
     #get estimates for the individual
     lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(group, NUM_BOOTSTRAPS)
     estimate_df['Participant'] = name
@@ -77,29 +62,20 @@ all_par_ests = pd.concat(all_par_ests, ignore_index=True)
 all_par_fits = pd.concat(all_par_fits, ignore_index=True)
 print(all_par_fits)
 
-########################### Plotting our results ##############################
-myplot = sns.FacetGrid(all_par_fits, col = 'Participant')
-print(stat_df.columns)
-myplot.map_dataframe(sns.scatterplot, x ='bin_edges', y ='ratio_bins')
-myplot.map_dataframe(sns.lineplot, x ='bin_edges', y ='lower_conf', color = 'gray', linestyle = 'dashed')
-myplot.map_dataframe(sns.lineplot, x ='bin_edges', y ='mid_conf', color = 'k')
-myplot.map_dataframe(sns.lineplot, x ='bin_edges', y ='high_conf', color = 'gray', linestyle = 'dashed')
-plt.xlabel(r'Distance X Time (bp/generation)')
-plt.ylabel(r'D\' Ratio')
-plt.savefig(outDir + "fits_by_participant.jpg")
-plt.close()
-
 
 ################################ Estimate Plot ################################
+plt.rcParams.update({
+  "text.usetex": True
+})
 sns.set(rc={'figure.figsize':(20,7.5)}, font_scale = 2)
 sns.set_palette("tab10")
-ax = sns.boxplot(x = 'Participant', y = 'Estimated_Rho', data = all_par_ests)
+ax = sns.boxplot(x = 'Participant', y = 'Estimated_Rho', data = all_par_ests,
+    order = ['p1', 'p2', 'p3', 'p4', 'p5', 'p7', 'p8', 'p9', 'p11'])
 ax.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
 ax.axhline(0.000014, color = 'tab:green')
 ax.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
 ax.set_ylim(0, 0.0002)
-# distance across the "X" or "Y" stipplot column to span, in this case 40%
-label_width = 0.4
+
 
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.xlabel(r'Participant')
@@ -107,9 +83,8 @@ plt.ylabel(r'Estimated Value of $\rho$')
 
 plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 plt.tight_layout()
-plt.savefig(outDir + "estimates_by_participant.jpg")
+plt.savefig(outDir + "fig3.jpg")
 plt.close()
 
-sns.histplot(x = 'Participant', data = stat_df)
-plt.savefig(outDir + "datapoints_by_participant.jpg")
-plt.close()
+
+
