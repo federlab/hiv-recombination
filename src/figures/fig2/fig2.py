@@ -159,6 +159,7 @@ sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE',
 axes[1].set_xscale('log')
 axes[1].set_ylabel('Normalized RMSE')
 axes[1].set_xlabel(r'Simulation Value of $\rho$')
+plt.legend(title = 'Segregating Loci')
 plt.tight_layout()
 
 plt.savefig(outDir + "figure_2.jpg")
