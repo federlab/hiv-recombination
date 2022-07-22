@@ -19,6 +19,8 @@ for curr_file in fileList:
 fileList = os.listdir(datadir)
 
 for curr_file in fileList:
+    if curr_file[0] == '.':
+        continue
     #make sure to only get tsv files
     file_type = curr_file.split('.')[-1]
     if file_type == 'tsv':
