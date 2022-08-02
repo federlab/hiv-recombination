@@ -22,14 +22,14 @@ for currfile in os.listdir(textDataDir):
     #get the timepoint, participant, and fragment
     print(currfile)
     curr_info = currfile.split('_')
-    timepoint = curr_info[3]
+    timepoint = curr_info[2]
     participant = curr_info[1]
-    fragment = curr_info[4]
+    fragment = curr_info[3]
     fragment = fragment.split('.')[0]
 
     #move the file and rename it
     move_dir = outDir + participant + "_" + fragment + "/"
-    new_name = currfile.split('.')[0] + "_t" + timepoint + "." + currfile.split('.')[1]
+    new_name = 'cocounts_' + participant + "_sample_" + timepoint + "_" + fragment + "_t" + timepoint + "." + currfile.split('.')[1]
 
     shutil.move(textDataDir + currfile, move_dir + new_name)
 

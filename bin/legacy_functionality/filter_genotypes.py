@@ -42,7 +42,7 @@ for currfile in os.listdir(timepoint_dir):
     timepoint = timepoint.split('.')[0]
 
     #load the array
-    coCounts_arr = np.load(timepoint_dir  + currfile)
+    coCounts_arr = np.load(timepoint_dir  + currfile, allow_pickle=True)
     frag_len = coCounts_arr.shape[-1]
 
     #find the segregating sites

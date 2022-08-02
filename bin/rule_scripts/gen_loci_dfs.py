@@ -39,11 +39,14 @@ for currfile in os.listdir(timepoint_dir):
 
     #get the timepoint label
     timepoint = currfile.split('_')[-1]
+    #sometimes the timepoint label isn't in the last position
+    if timepoint[0] != 't':
+        timepoint = currfile.split('_')[-2]
     timepoint = timepoint.split('.')[0]
     print(int(timepoint[1:]), file = sys.stderr)
 
     #load the array
-    coCounts_arr = np.load(timepoint_dir  + currfile)
+    coCounts_arr = np.load(timepoint_dir  + currfile, allow_pickle=True, encoding='bytes')
 
     #find the segregating sites
     segregatingLoci = zu.find_segregating_diagonal(coCounts_arr, all_seg = True)  

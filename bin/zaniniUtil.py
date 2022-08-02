@@ -280,12 +280,12 @@ def label_vl_drats(stat_df, vlDir, cd4_label = False):
         participant = curr_file.split('.')[0]
         participant = participant.split('_')[1]
         par_d_rats = stat_df[stat_df['Participant'] == participant]
-   
 
         #make a deep copy so we can set values on it
         curr_d_rats = par_d_rats.copy()
         curr_d_rats['Day_1'] = curr_d_rats['Time_1'] * 2
         curr_d_rats['Day_2'] = curr_d_rats['Time_2'] * 2
+        
 
         #check if there are rows without any exact matrhing timepoints
         unmatched = curr_d_rats[~curr_d_rats['Day_1'].isin(dict_from_csv.keys()) | ~curr_d_rats['Day_2'].isin(dict_from_csv.keys())]

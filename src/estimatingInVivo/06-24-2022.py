@@ -36,6 +36,7 @@ stat_df_non_btwn = stat_df[stat_df['Consecutive'] == True]
 stat_df_monoton = stat_df[stat_df['Monotonic'] == True]
 stat_df = stat_df_monoton
 
+
 all_par_ests = []
 all_group_fits = []
 x_vals = stat_df_monoton['Dist_X_Time'].unique()

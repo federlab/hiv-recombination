@@ -14,21 +14,24 @@ from matplotlib import rcParams
 GROUP_THRESHOLD_LIST = [7500, 10000, 25000, 50000, 100000, 200000]
 NUM_BOOTSTRAPS = 1000
 
+#Today I am going to try to do the leave one out validation but also include different thresholds
+
 #For running on desktop
 dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig4/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/07-29-2022/"
 
 #Make the dataframe containg D' ratios
 stat_df = zu.combine_drats(dataDir)
 stat_df = zu.label_vl_drats(stat_df, vlDir)
 
 stat_df = stat_df[stat_df['Fragment'] != 'F5']
-# stat_df = stat_df[stat_df['Participant'] != 'p4']
 stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
+stat_df = stat_df[stat_df['Participant'] != 'p1']
+
 
 #Only get values for which the viral load doesn't leave the boundaries of the 
-#initial and final measurments
+#initial and final measurements
 stat_df = stat_df[stat_df['Monotonic'] == True]
 
 ############################# Panel 1 Analysis ################################
@@ -93,6 +96,7 @@ for name, group in all_par_ests.groupby(['Group', 'Threshold']):
 
 all_conf_ints = pd.DataFrame(all_conf_ints, 
     columns=['lower_conf', 'upper_conf', 'Group', 'Threshold'])
+print(all_conf_ints)
 
 ############################# Plotting Panel 1 ################################
 #plot the 
@@ -131,5 +135,5 @@ ax2.set_ylabel("D\' Ratio")
 
 
 plt.tight_layout()
-plt.savefig(outDir + 'fig4.jpg')
+plt.savefig(outDir + 'group_results_leave_out_p1.jpg')
 plt.close()

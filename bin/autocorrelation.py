@@ -39,6 +39,7 @@ def calculate_d_ratios(linkage_file, THRESHOLD = 0.2):
         group_times = group['timepoint'].unique()
         group_times.sort()
         for i in range(len(group_times) - 1):
+
             curr_time = float(group_times[i])
             next_time = float(group_times[i+1])
 
@@ -50,6 +51,7 @@ def calculate_d_ratios(linkage_file, THRESHOLD = 0.2):
             if d_i < THRESHOLD:
                 # print('D_i is zero')
                 continue
+
             curr_val = -np.log(d_i_1/d_i)
             stat_df.append([curr_val, name[0], name[1], next_time - curr_time, d_i, curr_time, next_time])
 

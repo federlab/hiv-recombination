@@ -39,7 +39,7 @@ stat_df = zu.label_vl_drats(stat_df, vlDir)
 
 #Filter the d' ratio dataframe
 stat_df = stat_df[stat_df['Fragment'] != 'F5']
-stat_df = stat_df[stat_df['Participant'] != 'p4']
+# stat_df = stat_df[stat_df['Participant'] != 'p4']
 stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
 stat_df = stat_df[stat_df['Monotonic'] == True]
 

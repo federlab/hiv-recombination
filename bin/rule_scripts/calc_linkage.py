@@ -36,6 +36,9 @@ for currfile in os.listdir(coCounts_dir):
 
     #get the timepoint label
     timepoint = currfile.split('_')[-1]
+    #sometimes the timepoint label isn't in the last position
+    if timepoint[0] != 't':
+        timepoint = currfile.split('_')[-2]
     timepoint = timepoint.split('.')[0]
     timepoint = int(timepoint[1:])
     generation = timepoint_df[timepoint_df['name'] == timepoint]
@@ -46,7 +49,7 @@ for currfile in os.listdir(coCounts_dir):
     curr_seg.reset_index(drop = True, inplace = True)
 
     #load the array
-    coCounts_arr = np.load(coCounts_dir  + currfile)
+    coCounts_arr = np.load(coCounts_dir  + currfile, allow_pickle = True, encoding = 'bytes')
 
     #get the linkage calculation results
     stat_list, distList, supportList, resultsDF = r2.calculate_R2_pairCounts(
