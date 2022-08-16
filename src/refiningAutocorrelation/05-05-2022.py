@@ -4,6 +4,7 @@ import sys
 from matplotlib.ticker import MaxNLocator
 sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -108,3 +109,7 @@ plt.xlabel("Number of Segregating Sites")
 plt.tight_layout()
 plt.savefig(outDir + "segregating_loci_fragment.jpg")
 plt.close()
+
+#print the total number of segregating loci
+print("The total number of segregating loci is")
+print(np.sum(time_par_df['snp_counts']))

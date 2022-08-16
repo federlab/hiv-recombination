@@ -53,9 +53,19 @@ for curr_data in os.listdir(dataDir):
 
 seg_hist_data = pd.DataFrame(seg_hist_data, columns = ['num_seg_loci', 'sim_rho'])
 seg_hist_data = seg_hist_data.groupby('sim_rho').num_seg_loci.agg('sum')
-all_stat_df = pd.concat(all_stat_df, ignore_index=True)
 print(seg_hist_data)
+
+
+all_stat_df = pd.concat(all_stat_df, ignore_index=True)
 sim_rho_list = all_stat_df['sim_rho'].unique()
+
+
+num_seg_pairs = []
+for name, group in all_stat_df.groupby('sim_rho'):
+    num_seg_pairs.append([name, len(group)])
+
+
+
 
 for curr_rho in sim_rho_list:
     stat_df = all_stat_df[all_stat_df['sim_rho'] == curr_rho]
@@ -90,6 +100,8 @@ for curr_rho in sim_rho_list:
 estimate_df = pd.DataFrame(estimate_df, columns=["C0", "C1", "C2",
                      "Est_Rho", 'Dataset', 'Sim_Rho', 'data'] )
 
+num_seg_pairs = pd.DataFrame(num_seg_pairs, columns = ['Sim_Rho', 'Num_Seg_Pairs'])
+print(num_seg_pairs)
 ############################# Plotting Estimate Accuracy ######################
 # #Plot our estimates against each other 
 

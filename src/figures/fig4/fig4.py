@@ -111,11 +111,12 @@ rcParams['mathtext.fontset'] = 'custom'
 rcParams['mathtext.rm'] = 'DejaVu Sans'
 # rcParams['mathtext.it'] = 'DejaVu Sans:italic'
 sns.set(font_scale = 2)
-sns.set_palette("rocket")
+sns.set_palette("tab10")
+sns.set_style("white")
 
 
 myplot = sns.FacetGrid(all_par_ests, col = 'Participant', height = 10, aspect = 1.5)
-myplot.map_dataframe(sns.boxplot, x ='Threshold', y ='Estimated_Rho', hue = 'Group')
+myplot.map_dataframe(sns.boxplot, x ='Threshold', y ='Estimated_Rho', hue = 'Group', palette=dict(Low_VL="tab:blue", High_VL = "tab:orange"))
 plt.ylim(0, 0.0003)
 plt.xlabel(r'Group Viral Load Threshold (copies/ml)')
 plt.ylabel(r'Estimated Value of $\rho$')
@@ -124,23 +125,7 @@ plt.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
 plt.axhline(0.000014, color = 'tab:green')
 plt.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
 
-# # #plot the fits for the 50000 copies/mL threshold
-# data_50k = all_group_fits[all_group_fits['Threshold'] == 50000]
-# low_50k = data_50k[data_50k['Group'] == 'Low_VL']
-# high_50k = data_50k[data_50k['Group'] == 'High_VL']
-# sns.lineplot(x ='bin_edges', y ='ratio_bins', data = low_50k, color = 'tab:blue', ax = ax2)
-# sns.lineplot(x ='bin_edges', y ='mid_conf', data = low_50k, color = 'tab:blue', linestyle = 'dashed', ax = ax2)
-# sns.lineplot(x ='bin_edges', y ='lower_conf', data = low_50k, color = 'gray', linestyle = 'dashed', ax = ax2)
-# sns.lineplot(x ='bin_edges', y ='high_conf', data = low_50k, color = 'gray', linestyle = 'dashed', ax = ax2)
-
-# sns.lineplot(x ='bin_edges', y ='ratio_bins', data = high_50k, color = 'tab:orange', ax = ax2)
-# sns.lineplot(x ='bin_edges', y ='mid_conf', data = high_50k, color = 'tab:orange', linestyle = 'dashed', ax = ax2)
-# sns.lineplot(x ='bin_edges', y ='lower_conf', data = high_50k, color = 'black', linestyle = 'dashed', ax = ax2)
-# sns.lineplot(x ='bin_edges', y ='high_conf', data = high_50k, color = 'black', linestyle = 'dashed', ax = ax2)
-# ax2.set_xlabel(r'Distance X Time (bp/generation)')
-# ax2.set_ylabel("D\' Ratio")
-
-plt.legend()
+plt.legend(loc='upper right')
 plt.tight_layout()
 plt.savefig(outDir + 'fig4_p1.jpg')
 plt.close()
