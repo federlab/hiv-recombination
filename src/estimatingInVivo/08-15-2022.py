@@ -75,7 +75,8 @@ for i in range(3):
                 my_color = "tab:blue"
                 my_color2 = "navy"
 
-            axs[i,j].axline((time_1, vl_1), (time_2, vl_2), color = my_color)
+            # axs[i,j].axline((time_1, vl_1), (time_2, vl_2), color = my_color)
+            axs[i,j].plot([time_1, time_2], [vl_1, vl_2], color = my_color)
             axs[i,j].axhline(THRESHOLD, color = "gray", linestyle = "--")
             axs[i,j].set_title("p" + str(curr_par))
 
@@ -95,11 +96,60 @@ for i in range(3):
                 my_color = "tab:blue"
                 my_color2 = "navy"
             
-            axs[i,j].plot(ave_time, ave_vl, color = my_color2, marker = "D")
+            axs[i,j].plot(ave_time, ave_vl, color = my_color2, marker = "D", markersize = 2)
 
         #update the participant
         curr_par += 1
 
 # plt.yscale('log')
 plt.savefig(outDir + 'new_vl_prototype.jpg')
+plt.close()
+
+#plot all of the points on top of each other
+
+#now loop through pairs of timepoints and plot them on the grid
+grouped_par = stat_df.groupby(by = ['Day_1', 'Day_2'])
+for name, group in grouped_par:
+
+    time_1 = name[0]
+    time_2 = name[1]
+
+    vl_1 = group['VL_1'].unique()[0]
+    vl_2 = group['VL_2'].unique()[0]
+
+    ave_vl = group['Ave_VL'].unique()[0]
+    ave_time = np.mean([time_1, time_2])
+    if  ave_vl > THRESHOLD:
+        my_color = "tab:orange"
+        my_color2 = "peru"
+    else: 
+        my_color = "tab:blue"
+        my_color2 = "navy"
+
+    plt.plot([time_1, time_2], [vl_1, vl_2], color = my_color)
+    plt.axhline(THRESHOLD, color = "gray", linestyle = "--")
+
+for name, group in grouped_par:
+
+    time_1 = name[0]
+    time_2 = name[1]
+
+    vl_1 = group['VL_1'].unique()[0]
+    vl_2 = group['VL_2'].unique()[0]
+
+    ave_vl = group['Ave_VL'].unique()[0]
+    ave_time = np.mean([time_1, time_2])
+    if  ave_vl > THRESHOLD:
+        my_color = "tab:orange"
+        my_color2 = "saddlebrown"
+    else: 
+        my_color = "tab:blue"
+        my_color2 = "navy"
+
+
+    plt.plot(ave_time, ave_vl, color = my_color2, marker = "D", markersize = 2)
+
+plt.xlabel('Time (days)')
+plt.ylabel('Viral Load (copies/ml)')
+plt.savefig(outDir + 'all_vls_prototype.jpg')
 plt.close()
