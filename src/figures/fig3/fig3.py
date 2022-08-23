@@ -41,7 +41,6 @@ x_vals = stat_df['Dist_X_Time'].describe()
 for curr_thresh in GROUP_THRESHOLD_LIST:
     #Get the dataframe for everyone except the current participant
     stat_df['High_VL'] = stat_df['Ave_VL'].gt(curr_thresh)
-    stat_df_LOW = stat_df[stat_df['Ave_VL'].lt(curr_thresh)]
 
     #Estimate for the specific group
     for name, group in stat_df.groupby('High_VL'):

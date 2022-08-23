@@ -3,22 +3,26 @@ import numpy as np
 #This file is for running our neher and leitner analysis on the filtered genotypes
 
 #Directory with the text files
-textdataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_08_10_MPL_txt/'
+textdataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_08_12_MPL_txt/'
 
 #Directory we'll use to save all of the additional analysis files
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_08_10_MPL/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_08_12_MPL/'
 
 #Directory with all of the scripts for our additional rules
 ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 
 # #For Desktop Dry run
-# textdataDir = '/Volumes/feder-vol1/project/hiv_recombination/data/simulated/2022_08_10_MPL/'
-# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_08_10_MPL/'
+# textdataDir = '/Volumes/feder-vol1/project/hiv_recombination/data/simulated/2022_08_12_MPL/'
+# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_08_12_MPL/'
 # ruleScriptDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 
 #get the proper names of all the simulated directories
 rho_vals = ['0.001', '1e-04','2e-04' ,'1e-05', '2e-05', '2e-06' ]
-reps = range(1,11)
+
+#for the 08-12 dataset
+rho_vals = ['1e-04','2e-04' ,'1e-05', '2e-05', '2e-06' ]
+
+reps = range(1,41)
 
 #the patterns for the linkage results
 full_dir_pattern_linkage = dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_rep{rep}/linkage/r2_and_D"
