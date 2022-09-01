@@ -19,10 +19,10 @@ ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 #get the proper names of all the simulated directories
 rho_vals = ['0.001', '1e-04', '1e-05', '2e-04', '2e-05', '2e-06']
 reps = range(1,11)
-filetypes = ['mutation', 'recombination']
-full_dir_pattern_neher= dataDir + "mu1e-05_rho{rho_val}_Ne10000_M800_rep{rep}/neher_res/{filetype}"
-full_dir_neher = expand(full_dir_pattern_neher,
-        rho_val = rho_vals, rep = reps, filetype = filetypes)
+# filetypes = ['mutation', 'recombination']
+# full_dir_pattern_neher= dataDir + "mu1e-05_rho{rho_val}_Ne10000_M800_rep{rep}/neher_res/{filetype}"
+# full_dir_neher = expand(full_dir_pattern_neher,
+#         rho_val = rho_vals, rep = reps, filetype = filetypes)
 
 #the patterns for the linkage results
 full_dir_pattern_linkage = dataDir + "mu1e-05_rho{rho_val}_Ne10000_M800_rep{rep}/linkage/r2_and_D"

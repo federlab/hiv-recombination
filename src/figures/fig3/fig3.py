@@ -10,9 +10,10 @@ import plot_neher as plne
 import zaniniUtil as zu
 from scipy import stats
 from matplotlib import rcParams
+from matplotlib import gridspec
 
 GROUP_THRESHOLD_LIST = [7500, 10000, 25000, 50000, 100000, 200000]
-NUM_BOOTSTRAPS = 1000
+NUM_BOOTSTRAPS = 10
 EXAMPLE_THRESHOLD = 50000
 
 #For running on desktop
@@ -25,7 +26,6 @@ stat_df = zu.combine_drats(dataDir)
 stat_df = zu.label_vl_drats(stat_df, vlDir)
 
 stat_df = stat_df[stat_df['Fragment'] != 'F5']
-# stat_df = stat_df[stat_df['Participant'] != 'p4']
 stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
 
 #Only get values for which the viral load doesn't leave the boundaries of the 
@@ -36,6 +36,7 @@ stat_df = stat_df[stat_df['Monotonic'] == True]
 all_par_ests = []
 all_group_fits = []
 x_vals = stat_df['Dist_X_Time'].describe()
+group_size_df = []
 
 #Estimate rates specifically excluding each individual
 for curr_thresh in GROUP_THRESHOLD_LIST:
@@ -75,11 +76,17 @@ for curr_thresh in GROUP_THRESHOLD_LIST:
         group_fits['Threshold'] = curr_thresh
         group_fits['Group'] = curr_name
 
-        all_group_fits.append(group_fits)
+        #Add the size of the group to the dictionary which labels the axis
+        group_size_df.append([curr_thresh, curr_name, group.shape[0]])
+        
+        #Add all of the current results
         all_par_ests.append(estimate_df)
+        all_group_fits.append(group_fits)
+
 
 all_par_ests = pd.concat(all_par_ests, ignore_index=True)
 all_group_fits = pd.concat(all_group_fits, ignore_index=True)
+all_group_sizes = pd.DataFrame(group_size_df, columns=['Threshold', 'Group', 'Size'])
 
 all_conf_ints = []
 
@@ -94,44 +101,73 @@ for name, group in all_par_ests.groupby(['Group', 'Threshold']):
 all_conf_ints = pd.DataFrame(all_conf_ints, 
     columns=['lower_conf', 'upper_conf', 'Group', 'Threshold'])
 
-############################# Plotting Panel 1 ################################
+############################# Plotting Panel C ################################
 
 
 print(all_group_fits)
 rcParams['mathtext.fontset'] = 'custom'
 rcParams['mathtext.rm'] = 'DejaVu Sans'
 rcParams['mathtext.it'] = 'DejaVu Sans:italic'
-sns.set(rc={'figure.figsize':(25,7.5)}, font_scale = 2)
+sns.set(rc={'figure.figsize':(20, 15)}, font_scale = 2)
 sns.set_palette("tab10")
 sns.set_style("white")
-fig_4, (ax1, ax2, ax3) = plt.subplots(1,3)
+fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [7, 1]})
+plt.subplots_adjust(hspace=0.25)
 
-sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_ests, ax = ax3)
-ax3.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
-ax3.set_ylabel(r'Estimated Value of $\rho$')
-ax3.set_ylim(0, 0.0003)
-ax3.ticklabel_format(style = 'sci', axis = 'y')
-ax3.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
-ax3.axhline(0.000014, color = 'tab:green')
-ax3.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
+sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_ests, ax = ax1)
+
+# ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+ax1.set_ylabel(r'Estimated Value of $\rho$')
+ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+ax1.ticklabel_format(style = 'sci', axis = 'y')
+ax1.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
+ax1.axhline(0.000014, color = 'tab:green')
+ax1.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
+ax1.xaxis.set_tick_params(labelbottom=True)
+
+############################# Plotting Panel D ################################
+sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', data = all_group_sizes, ci = None, ax = ax2)
+ax2.set_xlabel("")
+ax2.set_ylabel("Group Size")
+ax2.get_legend().remove()
+ax2.xaxis.set_tick_params(labelbottom=False)
+ax2.invert_yaxis()
+# ax2.set_xlabel('')
+fig.align_ylabels([ax1, ax2])
+plt.savefig(outDir + 'fig3CD.jpg')
+plt.close()
+
+####################### Plotting Panel B ######################################
+sns.set(rc={'figure.figsize':(10,10)}, font_scale = 2)
+sns.set_palette("tab10")
+sns.set_style("white")
 
 # #plot the fits for the 50000 copies/mL threshold
 data_50k = all_group_fits[all_group_fits['Threshold'] == EXAMPLE_THRESHOLD]
 low_50k = data_50k[data_50k['Group'] == 'Low_VL']
 high_50k = data_50k[data_50k['Group'] == 'High_VL']
-sns.lineplot(x ='bin_edges', y ='ratio_bins', data = low_50k, color = 'tab:blue', ax = ax2)
-sns.lineplot(x ='bin_edges', y ='mid_conf', data = low_50k, color = 'tab:blue', linestyle = 'dashed', ax = ax2)
-sns.lineplot(x ='bin_edges', y ='lower_conf', data = low_50k, color = 'navy', linestyle = 'dashed', ax = ax2)
-sns.lineplot(x ='bin_edges', y ='high_conf', data = low_50k, color = 'navy', linestyle = 'dashed', ax = ax2)
+sns.lineplot(x ='bin_edges', y ='ratio_bins', data = low_50k, color = 'tab:blue')
+sns.lineplot(x ='bin_edges', y ='mid_conf', data = low_50k, color = 'tab:blue', linestyle = 'dashed')
+sns.lineplot(x ='bin_edges', y ='lower_conf', data = low_50k, color = 'navy', linestyle = 'dashed')
+sns.lineplot(x ='bin_edges', y ='high_conf', data = low_50k, color = 'navy', linestyle = 'dashed')
 
-sns.lineplot(x ='bin_edges', y ='ratio_bins', data = high_50k, color = 'tab:orange', ax = ax2)
-sns.lineplot(x ='bin_edges', y ='mid_conf', data = high_50k, color = 'tab:orange', linestyle = 'dashed', ax = ax2)
-sns.lineplot(x ='bin_edges', y ='lower_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed', ax = ax2)
-sns.lineplot(x ='bin_edges', y ='high_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed', ax = ax2)
-ax2.set_xlabel(r'Distance X Time (bp/generation)')
-ax2.set_ylabel("D\' Ratio")
+sns.lineplot(x ='bin_edges', y ='ratio_bins', data = high_50k, color = 'tab:orange')
+sns.lineplot(x ='bin_edges', y ='mid_conf', data = high_50k, color = 'tab:orange', linestyle = 'dashed')
+sns.lineplot(x ='bin_edges', y ='lower_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed')
+sns.lineplot(x ='bin_edges', y ='high_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed')
+plt.xlabel(r'Distance X Time (bp/generation)')
+plt.ylabel("D\' Ratio")
 
-############################# Panel 2 Analysis ################################
+plt.savefig(outDir + 'fig3B.jpg')
+plt.tight_layout()
+plt.close()
+
+
+############################# Plotting Panel A ################################
+sns.set(rc={'figure.figsize':(15,10)}, font_scale = 2)
+sns.set_palette("tab10")
+sns.set_style("white")
+
 #now loop through pairs of timepoints and plot them on the grid
 grouped_par = stat_df.groupby(by = ['Day_1', 'Day_2'])
 for name, group in grouped_par:
@@ -151,8 +187,8 @@ for name, group in grouped_par:
         my_color = "tab:blue"
         my_color2 = "navy"
 
-    ax1.plot([time_1, time_2], [vl_1, vl_2], color = my_color)
-    ax1.axhline(EXAMPLE_THRESHOLD, color = "gray", linestyle = "--")
+    plt.plot([time_1, time_2], [vl_1, vl_2], color = my_color)
+    plt.axhline(EXAMPLE_THRESHOLD, color = "gray", linestyle = "--")
 
 for name, group in grouped_par:
 
@@ -172,12 +208,11 @@ for name, group in grouped_par:
         my_color2 = "navy"
 
 
-    ax1.plot(ave_time, ave_vl, color = my_color2, marker = "D", markersize = 3)
+    plt.plot(ave_time, ave_vl, color = my_color2, marker = "D", markersize = 3)
 
-ax1.set_xlabel('Time (days)')
-ax1.set_ylabel('Viral Load (copies/ml)')
+plt.xlabel('Time (days)')
+plt.ylabel('Viral Load (copies/ml)')
 
-
+plt.savefig(outDir + 'fig3A.jpg')
 plt.tight_layout()
-plt.savefig(outDir + 'fig3.jpg')
 plt.close()
