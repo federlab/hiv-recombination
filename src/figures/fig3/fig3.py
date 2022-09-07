@@ -13,7 +13,7 @@ from matplotlib import rcParams
 from matplotlib import gridspec
 
 GROUP_THRESHOLD_LIST = [7500, 10000, 25000, 50000, 100000, 200000]
-NUM_BOOTSTRAPS = 10
+NUM_BOOTSTRAPS = 1000
 EXAMPLE_THRESHOLD = 50000
 
 #For running on desktop
@@ -116,7 +116,6 @@ plt.subplots_adjust(hspace=0.25)
 
 sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_ests, ax = ax1)
 
-# ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
 ax1.set_ylabel(r'Estimated Value of $\rho$')
 ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
 ax1.ticklabel_format(style = 'sci', axis = 'y')
@@ -126,13 +125,13 @@ ax1.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
 ax1.xaxis.set_tick_params(labelbottom=True)
 
 ############################# Plotting Panel D ################################
+print(all_group_sizes)
+
 sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', data = all_group_sizes, ci = None, ax = ax2)
-ax2.set_xlabel("")
+ax2.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
 ax2.set_ylabel("Group Size")
 ax2.get_legend().remove()
-ax2.xaxis.set_tick_params(labelbottom=False)
-ax2.invert_yaxis()
-# ax2.set_xlabel('')
+ax2.xaxis.set_tick_params(labelbottom=True)
 fig.align_ylabels([ax1, ax2])
 plt.savefig(outDir + 'fig3CD.jpg')
 plt.close()
