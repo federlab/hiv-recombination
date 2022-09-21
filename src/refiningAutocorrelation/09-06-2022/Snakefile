@@ -3,7 +3,7 @@ import numpy as np
 #Load the modules we will need for the jobs
 # shell.prefix()
 shell.prefix("module load pcre2/10.39;\nmodule load R/4.1.2;\nmodule load SLiM/3.7;")
-configfile: "config_0-001.yaml"
+configfile: "config_0-1e-4.yaml"
 
 
 #This file runs Alison's scripts for slim simulations
@@ -45,7 +45,7 @@ rule all:
 rule set_up_dirs:
     output: 
      wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/slim_script.txt"
-    shell: "Rscript " + r_script_dir + "setup_dir_and_script_minusmegaline.r -d " + \
+    shell: "Rscript " + r_script_dir + "setup_dir_and_script.r -d " + \
              DIR_NAME + " -m " + str(MU) + " -r {wildcards.rho_val} -N " + str(NE) + " -M " + str(SAMP_DEPTH) + " -i {wildcards.rep} -s {wildcards.sel_opt}"
 
 #This rule runs the slim script for each simulation

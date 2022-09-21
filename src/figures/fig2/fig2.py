@@ -102,7 +102,8 @@ for entry in estimate_df['Sim_Rho']:
     newStringRho.append(rho_dict_fix_strings[entry])
 estimate_df['Sim_int_rho'] = intRhoList
 estimate_df['Sim_Rho'] = newStringRho
-
+print(np.unique(estimate_df['Sim_Rho']))
+print(estimate_df[estimate_df['Sim_int_rho'] == 0.000002])
 
 rcParams['mathtext.fontset'] = 'custom'
 rcParams['mathtext.rm'] = 'DejaVu Sans'

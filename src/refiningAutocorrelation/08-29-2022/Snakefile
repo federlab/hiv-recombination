@@ -17,14 +17,14 @@ r_script_dir = '/net/feder/vol1/project/hiv_recombination/bin/R_for_snakemake/'
 # r_script_dir = '/Volumes/feder-vol1/project/hiv_recombination/bin/R_for_snakemake/'
 
 #The constants we will use for each run
-DIR_NAME = '2022_09_07_neutral'
+DIR_NAME = '2022_09_16_neutral_long'
 MU = 1e-6
 NE = 1e4
 SAMP_DEPTH = 800 
 
 #get the values for each of the simulation options
 rho_vals = ['0.001', '1e-04','2e-04' ,'1e-05', '2e-05', '2e-06' ]
-reps = range(1,20)
+reps = range(1)
 sel_opts = ['neutral']#, 'MPL']
 timepoint_nums = range(1, 6)
 
@@ -45,7 +45,7 @@ rule all:
 rule set_up_dirs:
     output: 
      wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/slim_script.txt"
-    shell: "Rscript " + r_script_dir + "setup_dir_and_script_minusmegaline.r -d " + \
+    shell: "Rscript " + r_script_dir + "setup_dir_and_script.r -d " + \
              DIR_NAME + " -m " + str(MU) + " -r {wildcards.rho_val} -N " + str(NE) + " -M " + str(SAMP_DEPTH) + " -i {wildcards.rep} -s {wildcards.sel_opt}"
 
 #This rule runs the slim script for each simulation

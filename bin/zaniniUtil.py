@@ -112,8 +112,6 @@ def make_genotype_df(segregatingLoci, coCounts_arr):
                         gen_count = currentCounts[pos_1,pos_2]
                         #we want to put all the counts that arent zero in our array
                         if gen_count > 0:
-                            #but first check that neither of the frequencies are below
-                            #the 3% error rate
                             alleles = allele_dict[pos_1] + allele_dict[pos_2]
                             genotype_df.append([i, j, alleles, gen_count])
     
