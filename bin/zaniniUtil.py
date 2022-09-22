@@ -7,6 +7,7 @@ import csv
 def find_segregating_diagonal(coCounts_arr, all_seg = False):
     """ Takes a numpy array of co-SNP counts from the Zanini et al. data.
     Scans the diagonal of the array to find segregating sites. 
+    ---------------------------------------------------------------------------
     Params
     ------
     coCounts_arr:   np.array, array from Zanini et al. of snp counts
