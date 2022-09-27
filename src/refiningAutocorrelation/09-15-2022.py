@@ -12,7 +12,7 @@ from scipy.stats import binned_statistic
 import plot_neher as plne
 import autocorrelation as autocorr
 from scipy import optimize
-from sklearn.metrics import mean_squared_error
+# from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
 
 THRESHOLD = 0.2

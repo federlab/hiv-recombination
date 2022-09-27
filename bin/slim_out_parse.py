@@ -1,5 +1,8 @@
 from io import StringIO
+from turtle import position
+from unicodedata import numeric
 import pandas as pd
+import numpy as np
 from operator import contains
 
 #This file contains helper functions for parsing the generic slim output
@@ -18,24 +21,215 @@ def parse_output_section(section):
 
     Returns
     -----------
+    mut_data_df:pd.DataFrame, the slim output for the mutation section in a
+                pandas dataframe format. The first 10 columns are just the 
+                columns output by slim. Then there is a time column that gives
+                the sampling time and a segregating column that is True if the
+                mutation is segregating and False if it's fixed.
     """
     #First we can get the timepoint from the first line
-    time, seg_data = section.split('\n', 1)
+    first_line, mut_data = section.split('\n', 1)
+    first_line = first_line.split(' ')
 
     #Isolate the timepoint and convert to an int
-    time = int(time.split(' ')[1])
+    time = int(first_line[1])
+    
+    #Now we will put the segregating site data into a dataframe
+    mut_data_df = pd.read_csv(StringIO(mut_data), sep=' ', header=None,
+        skiprows=[0,1], names = ['numeric_id','id', 'type', 'position', 
+        'selection', 'dominance', 'subpop', 'tick', 'prevalence', 'allele'])
+    mut_data_df['time'] = time
 
-    #Check if there is this section includes genotype info
-    contains_genomes = len(seg_data.split('Genomes:')) > 1
+    return mut_data_df
+
+def parse_genome_data(genome_data):
+    """Takes the section of the output file that contains the list of mutations
+    associated with each individual.
+    ---------------------------------------------------------------------------
+    Params
+    -----------
+    genome_data: str, the section of the slim output file to parse. Generated 
+                by reading in the entire slim file and splitting on the #OUT  
+                tag then splitting on the Genomes: tag. This section contains
+                the haplotypes for each sampled individual.
+
+    Returns
+    -----------
+    genotype_dict: dictionary, keys are the individual ids and values are lists
+                of the mutations associated with that individual.
+    """
+    #Initialize the dictionary to store the data
+    genotype_dict = {}
+
+    #First separate out all of the individuals and get rid of trailing bits
+    genome_data = genome_data.split('\n')[1:-1]
     
-    #Separate out and process the genotype info if it exists
-    if contains_genomes:
-        split_results = seg_data.split('Genomes:')[1]
-        genome_data = split_results[1]
-        seg_data = split_results[0]
+    #Now we will loop through each individual and get the mutations
+    #We will store the mutations in a dictionary of sets
+    for curr_indiv in genome_data:
+        curr_indiv_split = curr_indiv.split(' ')
+        indiv_id = curr_indiv_split[0]
+        indiv_id = indiv_id.split(':')[1]
+
+        genotype_list = curr_indiv_split[2:]
+        genotype_dict[indiv_id] = genotype_list
+
+    return genotype_dict
+
+
+def make_seg_loci_df(mut_data_df, hxb2, samplenum):
+    """Makes the segregating loci dataframe that the recombination estimation
+    snakemake pipeline uses.
+    ---------------------------------------------------------------------------
+    Params
+    -----------
+    mut_data_df:    pd.DataFrame, the segregating dataframe created by 
+                    parse_output_section
+    hxb2:           string, the hxb2 sequence updated with all of the fixed 
+                    mutations that have occurred in the population so far
+    samplenum:      int, the number of genomes sampled. Necessary for 
+                    calculating mutation frequencies
+    Returns
+    -----------
+    seg_loci_df:    pd.DataFrame, the dataframe that contains the segregating
+                    loci in the format that the recombination estimation
+                    pipeline uses
+    """
+    #Make the dataframe we will return
+    seg_loci_df = []
+
+    #Group the dataframe by position
+    grouped_df = mut_data_df.groupby('position')
+
+    #Loop through each position and add it to the dataframe
+    for position, group in grouped_df:
+        #Get info we will use for the hxb2 allele
+        ref_allele = hxb2[position]
+        other_prevs = 0
+
+        #Make a list where each item is a tuple of an allele and its frequency
+        allele_freq_list = []
+
+        #Group the dataframe by allele as well
+        allele_grouped_df = group.groupby('allele')
+
+        #Loop through each allele and get the frequency
+        for allele_name, allele_group in allele_grouped_df:
+            
+            #Add the allele prevalence to the other prevalences of it doesn't
+            #match the reference allele
+            if allele_name == ref_allele:
+                #If we just pass it'll be included when we subtract other_prevs
+                pass
+            else:
+                curr_prev = np.sum(allele_group['prevalence'])
+                allele_freq_list.append((allele_name, curr_prev/samplenum)) 
+                other_prevs += curr_prev
+
+        #Now we will add the reference allele to the list
+        allele_freq_list.append((ref_allele, (samplenum - other_prevs)/samplenum))
+
+        #Check if we need to add any 0 frequency alleles
+        observed_alleles = set([x[0] for x in allele_freq_list])
+        for allele in ['A', 'C', 'G', 'T']:
+            if allele not in observed_alleles:
+                allele_freq_list.append((allele, 0))
+
+        allele_freq_list.sort(reverse = True, key=lambda x: x[1])
+
+        #Flatten the allele_freq_list
+        allele_freq_list = [item for sublist in allele_freq_list for item in sublist]
+        seg_loci_df.append([position] + allele_freq_list)
     
-    #Now we can process the data on segregating sites
-    seg_df = pd.read_csv(StringIO(seg_data), sep=' ', skiprows=[0,1], header=None)
-    print(seg_df)
-    return
+    #Make the dataframe
+    seg_loci_df = pd.DataFrame(seg_loci_df, columns = ['position', 'allele_1',
+                    'freq_1', 'allele_2', 'freq_2', 'allele_3', 'freq_3',
+                    'allele_4', 'freq_4'])
+    return seg_loci_df
+
+def make_haplotype_df(genome_dict, curr_seg_df, hxb2):
+    """Makes the haplotype dataframe that the recombination estimation
+    snakemake pipeline uses.
+    ---------------------------------------------------------------------------
+    Params
+    -----------
+    genome_dict:    dictionary, keys are the individual ids and values are sets
+                    of the mutations associated with that individual.
+    curr_seg_df:    pd.DataFrame, the segregating dataframe created by 
+                    parse_output_section
+    hxb2:           string, the hxb2 sequence updated with all of the fixed 
+                    mutations that have occurred in the population so far
+    Returns
+    -----------
+    haplotype_df:   pd.DataFrame, the dataframe that contains the haplotypes
+                    in the format that the recombination estimation pipeline
+                    uses
+    """
+    #Make the dataframe we will return
+    haplotype_df = []
+
+    #Make a dictionary keyed by individual, each value is a dictionary of 
+    #the positions of mutations and alleles they're mutated to
+    genotype_dict = {}
+
+    #Loop through each individual
+    for individual in genome_dict.keys():
+        #Get the mutations associated with the individual
+        curr_haplotype = genome_dict[individual]
+        #Make a dictionary to store the mutations
+        curr_mut_dict = {}
+
+        #Loop through each mutation and add it to the dictionary
+        for mutation in curr_haplotype:
+            mutation_info = curr_seg_df[curr_seg_df['numeric_id'] == int(mutation)]
+            #For some reason numeric id 190 is missing from the segregating dataframe
+            if len(mutation_info) == 0:
+                print('Numeric ID ' + mutation + ' not found in segregating dataframe')
+                continue
+
+            #Add the mutation to that individual's dictionary
+            position = mutation_info['position'].tolist()[0]
+            allele = mutation_info['allele'].tolist()[0]
+            curr_mut_dict[position] = allele
+        
+        #Add the individual's dictionary to the genotype dictionary
+        genotype_dict[individual] = curr_mut_dict
     
+    #Now we will use this dictionary to assemble the haplotype dataframe
+    segregating_loci = curr_seg_df['position'].unique()
+    print(len(segregating_loci))
+    print("******************")
+    for i in segregating_loci:
+        print(i)
+        for j in segregating_loci:
+            #Dictionary where we count up each of the haplotypes
+            hap_dict = {}
+
+            #loop through each individual and get its haplotype
+            for curr_individual in genotype_dict.keys():
+                curr_mut_dict = genotype_dict[curr_individual]
+
+                #Get the alleles at each position
+                if i in curr_mut_dict.keys():
+                    allele_i = curr_mut_dict[i]
+                else: allele_i = hxb2[i]
+
+                if j in curr_mut_dict.keys():
+                    allele_j = curr_mut_dict[j]
+                else: allele_j = hxb2[j]
+
+                #Add the haplotype to the dictionary
+                curr_hap = allele_i + allele_j
+                if curr_hap not in hap_dict.keys():
+                    hap_dict[curr_hap] = 1
+                else:
+                    hap_dict[curr_hap] += 1
+            
+            #Now make an entry for each haplotype we observed
+            for hap in hap_dict.keys():
+                haplotype_df.append([i, j, hap, hap_dict[hap]])
+    
+    haplotype_df = pd.DataFrame(haplotype_df, 
+        columns = ['Locus_1', 'Locus_2', '2_Haplotype', 'Count'])
+
+    return haplotype_df

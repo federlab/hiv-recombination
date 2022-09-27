@@ -11,3 +11,5 @@ seg_loc_df = pd.read_pickle(input_dir + "FilteredLoci")
 print(seg_loc_df.head())
 print(seg_loc_df['timepoint'].unique())
 
+genotype_df = pd.read_pickle(input_dir + "FilteredGenotypes")
+print(genotype_df.head())

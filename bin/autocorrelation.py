@@ -59,7 +59,6 @@ def calculate_d_ratios(linkage_file, THRESHOLD = 0.2):
     stat_df = pd.DataFrame(stat_df, columns = ['d_ratio', 'Locus_1', 'Locus_2', 'Time_Diff', 'd_i', 'Time_1', 'Time_2'])
     stat_df['Dist_X_Time'] = (stat_df['Locus_2'] - stat_df['Locus_1']) * stat_df['Time_Diff']
     stat_df = stat_df[stat_df['d_ratio'].between(-10,10)]
-    stat_df = stat_df[stat_df['Dist_X_Time'].between(0, 50000)]
     stat_df.replace([np.inf, -np.inf], np.nan, inplace=True)
     stat_df.dropna(inplace = True)
 

@@ -11,7 +11,6 @@ from scipy.stats import binned_statistic
 import plot_neher as plne
 import autocorrelation as autocorr
 from scipy import optimize
-from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
 
 THRESHOLD = 0.2
@@ -21,6 +20,8 @@ NUM_REPS = 1
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_16_neutral_long/'
 outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_16_neutral_long/'
 
+# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_16_neutral_long/'
+# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_16_neutral_long/'
  
 all_stat_dfs = []
 estimate_df = []
@@ -44,8 +45,12 @@ for curr_data in os.listdir(dataDir):
     stat_df['Sim_Rho'] = sim_rho
     all_stat_dfs.append(stat_df)
 all_stat_dfs = pd.concat(all_stat_dfs)
+all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] < 0.3e6]
 
 print(np.max(all_stat_dfs['Locus_2'] - all_stat_dfs['Locus_1']))
+print(np.max(all_stat_dfs['Dist_X_Time']))
+print(np.max(all_stat_dfs['Time_Diff']))
+
 
 #loop through each rho value
 for curr_rho in all_stat_dfs['Sim_Rho'].unique():
@@ -62,13 +67,19 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
     fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2])
                 for x in x_vals]
 
+
+    sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = curr_stat_df, color = 'black')
+    sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
+    plt.savefig(outDir + 'fit_results' + curr_rho + '.png')
+    plt.close()
+
     #Bin the d' ratios so they are easier to view on the plots
     binned_rat, binedges, bin_nums = binned_statistic(
         curr_stat_df['Dist_X_Time'].to_numpy(), 
         curr_stat_df['d_ratio'].to_numpy(), bins = 100)
 
     estimate_df.append([coeffs[0], coeffs[1], coeffs[2], 
-        coeffs[1] * coeffs[2], curr_data, curr_rho, 
+        coeffs[1] * coeffs[2],curr_data, curr_rho, 
         curr_data, len(curr_stat_df)])  
 
 estimate_df = pd.DataFrame(estimate_df, columns=["C0", "C1", "C2",
