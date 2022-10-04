@@ -5,6 +5,130 @@ import numpy as np
 import pandas as pd
 import math
 
+test_dir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral/mu1e-06_rho0.001_Ne10000_M800_sneutral_rep1/analysis/'
+SEG_LOC = pd.read_pickle(test_dir + 'FilteredLoci')
+GENO_DF = pd.read_pickle(test_dir + 'FilteredGenotypes')
+
+################## Functions Written to Work with Slim Dataset ################
+
+def calculate_R2_df(genotype_df, segregating_loci, verbose = False, 
+                    statistic = 'r2', saveData = False):
+    """ Takes an array of snps at specific loci with counts of the number of 
+    times they were observed together. Calculates the R^2 value for each pair.
+    ---------------------------------------------------------------------------
+    Params
+    ---------
+    genotypeDF : pd.dataframe, dataframe with two columns indicating loci pairs
+                an aditional column indicates the 2 haplotype at those loci 
+                and the timepoint is also labeled.
+    segregating_loci : a dataframe indicating the segregating loci and the 
+                        highest frequency alleles at those loci
+    verbose: bool, whether to print out information for debugging
+    statistic: str, 'r2' or 'D' to indicate which statistic to return
+    saveData: bool, whether to save our results to a dataframe
+    """
+    stat_list = []
+    distList = []
+    supportList = []  
+    if saveData:
+        resultsDf = []  
+
+    #Add columns for the alleles to our segregating loci dataframe
+    genotype_df['Allele_1'] = [x[0] for x in genotype_df['2_Haplotype']]  
+    genotype_df['Allele_2'] = [x[1] for x in genotype_df['2_Haplotype']]  
+
+    #Loop through our pairs of loci
+    for locus_1 in segregating_loci.index:
+        #get the indices for the segregating alleles at this locus
+        locus_1_entry = segregating_loci.iloc[[locus_1]]
+        i = locus_1_entry["position"].tolist()[0]
+        i_allele1 = locus_1_entry['allele_1'].tolist()[0]
+        i_allele2 = locus_1_entry['allele_2'].tolist()[0]
+
+        for locus_2 in segregating_loci.index:
+            #only consider each pair once
+            if locus_1 < locus_2:
+                #get the indices for the segregating alleles at this locus
+                locus_2_entry = segregating_loci.iloc[[locus_2]]
+                j = locus_2_entry["position"].tolist()[0]
+                j_allele1 = locus_2_entry['allele_1'].tolist()[0]
+                j_allele2 = locus_2_entry['allele_2'].tolist()[0]
+
+
+                #now we get just the entries corresponding to the haplotypes
+                currentCounts = genotype_df[genotype_df['Locus_1'] == i]
+                currentCounts = currentCounts[currentCounts['Locus_2'] == j]
+
+                AB_obs = currentCounts[(currentCounts['Allele_1'] == i_allele1) & (currentCounts['Allele_2'] == j_allele1)]
+                if len(AB_obs) == 0:
+                    AB_obs = 0
+                else: AB_obs = AB_obs['Count'].tolist()[0]
+
+                Ab_obs = currentCounts[(currentCounts['Allele_1'] == i_allele1) & (currentCounts['Allele_2'] == j_allele2)]
+                if len(Ab_obs) == 0:
+                    Ab_obs = 0
+                else: Ab_obs = Ab_obs['Count'].tolist()[0]
+
+                aB_obs = currentCounts[(currentCounts['Allele_1'] == i_allele2) & (currentCounts['Allele_2'] == j_allele1)]
+                if len(aB_obs) == 0:
+                    aB_obs = 0
+                else: aB_obs = aB_obs['Count'].tolist()[0]
+
+                ab_obs = currentCounts[(currentCounts['Allele_1'] == i_allele2) & (currentCounts['Allele_2'] == j_allele2)]
+                if len(ab_obs) == 0:
+                    ab_obs = 0
+                else: ab_obs = ab_obs['Count'].tolist()[0]
+
+                allSum = AB_obs + aB_obs + Ab_obs + ab_obs
+                #make sure there are enough spanning reads
+                if allSum < 10:
+                    continue
+                #calculate both statistics if we are saving things
+                if saveData:
+                    r_squared = r2(AB_obs=AB_obs, Ab_obs=Ab_obs,
+                                 aB_obs=aB_obs, ab_obs= ab_obs)
+                    d_prime = calc_D(AB_obs=AB_obs, Ab_obs=Ab_obs,
+                                 aB_obs=aB_obs, ab_obs= ab_obs)
+                    p_A = (Ab_obs + AB_obs)/float(allSum)
+                    p_B = (AB_obs + aB_obs)/float(allSum)
+                    dataList = [i, j, p_A, p_B, AB_obs, Ab_obs, aB_obs, ab_obs, r_squared, d_prime ]
+                    resultsDf.append(dataList)
+
+                if statistic == 'D':
+                    curr_stat = calc_D(AB_obs=AB_obs, Ab_obs=Ab_obs,
+                                 aB_obs=aB_obs, ab_obs= ab_obs)
+                else:
+                    curr_stat = r2(AB_obs=AB_obs, Ab_obs=Ab_obs,
+                                 aB_obs=aB_obs, ab_obs= ab_obs)
+                #If the frequencies were too low
+                if curr_stat is None:
+                    continue
+
+                stat_list.append(curr_stat)
+                distance = j - i 
+                distList.append(distance)
+                support = allSum
+                supportList.append(support)
+                
+                if verbose:
+                    print("--------------------")
+                    print("Locus 1 is : " + str(i) + " Locus 2 is : " + str(j))
+                    print(curr_stat)
+                    print("AB")
+                    print(AB_obs/allSum)
+                    print("aB")
+                    print(aB_obs/allSum)
+                    print("Ab")
+                    print(Ab_obs/allSum)
+                    print("ab")
+                    print(ab_obs/allSum)
+
+    if saveData:
+        resultsDf = pd.DataFrame(resultsDf, columns=[
+            'Locus_1', 'Locus_2', 'p_A', 'p_B', 'AB_obs', 'Ab_obs', 
+            'aB_obs', 'ab_obs', 'r_squared', 'd_prime'])
+        return stat_list, distList, supportList, resultsDf
+    return stat_list, distList, supportList
 
 ################# Functions Written to Work with Zanini Dataset ###############
 

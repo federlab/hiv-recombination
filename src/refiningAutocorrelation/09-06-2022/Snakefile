@@ -33,7 +33,7 @@ full_dir_pattern_sim= wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_
 full_dir_pattern_sim = expand(full_dir_pattern_sim,
         rho_val = rho_vals, sel_opt = sel_opts, rep = reps, curr_time = timepoint_nums)
 
-# timepoint_pattern = "slim_formatted_t{timepoint_num}"
+#the slim files by timepoint
 timepoint_list = ["slim_formatted_t" + str(s) + '_f1' for s in timepoint_nums]
 
 #Targets are outputs and dependencies are inputs

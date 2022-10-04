@@ -4,7 +4,7 @@ import sys
 import os
 import csv
 
-def find_segregating_diagonal(coCounts_arr, all_seg = False):
+def find_segregating_diagonal(coCounts_arr, allele_cutoff, all_seg = False):
     """ Takes a numpy array of co-SNP counts from the Zanini et al. data.
     Scans the diagonal of the array to find segregating sites. 
     ---------------------------------------------------------------------------
@@ -14,7 +14,8 @@ def find_segregating_diagonal(coCounts_arr, all_seg = False):
     all_seg:        bool, if true, all information for all segregating 
                     alleles will be included. This is needed for neher
                     analysis (neher.py).
-
+    allele_cutoff : float, the frequency each allele has to reach
+                    for it to be included in the output
     returns
     --------
     segregatingLoci:    pd.df, dataframe with the position of each segregating
@@ -39,7 +40,7 @@ def find_segregating_diagonal(coCounts_arr, all_seg = False):
             frequencies = acgt_counts/total
 
             #check if a value is greater than 1%
-            checkPercent = lambda x : 1 if (x > 0.01) else 0
+            checkPercent = lambda x : 1 if (x > allele_cutoff) else 0
             numSegregating = sum(list(map(checkPercent, frequencies)))
             if numSegregating > 1:
                 #find the alleles with the highest frequency

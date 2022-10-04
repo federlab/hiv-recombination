@@ -8,6 +8,10 @@ import zaniniUtil as zu
 
 #This script takes in the cocount arrays and makes a dataframe of 
 #segregating Loci
+
+#The cutoffs for processing the segregating loci
+SEG_CUTOFF = 0.01
+
 #I am going to use the same filtering as our previous analysis
 #These parameters are used when processing the data
 CUTOFF = 0.03
@@ -49,7 +53,7 @@ for currfile in os.listdir(timepoint_dir):
     coCounts_arr = np.load(timepoint_dir  + currfile, allow_pickle=True, encoding='bytes')
 
     #find the segregating sites
-    segregatingLoci = zu.find_segregating_diagonal(coCounts_arr, all_seg = True)  
+    segregatingLoci = zu.find_segregating_diagonal(coCounts_arr, allele_cutoff = SEG_CUTOFF, all_seg = True)  
     segregatingLoci['timepoint'] = timepoint_df[timepoint_df['name'] == int(timepoint[1:])]['generation'].tolist()[0]
     segregatingLoci['frag_len'] = coCounts_arr.shape[-1]
     all_seg.append(segregatingLoci)

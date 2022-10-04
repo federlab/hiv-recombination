@@ -77,7 +77,7 @@ def parse_genome_data(genome_data):
     return genotype_dict
 
 
-def make_seg_loci_df(mut_data_df, hxb2, samplenum):
+def make_seg_loci_df(mut_data_df, hxb2, samplenum, allele_cutoff):
     """Makes the segregating loci dataframe that the recombination estimation
     snakemake pipeline uses.
     ---------------------------------------------------------------------------
@@ -89,6 +89,8 @@ def make_seg_loci_df(mut_data_df, hxb2, samplenum):
                     mutations that have occurred in the population so far
     samplenum:      int, the number of genomes sampled. Necessary for 
                     calculating mutation frequencies
+    allele_cutoff : float, the frequency each allele has to reach
+                    for it to be included in the output
     Returns
     -----------
     seg_loci_df:    pd.DataFrame, the dataframe that contains the segregating
@@ -123,11 +125,16 @@ def make_seg_loci_df(mut_data_df, hxb2, samplenum):
                 pass
             else:
                 curr_prev = np.sum(allele_group['prevalence'])
-                allele_freq_list.append((allele_name, curr_prev/samplenum)) 
+                curr_freq = curr_prev/samplenum
+                if curr_freq > allele_cutoff:
+                    allele_freq_list.append((allele_name, curr_prev/samplenum)) 
                 other_prevs += curr_prev
 
         #Now we will add the reference allele to the list
-        allele_freq_list.append((ref_allele, (samplenum - other_prevs)/samplenum))
+        ref_freq = 1 - other_prevs/samplenum
+        #if an allele doesn't reach the set frequency, set it to 0
+        if ref_freq > allele_cutoff:
+            allele_freq_list.append((ref_allele, (samplenum - other_prevs)/samplenum))
 
         #Check if we need to add any 0 frequency alleles
         observed_alleles = set([x[0] for x in allele_freq_list])
@@ -145,6 +152,7 @@ def make_seg_loci_df(mut_data_df, hxb2, samplenum):
     seg_loci_df = pd.DataFrame(seg_loci_df, columns = ['position', 'allele_1',
                     'freq_1', 'allele_2', 'freq_2', 'allele_3', 'freq_3',
                     'allele_4', 'freq_4'])
+
     return seg_loci_df
 
 def make_haplotype_df(genome_dict, curr_seg_df, hxb2):
@@ -197,10 +205,8 @@ def make_haplotype_df(genome_dict, curr_seg_df, hxb2):
     
     #Now we will use this dictionary to assemble the haplotype dataframe
     segregating_loci = curr_seg_df['position'].unique()
-    print(len(segregating_loci))
-    print("******************")
+
     for i in segregating_loci:
-        print(i)
         for j in segregating_loci:
             #Dictionary where we count up each of the haplotypes
             hap_dict = {}
