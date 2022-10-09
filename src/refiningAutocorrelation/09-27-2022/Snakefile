@@ -26,7 +26,7 @@ SAMP_DEPTH = 800
 
 #get the values for each of the simulation options
 rho_vals = ['0.001', '1e-04','2e-04' ,'1e-05', '2e-05', '2e-06' ]
-reps = range(2)
+reps = range(10)
 sel_opts = ['neutral']
 timepoint_nums = range(1, 6)
 

@@ -11,13 +11,17 @@ import autocorrelation as autocorr
 THRESHOLD = 0.2
 
 #This script uses the linkage data and outputs calculated D' ratios
-dataDir = snakemake.output[0]
+dataDir = snakemake.input[0]
 print(dataDir, file = sys.stderr)
 dataDir = dataDir.split('/')[:-2]
 dataDir = "/".join(dataDir)
 
+outDataDir = snakemake.output[0]
+outDataDir = outDataDir.split('/')[:-2]
+outDataDir = "/".join(outDataDir)
+
 linkage_file = dataDir + "/linkage/r2_and_D"
-d_ratio_out =  dataDir + "/linkage/d_ratio"
+d_ratio_out =  outDataDir + "/linkage/d_ratio"
 r2_and_D = pd.read_pickle(linkage_file)
 
 print(r2_and_D['timepoint'].unique())

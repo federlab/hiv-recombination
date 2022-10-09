@@ -15,13 +15,13 @@ from matplotlib import rcParams
 
 THRESHOLD = 0.2
 D_PRIME_NUMS = [5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000]
-NUM_REPS = 1
+
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_16_neutral_long/'
 outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_16_neutral_long/'
 
-# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_16_neutral_long/'
-# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_16_neutral_long/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_16_neutral_long/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_16_neutral_long/'
  
 all_stat_dfs = []
 estimate_df = []
@@ -53,37 +53,40 @@ print(np.max(all_stat_dfs['Time_Diff']))
 
 
 #loop through each rho value
-for curr_rho in all_stat_dfs['Sim_Rho'].unique():
-    curr_rho_stat = all_stat_dfs[all_stat_dfs['Sim_Rho'] == curr_rho]
+for curr_rep in all_stat_dfs['rep'].unique():
+    curr_rep_stat = all_stat_dfs[all_stat_dfs['rep'] == curr_rep]
+    for curr_rho in all_stat_dfs['Sim_Rho'].unique():
+        curr_rho_stat = curr_rep_stat[curr_rep_stat['Sim_Rho'] == curr_rho]
 
-    #get the data for the current rho and iteration
-    curr_stat_df = curr_rho_stat
+        #get the data for the current rho and iteration
+        curr_stat_df = curr_rho_stat
 
-    #get the estimate and fit for the current dataset and sample size
-    x_vals = curr_stat_df['Dist_X_Time'].unique()
-    coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, 
-        curr_stat_df['Dist_X_Time'], curr_stat_df['d_ratio'],
-        p0 = [0, 0.26, .0000439], maxfev = 10000)
-    fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2])
-                for x in x_vals]
+        #get the estimate and fit for the current dataset and sample size
+        x_vals = curr_stat_df['Dist_X_Time'].unique()
+        coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, 
+            curr_stat_df['Dist_X_Time'], curr_stat_df['d_ratio'],
+            p0 = [0, 0.26, .0000439], maxfev = 10000)
+        fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2])
+                    for x in x_vals]
 
 
-    sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = curr_stat_df, color = 'black')
-    sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
-    plt.savefig(outDir + 'fit_results' + curr_rho + '.png')
-    plt.close()
+        sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = curr_stat_df, color = 'black')
+        sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
+        plt.savefig(outDir + 'fit_results' + curr_rho + '.png')
+        plt.close()
 
-    #Bin the d' ratios so they are easier to view on the plots
-    binned_rat, binedges, bin_nums = binned_statistic(
-        curr_stat_df['Dist_X_Time'].to_numpy(), 
-        curr_stat_df['d_ratio'].to_numpy(), bins = 100)
+        #Bin the d' ratios so they are easier to view on the plots
+        binned_rat, binedges, bin_nums = binned_statistic(
+            curr_stat_df['Dist_X_Time'].to_numpy(), 
+            curr_stat_df['d_ratio'].to_numpy(), bins = 100)
 
-    estimate_df.append([coeffs[0], coeffs[1], coeffs[2], 
-        coeffs[1] * coeffs[2],curr_data, curr_rho, 
-        curr_data, len(curr_stat_df)])  
+        estimate_df.append([coeffs[0], coeffs[1], coeffs[2], 
+            coeffs[1] * coeffs[2],curr_data, curr_rho, 
+            curr_data, len(curr_stat_df), curr_rep])  
 
 estimate_df = pd.DataFrame(estimate_df, columns=["C0", "C1", "C2",
-                     "Est_Rho", 'Dataset', 'Sim_Rho', 'data', 'sample_size'] )
+                     "Est_Rho", 'Dataset', 'Sim_Rho', 'data', 'sample_size', 
+                     'Rep'] )
 print(estimate_df)
 ############################# Plotting Estimate Accuracy ######################
 # #Plot our estimates against each other 
@@ -120,7 +123,7 @@ rcParams['mathtext.it'] = 'DejaVu Sans:italic'
 #plot the estimates to show how accurate they are
 sns.set(rc={'figure.figsize':(20,10)}, font_scale = 2, font = '')
 fig, axes = plt.subplots(1, 1)
-sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, 
+sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, hue = 'Rep',
     jitter = True, color = 'k', s = 8, ax = axes,
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 
@@ -145,8 +148,8 @@ axes.set_ylabel(r'Estimated Value of $\rho$')
 axes.set_ylim(0.000001, 0.01)
 axes.set_yscale('log')
 
-plt.savefig(outDir + "accuracy.jpg")
+plt.savefig(outDir + "accuracy_1.jpg")
 plt.close()
 
 sns.histplot(data = estimate_df, x = 'sample_size')
-plt.savefig(outDir + "sample_size.jpg")
+plt.savefig(outDir + "sample_size_1.jpg")

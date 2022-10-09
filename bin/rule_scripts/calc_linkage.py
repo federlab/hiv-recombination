@@ -8,16 +8,19 @@ import r2Analysis as r2
 
 #This script uses the coCounts_arr and list of segregatingLoci
 #It takes them and saves a dataframe with the R^2 and D statistics
-dataDir = snakemake.output[0]
+dataDir = snakemake.input[0]
 print(dataDir, file = sys.stderr)
-dataDir = dataDir.split('/')[:-2]
+dataDir = dataDir.split('/')[:-1]
 dataDir = "/".join(dataDir)
 
+outDataDir = snakemake.output[0]
+outDataDir = outDataDir.split('/')[:-2]
+outDataDir = "/".join(outDataDir)
 
 #make a dictionary for the timepoint labels
 timepoint_df = pd.read_csv(dataDir + '/timepoint_info.tsv', sep = ' ',
                 header= None, names = ['name', 'generation'], index_col = False)
-print(timepoint_df, file = sys.stderr)
+
 #The directories for our data
 coCounts_dir = dataDir + "/numpy/"
 loci_dir = dataDir + "/analysis/FilteredLoci"
@@ -60,6 +63,6 @@ for currfile in os.listdir(coCounts_dir):
 
 #Make the dataframe from all of our results
 all_resultsDF = pd.concat(all_resultsDF, ignore_index=True)
-all_resultsDF.to_pickle(dataDir + "/linkage/r2_and_D")
+all_resultsDF.to_pickle(outDataDir + "/linkage/r2_and_D")
 
 

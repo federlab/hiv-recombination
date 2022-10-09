@@ -1,19 +1,21 @@
 import numpy as np
+import shutil
 
 #This file is for running our neher and leitner analysis on the filtered genotypes
 
 #Directory with the text files
-textdataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral_txt/'
+textDataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral_txt/'
+inDataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral/'
 
 #Directory we'll use to save all of the additional analysis files
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral_lessFilter/'
 
 #Directory with all of the scripts for our additional rules
 ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 
 # #For Desktop Dry run
-# textdataDir = '/Volumes/feder-vol1/project/hiv_recombination/data/simulated/2022_09_07_neutral/'
-# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral/'
+# inDataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral/'
+# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral_lessFilter/'
 # ruleScriptDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 
 #get the proper names of all the simulated directories
@@ -42,31 +44,23 @@ rule all:
     input:
      full_dir_pattern_d_rat
 
-rule process_slim:
+rule copy_time_file:
     input: 
-     (textdataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/" + s + ".txt" for s in timepoint_list)
-    output: 
-     dataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
-     (dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list)
-    script: ruleScriptDir + "process_slim.py"
-
-
-rule gen_loci_dfs:
-    input: 
-     dataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
-     (dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list)
+     textDataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
     output:
-     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredGenotypes",
-     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredLoci"
-    script: ruleScriptDir + "gen_loci_dfs.py"
+     inDataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv"
+    shell:
+        "cp " + textDataDir + "mu1e-06_rho{wildcards.rho_val}_Ne10000_M800_s{wildcards.sel_opt}_rep{wildcards.rep}/timepoint_info.tsv "
+         + inDataDir + "mu1e-06_rho{wildcards.rho_val}_Ne10000_M800_s{wildcards.sel_opt}_rep{wildcards.rep}/timepoint_info.tsv"
 
-rule calc_linkage_new:
+rule calc_linkage:
     input:
-     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredLoci",
-     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredGenotypes"
+     inDataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
+     inDataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredLoci",
+     (inDataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list),
     output:
      dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/r2_and_D"
-    script: ruleScriptDir + "calc_linkage_new.py"
+    script: ruleScriptDir + "calc_linkage.py"
 
 rule calc_d_rat:
     input:

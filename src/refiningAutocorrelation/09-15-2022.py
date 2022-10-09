@@ -17,7 +17,7 @@ from matplotlib import rcParams
 
 THRESHOLD = 0.2
 D_PRIME_NUMS = [5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000]
-NUM_REPS = 160
+NUM_REPS = 20
 NUM_GROUPS = 10
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral/'
@@ -27,7 +27,7 @@ outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/20
 all_stat_dfs = []
 estimate_df = []
 
-#loop through each of the dataframes for the separeate simulations
+#loop through each of the dataframes for the separate simulations
 for curr_data in os.listdir(dataDir):
     #only get the data directories, not hidden files
     if curr_data[0] == '.':
@@ -84,6 +84,11 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
             p0 = [0, 0.26, .0000439], maxfev = 10000)
         fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2])
                     for x in x_vals]
+
+        sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = curr_stat_df, color = 'black')
+        sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
+        plt.savefig(outDir + 'fit_results' + curr_rho + "_" + '.png')
+        plt.close()
 
         #Bin the d' ratios so they are easier to view on the plots
         binned_rat, binedges, bin_nums = binned_statistic(

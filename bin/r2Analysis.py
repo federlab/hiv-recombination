@@ -5,9 +5,6 @@ import numpy as np
 import pandas as pd
 import math
 
-test_dir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral/mu1e-06_rho0.001_Ne10000_M800_sneutral_rep1/analysis/'
-SEG_LOC = pd.read_pickle(test_dir + 'FilteredLoci')
-GENO_DF = pd.read_pickle(test_dir + 'FilteredGenotypes')
 
 ################## Functions Written to Work with Slim Dataset ################
 
