@@ -16,6 +16,8 @@ def compress_numpy(pipeline_dir):
 
         #get the numpy directory that we will compress
         curr_numpy_dir = os.path.join(pipeline_dir, curr_dir, 'numpy')
+        if os.path.exists(curr_numpy_dir):
+            if not os.path.exists(curr_numpy_dir + ".tar.gz"):
+                os.system('tar -zcvf ' + curr_numpy_dir + '.tar.gz ' + curr_numpy_dir)
+                os.system('rm -rf ' + curr_numpy_dir)
 
-        if not os.path.exists(curr_numpy_dir + ".tar.gz")):
-            os.system('tar -zcvf ' + curr_numpy_dir + '.tar.gz ' + curr_numpy_dir)

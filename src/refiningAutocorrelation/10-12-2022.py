@@ -18,11 +18,12 @@ THRESHOLD = 0.2
 DIST_EXAMPLE = 50000
 D_PRIME_NUMS = [5000, 10000, 15000, 20000, 25000]
 DIST_TIME_MAX = [10000, 25000, 50000, 100000, 200000]
+SEG_LOCI_SAMPLES = [100, 200, 300, 400, 500, 1000]
 NUM_REPS = 19
 NUM_GROUPS = 10
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral_lessFilter/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig2/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_07_neutral_lessFilter/'
 
 #First, we will get all of the data and divide it into groups
 all_stat_dfs = []
@@ -65,7 +66,7 @@ all_stat_dfs['iter_group'] = group_labels
 
 #loop through each of the sample sizes
 estimate_df_size = []
-for curr_size in D_PRIME_NUMS:
+for curr_size in SEG_LOCI_SAMPLES:
     print("Size is: " + str(curr_size))
     #loop through each rho value
     for curr_rho in all_stat_dfs['Sim_Rho'].unique():
@@ -79,7 +80,10 @@ for curr_size in D_PRIME_NUMS:
             curr_stat_df = curr_rho_stat[curr_rho_stat['rep'] == curr_iteration]
             
             #sample the correct number of d' values
-            curr_stat_df= curr_stat_df.sample(n=curr_size, replace=False)
+            locus_set = list(set(curr_stat_df['Locus_1'] + curr_stat_df['Locus_2']))
+            curr_stat_df_chosen_loci = np.random.choice(locus_set, curr_size, replace=False)
+            curr_stat_df = curr_stat_df[curr_stat_df['Locus_1'].isin(curr_stat_df_chosen_loci) &
+                     curr_stat_df['Locus_2'].isin(curr_stat_df_chosen_loci)]
 
 
             #get the estimate and fit for the current dataset and sample size
@@ -101,7 +105,7 @@ for curr_size in D_PRIME_NUMS:
 
             estimate_df_size.append([coeffs[0], coeffs[1], coeffs[2], 
                 coeffs[1] * coeffs[2], curr_data, curr_rho, curr_iteration, 
-                curr_data, len(curr_stat_df)])  
+                curr_data, curr_size])  
 
 estimate_df_size = pd.DataFrame(estimate_df_size, columns=["C0", "C1", "C2",
                     "Est_Rho", 'Dataset', 'Sim_Rho', 'iter_name' , 'data', 'sample_size'] )
@@ -233,11 +237,11 @@ group_MSE = pd.DataFrame(group_MSE,
 # print(group)
 sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE', 
     data = group_MSE, hue = 'sample_size', ax = axes[1],
-   palette=sns.color_palette("colorblind", n_colors=len(D_PRIME_NUMS)))
+    palette=sns.color_palette("colorblind", n_colors=len(SEG_LOCI_SAMPLES)))
 axes[1].set_xscale('log')
 axes[1].set_ylabel('Normalized RMSE')
 axes[1].set_xlabel(r'Simulation Value of $\rho$')
-axes[1].legend(title = '# of D\' Ratios')
+axes[1].legend(title = '# of Segregating Loci', loc = 'upper right')
 
 
 ##################### Plotting the MSE for each threshold ###################
@@ -260,9 +264,8 @@ sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE',
 axes[2].set_xscale('log')
 axes[2].set_ylabel('Normalized RMSE')
 axes[2].set_xlabel(r'Simulation Value of $\rho$')
-plt.legend(title = r'd$\Delta$t Threshold')
+plt.legend(title = r'd$\Delta$t Threshold', loc = 'upper right')
 plt.tight_layout()
 
-plt.savefig(outDir + "figure_2.jpg")
+plt.savefig(outDir + "figure_2_num_seg.jpg")
 plt.close()
-    

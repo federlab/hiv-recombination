@@ -1,4 +1,5 @@
 import sys
+from turtle import filling
 sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
 sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
@@ -15,14 +16,13 @@ from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
 
 THRESHOLD = 0.2
-DIST_EXAMPLE = 50000
 D_PRIME_NUMS = [5000, 10000, 15000, 20000, 25000]
-DIST_TIME_MAX = [10000, 25000, 50000, 100000, 200000]
+DIST_TIME_MAX = [10000, 25000, 50000, 100000, 150000]
 NUM_REPS = 19
 NUM_GROUPS = 10
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral_lessFilter/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig2/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_07_neutral_lessFilter/'
 
 #First, we will get all of the data and divide it into groups
 all_stat_dfs = []
@@ -185,7 +185,7 @@ rcParams['mathtext.fontset'] = 'custom'
 rcParams['mathtext.rm'] = 'DejaVu Sans'
 rcParams['mathtext.it'] = 'DejaVu Sans:italic'
 
-estimate_df = estimate_df_x[estimate_df_x['x_threshold'] == DIST_EXAMPLE]
+estimate_df = estimate_df_x[estimate_df_x['x_threshold'] == 50000]
 
 #plot the estimates to show how accurate they are
 sns.set(rc={'figure.figsize':(30,10)}, font_scale = 2, font = '')
@@ -237,7 +237,6 @@ sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE',
 axes[1].set_xscale('log')
 axes[1].set_ylabel('Normalized RMSE')
 axes[1].set_xlabel(r'Simulation Value of $\rho$')
-axes[1].legend(title = '# of D\' Ratios')
 
 
 ##################### Plotting the MSE for each threshold ###################
@@ -260,9 +259,8 @@ sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE',
 axes[2].set_xscale('log')
 axes[2].set_ylabel('Normalized RMSE')
 axes[2].set_xlabel(r'Simulation Value of $\rho$')
-plt.legend(title = r'd$\Delta$t Threshold')
+plt.legend(title = 'D\' Thresold')
 plt.tight_layout()
 
-plt.savefig(outDir + "figure_2.jpg")
+plt.savefig(outDir + "figure_2_log.jpg")
 plt.close()
-    

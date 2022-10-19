@@ -1,0 +1,72 @@
+import numpy as np
+
+#Load the modules we will need for the jobs
+# shell.prefix()
+shell.prefix("module load pcre2/10.39;\nmodule load R/4.1.2;\nmodule load SLiM/3.7;")
+configfile: "config_0-1e-5.yaml"
+
+
+#This file runs Alison's scripts for slim simulations
+
+#Directory where the simulations will take place
+wrap_dir = '/net/feder/vol1/project/hiv_recombination/data/simulated/'
+r_script_dir = '/net/feder/vol1/project/hiv_recombination/bin/R_for_snakemake/'
+
+# #For Desktop Dry run
+# wrap_dir = '/Volumes/feder-vol1/project/hiv_recombination/data/simulated/'
+# r_script_dir = '/Volumes/feder-vol1/project/hiv_recombination/bin/R_for_snakemake/'
+
+#The constants we will use for each run
+DIR_NAME = config['dir_name']
+MU = 1e-6
+NE = 1e4
+SAMP_DEPTH = 800 
+
+#get the values for each of the simulation options
+rho_vals = [config['rho_vals']]
+reps = range(0, config['reps'])
+sel_opts = [config['sel_opts']]
+timepoint_nums = range(1, 6)
+
+#the patterns for the directories and simulation files
+full_dir_pattern_sim= wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/slim_formatted_t{curr_time}_f1.txt"
+full_dir_pattern_sim = expand(full_dir_pattern_sim,
+        rho_val = rho_vals, sel_opt = sel_opts, rep = reps, curr_time = timepoint_nums)
+
+#the slim files by timepoint
+timepoint_list = ["slim_formatted_t" + str(s) + '_f1' for s in timepoint_nums]
+
+#Targets are outputs and dependencies are inputs
+rule all:
+    input:
+     full_dir_pattern_sim
+
+#This rule creates the directories and slim scripts for each simulation
+rule set_up_dirs:
+    output: 
+     wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/slim_script.txt"
+    shell: "Rscript " + r_script_dir + "setup_dir_and_script.r -d " + \
+             DIR_NAME + " -m " + str(MU) + " -r {wildcards.rho_val} -N " + str(NE) + " -M " + str(SAMP_DEPTH) + " -i {wildcards.rep} -s {wildcards.sel_opt}"
+
+#This rule runs the slim script for each simulation
+rule run_slim:
+    input:
+     wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/slim_script.txt"
+
+    output:
+     wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/slim_output.txt"
+    
+    shell: "slim " + wrap_dir + DIR_NAME + "/mu1e-06_rho{wildcards.rho_val}_Ne10000_M800_s{wildcards.sel_opt}_rep{wildcards.rep}/slim_script.txt > " + \
+            wrap_dir + DIR_NAME + "/mu1e-06_rho{wildcards.rho_val}_Ne10000_M800_s{wildcards.sel_opt}_rep{wildcards.rep}/slim_output.txt"
+
+#This rule processes the slim run output
+rule process_slim_r:
+    input: 
+     wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/slim_output.txt"
+     
+    output:
+     wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
+     (wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/" + s + ".txt" for s in timepoint_list)
+
+    shell: "Rscript " + r_script_dir + "process_slim_script.r -d " + \
+             DIR_NAME + " -m " + str(MU) + " -r {wildcards.rho_val} -N " + str(NE) + " -M " + str(SAMP_DEPTH) + " -i {wildcards.rep} -s {wildcards.sel_opt}"

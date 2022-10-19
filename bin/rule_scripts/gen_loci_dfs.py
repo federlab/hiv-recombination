@@ -60,13 +60,16 @@ for currfile in os.listdir(timepoint_dir):
 
     #make our dataframe of genotypes
     genotype_df = zu.make_genotype_df(segregatingLoci, coCounts_arr)
-
-    #filter the dataframe 
     genotype_df['timepoint'] = timepoint_df[timepoint_df['name'] == int(timepoint[1:])]['generation'].tolist()[0]
-    print(genotype_df, file = sys.stderr)
+    
+    #Removing filtering step 10-17-2022 Not necessary for accurate estimation
+    # #filter the dataframe 
+    # print(genotype_df, file = sys.stderr)
+    # if not genotype_df.empty:
+    #     filtered_genotypes = zu.filter_genotype_df(genotype_df, segregatingLoci, allele_cutoff= CUTOFF, hap_cutoff= SUCCESS)
+    #     all_timepoint_genotypes.append(filtered_genotypes)
     if not genotype_df.empty:
-        filtered_genotypes = zu.filter_genotype_df(genotype_df, segregatingLoci, allele_cutoff= CUTOFF, hap_cutoff= SUCCESS)
-        all_timepoint_genotypes.append(filtered_genotypes)
+        all_timepoint_genotypes.append(genotype_df)
 
 all_seg = pd.concat(all_seg, ignore_index=True)
 all_seg.to_pickle(dataDir + '/analysis/FilteredLoci')
