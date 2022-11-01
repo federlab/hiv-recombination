@@ -35,6 +35,7 @@ stat_df = stat_df[stat_df['Monotonic'] == True]
 ############################# Panel 1 Analysis ################################
 all_par_ests = []
 all_group_fits = []
+group_size_df = []
 x_vals = stat_df['Dist_X_Time'].describe()
 
 #Estimate rates specifically excluding each individual
@@ -81,11 +82,15 @@ for curr_thresh in GROUP_THRESHOLD_LIST:
             group_fits['Group'] = curr_name
             group_fits['Participant'] = curr_par
 
+            #Add the size of the group to the dictionary which labels the axis
+            group_size_df.append([curr_thresh, curr_name, group.shape[0]])
+
             all_group_fits.append(group_fits)
             all_par_ests.append(estimate_df)
 
 all_par_ests = pd.concat(all_par_ests, ignore_index=True)
 all_group_fits = pd.concat(all_group_fits, ignore_index=True)
+all_group_sizes = pd.DataFrame(group_size_df, columns=['Threshold', 'Group', 'Size'])
 
 all_conf_ints = []
 
@@ -102,30 +107,37 @@ all_conf_ints = pd.DataFrame(all_conf_ints,
 
 print(all_conf_ints)
 
-############################# Plotting Panel 1 ################################
-#plot the 
+############################# Plotting Panel C ################################
 
-# print(all_group_fits.columns)
-# print(all_par_ests.columns)
+
+print(all_group_fits)
 rcParams['mathtext.fontset'] = 'custom'
 rcParams['mathtext.rm'] = 'DejaVu Sans'
-# rcParams['mathtext.it'] = 'DejaVu Sans:italic'
-sns.set(font_scale = 2)
+rcParams['mathtext.it'] = 'DejaVu Sans:italic'
+sns.set(rc={'figure.figsize':(20, 15)}, font_scale = 2)
 sns.set_palette("tab10")
 sns.set_style("white")
+fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [7, 1]})
+plt.subplots_adjust(hspace=0.25)
 
+sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_ests, ax = ax1)
 
-myplot = sns.FacetGrid(all_par_ests, col = 'Participant', height = 10, aspect = 1.5)
-myplot.map_dataframe(sns.boxplot, x ='Threshold', y ='Estimated_Rho', hue = 'Group', palette=dict(Low_VL="tab:blue", High_VL = "tab:orange"))
-plt.ylim(0, 0.0003)
-plt.xlabel(r'Group Viral Load Threshold (copies/ml)')
-plt.ylabel(r'Estimated Value of $\rho$')
-plt.ticklabel_format(style = 'sci', axis = 'y')
-plt.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
-plt.axhline(0.000014, color = 'tab:green')
-plt.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
+ax1.set_ylabel(r'Estimated Value of $\rho$')
+ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+ax1.ticklabel_format(style = 'sci', axis = 'y')
+ax1.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
+ax1.axhline(0.000014, color = 'tab:green')
+ax1.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
+ax1.xaxis.set_tick_params(labelbottom=True)
 
-plt.legend(loc='upper right')
-plt.tight_layout()
-plt.savefig(outDir + 'fig4_p1.jpg')
+############################# Plotting Panel D ################################
+print(all_group_sizes)
+
+sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', data = all_group_sizes, ci = None, ax = ax2)
+ax2.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+ax2.set_ylabel("Group Size")
+ax2.get_legend().remove()
+ax2.xaxis.set_tick_params(labelbottom=True)
+fig.align_ylabels([ax1, ax2])
+plt.savefig(outDir + 'fig3CD.jpg')
 plt.close()

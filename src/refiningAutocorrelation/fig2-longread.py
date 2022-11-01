@@ -1,4 +1,5 @@
 import sys
+from turtle import filling
 sys.path.append('/net/feder/vol1/home/evromero/2021_hiv-rec/bin')
 sys.path.append('/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin')
 import os
@@ -13,15 +14,19 @@ import autocorrelation as autocorr
 from scipy import optimize
 from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
+from scipy.stats import linregress
 
 THRESHOLD = 0.2
-DIST_EXAMPLE = 50000
+DIST_EXAMPLE = 200000
+DIST_TIME_MAX = [10000, 25000, 50000, 100000, 150000, 200000]
+DIST_TIME_MAX = [50000, 200000]
 D_PRIME_NUMS = [2500, 5000, 10000, 15000, 20000, 25000]
-DIST_TIME_MAX = [2500, 5000, 10000, 25000, 50000, 100000, 200000]
-NUM_REPS = 19
-NUM_GROUPS = 10
+D_PRIME_NUMS = [25000]
+NUM_REPS = 10
+NUM_GROUPS = 9
+REG_WIN_SIZE = 5000
 
-dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral_lessFilter/'
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_16_neutral_long/'
 outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig2/'
 
 #First, we will get all of the data and divide it into groups
@@ -48,7 +53,7 @@ for curr_data in os.listdir(dataDir):
 all_stat_dfs = pd.concat(all_stat_dfs)
 
 #Randomly divide the reps into 10 groups
-rep_groups = np.array(range(1, NUM_REPS+1))
+rep_groups = np.array(range(0, NUM_REPS))
 np.random.shuffle(rep_groups)
 rep_groups = np.array_split(rep_groups, NUM_GROUPS)
 
@@ -70,9 +75,8 @@ for curr_size in D_PRIME_NUMS:
     #loop through each rho value
     for curr_rho in all_stat_dfs['Sim_Rho'].unique():
         curr_rho_stat = all_stat_dfs[all_stat_dfs['Sim_Rho'] == curr_rho]
-        
-        #Add the distance example cutoff
-        curr_rho_stat = curr_rho_stat[curr_rho_stat['Dist_X_Time'] <= DIST_EXAMPLE] 
+
+
 
         #loop through each iter group
         for curr_iteration in range(1, NUM_GROUPS+1):
@@ -84,20 +88,36 @@ for curr_size in D_PRIME_NUMS:
             sample_size = 0
             sampled_loci = set()
             unsampled_loci = set(list(curr_stat_df['Locus_1'].unique()) + list(curr_stat_df['Locus_2'].unique().tolist()))
-            while sample_size < curr_size and len(unsampled_loci) > 0:
+            while sample_size < curr_size:
                 #sample another locus
-                my_sample = np.random.choice(list(unsampled_loci))
-                sampled_loci.add(my_sample)
-                unsampled_loci.remove(my_sample)
+                sampled_loci.add(np.random.choice(list(unsampled_loci)))
                 sample_df = curr_stat_df[curr_stat_df['Locus_1'].isin(sampled_loci) & (curr_stat_df['Locus_2'].isin(sampled_loci))]
                 sample_size = len(sample_df)
             
-            print(sample_size)
             curr_stat_df= sample_df
+            x_vals = curr_stat_df['Dist_X_Time'].unique()
+            
+            num_tests = len(range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE))
+            fit_stop = DIST_EXAMPLE
 
+            for i in range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE):
+                linreg_df = curr_stat_df[curr_stat_df['Dist_X_Time'].between(i, i+REG_WIN_SIZE)]
+                if len(linreg_df) < 10:
+                    continue
+                mylinreg_results = linregress(linreg_df['Dist_X_Time'], linreg_df['d_ratio'])
+
+                #test to see if the slope is not significantly different from 0
+                if (1-mylinreg_results.pvalue) < 0.05:
+                    print("stop fitting at " + str(i))
+                    print(curr_iteration)
+                    print(curr_rho)
+                    fit_stop = i
+                    break
 
             #get the estimate and fit for the current dataset and sample size
-            x_vals = curr_stat_df['Dist_X_Time'].unique()
+            curr_stat_df = curr_stat_df[curr_stat_df['Dist_X_Time'] <= fit_stop]
+            
+         
             coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, 
                 curr_stat_df['Dist_X_Time'], curr_stat_df['d_ratio'],
                 p0 = [0, 0.26, .0000439], maxfev = 10000)
@@ -111,7 +131,6 @@ for curr_size in D_PRIME_NUMS:
             
             my_data = pd.DataFrame(list(zip(binned_rat, binedges[1:])), columns = ['d_ratio', 'Dist_X_Time'])
             my_data.dropna(inplace = True)
-
 
             estimate_df_size.append([coeffs[0], coeffs[1], coeffs[2], 
                 coeffs[1] * coeffs[2], curr_data, curr_rho, curr_iteration, 
@@ -137,6 +156,28 @@ for curr_x in DIST_TIME_MAX:
 
             #get the estimate and fit for the current dataset and sample size
             x_vals = curr_stat_df['Dist_X_Time'].unique()
+
+            num_tests = len(range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE))
+            fit_stop = curr_x
+
+            for i in range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE):
+                linreg_df = curr_stat_df[curr_stat_df['Dist_X_Time'].between(i, i+REG_WIN_SIZE)]
+                if len(linreg_df) < 10:
+                    continue
+                mylinreg_results = linregress(linreg_df['Dist_X_Time'], linreg_df['d_ratio'])
+
+                #test to see if the slope is not significantly different from 0
+                if (1-mylinreg_results.pvalue) < 0.05:
+                    print("stop fitting at " + str(i))
+                    print(curr_iteration)
+                    print(curr_rho)
+                    fit_stop = i
+                    break
+
+            #get the estimate and fit for the current dataset and sample size
+            curr_stat_df = curr_stat_df[curr_stat_df['Dist_X_Time'] <= fit_stop]
+            print(max(curr_stat_df['Dist_X_Time']))
+
             coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, 
                 curr_stat_df['Dist_X_Time'], curr_stat_df['d_ratio'],
                 p0 = [0, 0.26, .0000439], maxfev = 10000)
@@ -150,6 +191,11 @@ for curr_x in DIST_TIME_MAX:
             
             my_data = pd.DataFrame(list(zip(binned_rat, binedges[1:])), columns = ['d_ratio', 'Dist_X_Time'])
             my_data.dropna(inplace = True)
+
+            sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = my_data, color = 'black')
+            sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
+            plt.savefig(outDir + str(curr_rho) + '/fit_results_' + str(curr_iteration) + "_" + str(curr_x) + '.png')
+            plt.close()
 
             estimate_df_x.append([coeffs[0], coeffs[1], coeffs[2], 
                 coeffs[1] * coeffs[2], curr_data, curr_rho, curr_iteration, 
@@ -276,7 +322,8 @@ axes[2].set_ylabel('Normalized RMSE')
 axes[2].set_xlabel(r'Simulation Value of $\rho$')
 plt.legend(title = r'd$\Delta$t Threshold')
 plt.tight_layout()
+    
 
-plt.savefig(outDir + "figure_2.jpg")
+plt.savefig(outDir + "figure_2_longread.jpg")
 plt.close()
     

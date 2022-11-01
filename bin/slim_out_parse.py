@@ -239,3 +239,4 @@ def make_haplotype_df(genome_dict, curr_seg_df, hxb2):
         columns = ['Locus_1', 'Locus_2', '2_Haplotype', 'Count'])
 
     return haplotype_df
+

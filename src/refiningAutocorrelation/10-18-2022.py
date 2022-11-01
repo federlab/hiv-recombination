@@ -19,8 +19,8 @@ DIST_TIME_MAX = 50000
 NUM_REPS = 160
 NUM_GROUPS = 10
 
-dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_MPL_1e-3/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_07_MPL_1e-3/'
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_MPL_1e-4/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_07_MPL_1e-4/'
 
 #First, we will get all of the data and divide it into groups
 all_stat_dfs = []

@@ -44,31 +44,30 @@ rule all:
     input:
      full_dir_pattern_d_rat
 
-# rule copy_time_file:
-#     input: 
-#      textDataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
-#     output:
-#      inDataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv"
-#     shell:
-#         "cp " + textDataDir + "mu1e-06_rho{wildcards.rho_val}_Ne10000_M800_s{wildcards.sel_opt}_rep{wildcards.rep}/timepoint_info.tsv "
-#          + inDataDir + "mu1e-06_rho{wildcards.rho_val}_Ne10000_M800_s{wildcards.sel_opt}_rep{wildcards.rep}/timepoint_info.tsv"
-
 rule process_slim:
     input: 
-     (textDataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/" + s + ".txt" for s in timepoint_list)
+     (textdataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/" + s + ".txt" for s in timepoint_list)
     output: 
      dataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
      (dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list)
     script: ruleScriptDir + "process_slim.py"
 
-rule calc_linkage:
+rule gen_loci_dfs:
+    input: 
+     dataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
+     (dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list)
+    output:
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredGenotypes",
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredLoci"
+    script: ruleScriptDir + "gen_loci_dfs.py"
+
+rule calc_linkage_new:
     input:
-     inDataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
-     inDataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredLoci",
-     (inDataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list),
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredLoci",
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredGenotypes"
     output:
      dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/r2_and_D"
-    script: ruleScriptDir + "calc_linkage.py"
+    script: ruleScriptDir + "calc_linkage_new.py"
 
 rule calc_d_rat:
     input:
