@@ -16,7 +16,7 @@ ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 #get the proper names of all the simulated directories
 rho_vals = ['0.001', '1e-04','2e-04' ,'1e-05', '2e-05', '2e-06' ]
 
-reps = range(1,60)
+reps = range(60)
 sel_opts = ['neutral']
 
 #the patterns for the linkage results
@@ -38,25 +38,6 @@ timepoint_list = ["slim_formatted_t" + str(s) + '_f1' for s in timepoint_nums]
 rule all:
     input:
      full_dir_pattern_d_rat
-
-# rule process_slim:
-#     input: 
-#      (textdataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/" + s + ".txt" for s in timepoint_list)
-#     output: 
-#      dataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
-#      (dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list)
-#     script: ruleScriptDir + "process_slim.py"
-
-# 01/11 Elena - I tweaked the pipeline so that the giant numpy arrays are skipped and I make the dataframes
-# directly from the slim output files.
-# rule gen_loci_dfs:
-#     input: 
-#      dataDir +  "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
-#      (dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/numpy/" + s + ".npy" for s in timepoint_list)
-#     output:
-#      dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredGenotypes",
-#      dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredLoci"
-#     script: ruleScriptDir + "gen_loci_dfs.py"
 
 rule calc_linkage_new:
     input:

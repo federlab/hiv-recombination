@@ -114,7 +114,7 @@ print(all_group_fits)
 rcParams['mathtext.fontset'] = 'custom'
 rcParams['mathtext.rm'] = 'DejaVu Sans'
 rcParams['mathtext.it'] = 'DejaVu Sans:italic'
-sns.set(rc={'figure.figsize':(20, 15)}, font_scale = 2)
+sns.set(rc={'figure.figsize':(20, 15)}, font_scale = 3)
 sns.set_palette("tab10")
 sns.set_style("white")
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [7, 1]})
@@ -124,6 +124,7 @@ sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_es
 
 ax1.set_ylabel(r'Estimated Value of $\rho$')
 ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+ax1.set_ylim(0, 0.0003)
 ax1.ticklabel_format(style = 'sci', axis = 'y')
 ax1.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
 ax1.axhline(0.000014, color = 'tab:green')
@@ -139,5 +140,5 @@ ax2.set_ylabel("Group Size")
 ax2.get_legend().remove()
 ax2.xaxis.set_tick_params(labelbottom=True)
 fig.align_ylabels([ax1, ax2])
-plt.savefig(outDir + 'fig3CD.jpg')
+plt.savefig(outDir + 'fig4.jpg')
 plt.close()

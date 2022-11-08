@@ -103,18 +103,17 @@ all_conf_ints = pd.DataFrame(all_conf_ints,
 
 ############################# Plotting Panel C ################################
 
-
 print(all_group_fits)
 rcParams['mathtext.fontset'] = 'custom'
 rcParams['mathtext.rm'] = 'DejaVu Sans'
 rcParams['mathtext.it'] = 'DejaVu Sans:italic'
-sns.set(rc={'figure.figsize':(20, 15)}, font_scale = 2)
+sns.set(rc={'figure.figsize':(20, 15)}, font_scale = 3)
 sns.set_palette("tab10")
 sns.set_style("white")
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [7, 1]})
 plt.subplots_adjust(hspace=0.25)
 
-sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_ests, ax = ax1)
+sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_ests, ax = ax1, palette = ['tab:blue', 'tab:orange'])
 
 ax1.set_ylabel(r'Estimated Value of $\rho$')
 ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
@@ -123,21 +122,28 @@ ax1.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
 ax1.axhline(0.000014, color = 'tab:green')
 ax1.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
 ax1.xaxis.set_tick_params(labelbottom=True)
+# replace labels
 
+ax1.legend(bbox_to_anchor=(1, 0.5))
+new_labels = ['Low VL', 'High VL']
+for t, l in zip(ax1.get_legend().texts, new_labels):
+    t.set_text(l)
 ############################# Plotting Panel D ################################
 print(all_group_sizes)
 
-sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', data = all_group_sizes, ci = None, ax = ax2)
+sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', data = all_group_sizes, ci = None, ax = ax2, palette = ['tab:blue', 'tab:orange'])
 ax2.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
 ax2.set_ylabel("Group Size")
 ax2.get_legend().remove()
 ax2.xaxis.set_tick_params(labelbottom=True)
 fig.align_ylabels([ax1, ax2])
-plt.savefig(outDir + 'fig3CD.jpg')
+plt.tight_layout()
+plt.savefig(outDir + 'fig3CD.jpg', bbox_inches='tight')
+
 plt.close()
 
 ####################### Plotting Panel B ######################################
-sns.set(rc={'figure.figsize':(10,10)}, font_scale = 2)
+sns.set(rc={'figure.figsize':(12,10)}, font_scale = 3)
 sns.set_palette("tab10")
 sns.set_style("white")
 
@@ -158,12 +164,12 @@ plt.xlabel(r'Distance X Time (bp/generation)')
 plt.ylabel("D\' Ratio")
 
 plt.savefig(outDir + 'fig3B.jpg')
-plt.tight_layout()
+
 plt.close()
 
 
 ############################# Plotting Panel A ################################
-sns.set(rc={'figure.figsize':(15,10)}, font_scale = 2)
+sns.set(rc={'figure.figsize':(15,10)}, font_scale = 3)
 sns.set_palette("tab10")
 sns.set_style("white")
 
@@ -211,7 +217,7 @@ for name, group in grouped_par:
 
 plt.xlabel('Time (days)')
 plt.ylabel('Viral Load (copies/ml)')
-
-plt.savefig(outDir + 'fig3A.jpg')
 plt.tight_layout()
+plt.savefig(outDir + 'fig3A.jpg')
+
 plt.close()

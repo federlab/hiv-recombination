@@ -16,7 +16,7 @@ from matplotlib import rcParams
 
 THRESHOLD = 0.2
 DIST_TIME_MAX = 50000
-NUM_REPS = 160
+NUM_REPS = 3270
 NUM_GROUPS = 10
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_MPL_1e-4/'
@@ -74,7 +74,6 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
         #get the data for the current rho and iteration
         curr_stat_df = curr_rho_stat[curr_rho_stat['rep'] == curr_iteration]
         
-
 
         #get the estimate and fit for the current dataset and sample size
         x_vals = curr_stat_df['Dist_X_Time'].unique()
@@ -137,7 +136,7 @@ sns.set(rc={'figure.figsize':(30,10)}, font_scale = 2, font = '')
 fig, axes = plt.subplots(1,1)
 sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, 
     jitter = True, color = 'k', s = 8, ax = axes,
-    order = [r"$10^{-3}$"])
+    order = [r"$10^{-4}$"])
     #order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 
 # distance across the "X" or "Y" stipplot column to span, in this case 40%

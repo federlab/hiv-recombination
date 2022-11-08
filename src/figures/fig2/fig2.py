@@ -16,12 +16,12 @@ from matplotlib import rcParams
 
 THRESHOLD = 0.2
 DIST_EXAMPLE = 50000
-D_PRIME_NUMS = [2500, 5000, 10000, 15000, 20000, 25000]
-DIST_TIME_MAX = [2500, 5000, 10000, 25000, 50000, 100000, 200000]
-NUM_REPS = 19
-NUM_GROUPS = 10
+D_PRIME_NUMS = [2500, 5000, 10000, 15000, 20000]
+DIST_TIME_MAX = [5000, 10000, 25000, 50000, 100000, 200000]
+NUM_REPS = 60
+NUM_GROUPS = 30
 
-dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_07_neutral_lessFilter/'
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
 outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig2/'
 
 #First, we will get all of the data and divide it into groups
@@ -48,7 +48,7 @@ for curr_data in os.listdir(dataDir):
 all_stat_dfs = pd.concat(all_stat_dfs)
 
 #Randomly divide the reps into 10 groups
-rep_groups = np.array(range(1, NUM_REPS+1))
+rep_groups = np.array(range(0, NUM_REPS))
 np.random.shuffle(rep_groups)
 rep_groups = np.array_split(rep_groups, NUM_GROUPS)
 
@@ -202,17 +202,20 @@ rcParams['mathtext.it'] = 'DejaVu Sans:italic'
 estimate_df = estimate_df_x[estimate_df_x['x_threshold'] == DIST_EXAMPLE]
 
 #plot the estimates to show how accurate they are
-sns.set(rc={'figure.figsize':(30,10)}, font_scale = 2, font = '')
-fig, axes = plt.subplots(1, 3)
+sns.set(rc={'figure.figsize':(25,25)}, font_scale = 3, font = '')
+sns.set_palette("tab10")
+sns.set_style("white")
+
+fig, axes = plt.subplots(2, 2)
 sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, 
-    jitter = True, color = 'k', s = 8, ax = axes[0],
+    jitter = True, color = 'k', s = 8, ax = axes[0][1], alpha = 0.3,
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 
 # distance across the "X" or "Y" stipplot column to span, in this case 40%
 label_width = 0.4
 
             
-for tick, text in zip(axes[0].get_xticks(), axes[0].get_xticklabels()):
+for tick, text in zip(axes[0][1].get_xticks(), axes[0][1].get_xticklabels()):
     sample_name = text.get_text()  # "X" or "Y"
 
     #get the float value of rho corresponding with the tick
@@ -220,14 +223,14 @@ for tick, text in zip(axes[0].get_xticks(), axes[0].get_xticklabels()):
     rho_val = rho_val['Sim_int_rho'].unique()[0]
 
     # plot horizontal lines across the column, centered on the tick
-    axes[0].plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
+    axes[0][1].plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
             lw=2, color='k')
 
 
-axes[0].set_xlabel(r'Simulation Value of $\rho$')
-axes[0].set_ylabel(r'Estimated Value of $\rho$')
-axes[0].set_ylim(0.000001, 0.01)
-axes[0].set_yscale('log')
+axes[0][1].set_xlabel(r'Simulation Value of $\rho$')
+axes[0][1].set_ylabel(r'Estimated Value of $\rho$')
+axes[0][1].set_ylim(0.000001, 0.01)
+axes[0][1].set_yscale('log')
 # axes[0].set_ylim(0.000001, 0.002)
 
 
@@ -246,12 +249,12 @@ group_MSE = pd.DataFrame(group_MSE,
     columns=['sample_size', 'Sim_int_rho', 'NRMSE', 'Sim_Rho'])
 # print(group)
 sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE', 
-    data = group_MSE, hue = 'sample_size', ax = axes[1],
+    data = group_MSE, hue = 'sample_size', ax = axes[1][0],
    palette=sns.color_palette("icefire", n_colors=len(D_PRIME_NUMS)))
-axes[1].set_xscale('log')
-axes[1].set_ylabel('Normalized RMSE')
-axes[1].set_xlabel(r'Simulation Value of $\rho$')
-axes[1].legend(title = '# of D\' Ratios')
+axes[1][0].set_xscale('log')
+axes[1][0].set_ylabel('Normalized RMSE')
+axes[1][0].set_xlabel(r'Simulation Value of $\rho$')
+axes[1][0].legend(title = '# of D\' Ratios')
 
 
 ##################### Plotting the MSE for each threshold ###################
@@ -269,11 +272,11 @@ group_MSE = pd.DataFrame(group_MSE,
     columns=['sample_size', 'Sim_int_rho', 'NRMSE', 'Sim_Rho'])
 
 sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE', 
-    data = group_MSE, hue = 'sample_size', ax = axes[2],
+    data = group_MSE, hue = 'sample_size', ax = axes[1][1],
    palette=sns.color_palette("icefire", n_colors=len(DIST_TIME_MAX)))
-axes[2].set_xscale('log')
-axes[2].set_ylabel('Normalized RMSE')
-axes[2].set_xlabel(r'Simulation Value of $\rho$')
+axes[1][1].set_xscale('log')
+axes[1][1].set_ylabel('Normalized RMSE')
+axes[1][1].set_xlabel(r'Simulation Value of $\rho$')
 plt.legend(title = r'd$\Delta$t Threshold')
 plt.tight_layout()
 
