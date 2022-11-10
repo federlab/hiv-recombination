@@ -211,6 +211,8 @@ for name, group in grouped_par:
     else: 
         my_color = "tab:blue"
         my_color2 = "navy"
+    if time_1 > 4000:
+        print(time_1, time_2, vl_1, vl_2, ave_vl, ave_time)
 
 
     plt.plot(ave_time, ave_vl, color = my_color2, marker = "D", markersize = 3)

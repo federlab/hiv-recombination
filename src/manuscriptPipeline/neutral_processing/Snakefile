@@ -16,7 +16,7 @@ ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
 #get the proper names of all the simulated directories
 rho_vals = ['0.001', '1e-04','2e-04' ,'1e-05', '2e-05', '2e-06' ]
 
-reps = range(60)
+reps = range(200)
 sel_opts = ['neutral']
 
 #the patterns for the linkage results

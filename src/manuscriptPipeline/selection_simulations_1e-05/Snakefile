@@ -1,8 +1,11 @@
 import numpy as np
 
 #Load the modules we will need for the jobs
-# shell.prefix()
 shell.prefix("module load pcre2/10.39;\nmodule load R/4.1.2;\nmodule load SLiM/3.7;")
+configfile: "config_0-1e-5.yaml"
+
+
+#This file runs Alison's scripts for slim simulations
 
 #Directory where the simulations will take place
 wrap_dir = '/net/feder/vol1/project/hiv_recombination/data/simulated/'
@@ -10,26 +13,26 @@ r_script_dir = '/net/feder/vol1/project/hiv_recombination/bin/R_for_snakemake/'
 python_script_dir = '/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts_simulation/'
 out_dir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
 
-# #For Desktop Dry run
+# # #For Desktop Dry run
 # wrap_dir = '/Volumes/feder-vol1/project/hiv_recombination/data/simulated/'
 # r_script_dir = '/Volumes/feder-vol1/project/hiv_recombination/bin/R_for_snakemake/'
-# python_script_dir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts_simulation/'
 # out_dir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
+# python_script_dir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts_simulation/'
 
 #The constants we will use for each run
-DIR_NAME = '2022_10_03_neutral'
+DIR_NAME = config['dir_name']
 MU = 1e-6
 NE = 1e4
 SAMP_DEPTH = 800 
 
 #get the values for each of the simulation options
-rho_vals = ['0.001', '1e-04','2e-04' ,'1e-05', '2e-05', '2e-06' ]
-reps = range(200)
-sel_opts = ['neutral']
+rho_vals = [config['rho_vals']]
+reps = range(0, config['reps'])
+sel_opts = [config['sel_opts']]
 timepoint_nums = range(1, 6)
 
 #the patterns for the genotype and loci dataframes
-full_dir_pattern_gen= out_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredGenotypes"
+full_dir_pattern_gen = out_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredGenotypes"
 full_dir_pattern_gen = expand(full_dir_pattern_gen,
         rho_val = rho_vals, sel_opt = sel_opts, rep = reps, curr_time = timepoint_nums)
 
@@ -37,8 +40,7 @@ full_dir_pattern_loc= out_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s
 full_dir_pattern_loc = expand(full_dir_pattern_loc,
         rho_val = rho_vals, sel_opt = sel_opts, rep = reps, curr_time = timepoint_nums)
 
-
-# timepoint_pattern = "slim_formatted_t{timepoint_num}"
+#the slim files by timepoint
 timepoint_list = ["slim_formatted_t" + str(s) + '_f1' for s in timepoint_nums]
 
 #Targets are outputs and dependencies are inputs
@@ -64,19 +66,6 @@ rule run_slim:
     
     shell: "slim " + wrap_dir + DIR_NAME + "/mu1e-06_rho{wildcards.rho_val}_Ne10000_M800_s{wildcards.sel_opt}_rep{wildcards.rep}/slim_script.txt > " + \
             wrap_dir + DIR_NAME + "/mu1e-06_rho{wildcards.rho_val}_Ne10000_M800_s{wildcards.sel_opt}_rep{wildcards.rep}/slim_output.txt"
-
-# Elena 10/31/2022: I am trying to switch all of the simulation over to skip the co-counts array
-# #This rule processes the slim run output
-# rule process_slim_r:
-#     input: 
-#      wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/slim_output.txt"
-     
-#     output:
-#      wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/timepoint_info.tsv",
-#      (wrap_dir + DIR_NAME + "/mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/" + s + ".txt" for s in timepoint_list)
-
-#     shell: "Rscript " + r_script_dir + "process_slim_script.r -d " + \
-#              DIR_NAME + " -m " + str(MU) + " -r {wildcards.rho_val} -N " + str(NE) + " -M " + str(SAMP_DEPTH) + " -i {wildcards.rep} -s {wildcards.sel_opt}"
 
 #This rule parses and makes dataframes of the slim output
 rule format_slim_output:

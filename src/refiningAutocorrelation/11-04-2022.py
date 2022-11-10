@@ -15,16 +15,20 @@ from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
 
 DIST_TIME_MAX = 50000
-NUM_BOOTSTRAPS = 10
+NUM_BOOTSTRAPS = 1000
 NUM_REPS = 60
 NUM_GROUPS = 30
+NUM_SHUFFLES = 500
 
 #Today I am going to prototype an analysis to determine how well we can
 #discriminate between two different recombination rates that are a fixed
 #distance apart.
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig2/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
+
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
 
 #First I am going to read the data and randomly pair simulations
 all_stat_dfs = []
@@ -40,6 +44,8 @@ for curr_data in os.listdir(dataDir):
     sim_rho = run_info[1]
     sim_rho = sim_rho[3:]
     rep = run_info[-1]
+    if int(rep[3:]) > NUM_REPS:
+        continue
 
     #get the dataframe for the current run
     d_ratio_file = dataDir + curr_data + "/linkage/d_ratio"
@@ -106,7 +112,7 @@ all_conf_ints = pd.DataFrame(all_conf_ints,
 
 print(all_conf_ints)
 
-########################## Comparing pairs of groups ##########################
+
 #To get the comparison, we need to convert the rho values to floats
 rhoDict = {"0.001" : 0.001,
             "1e-04" : 0.0001,
@@ -121,6 +127,7 @@ rho_dict_fix_strings = { "0.001" : r"$10^{-3}$",
                         "2e-05" : r"$2\times10^{-5}$",
                         "2e-06" : r"$2\times10^{-6}$"}
 
+
 #redo the labeling on the rho values from what was used in the simulation names
 intRhoList = []
 newStringRho = []
@@ -130,6 +137,51 @@ for entry in all_conf_ints['Sim_Rho']:
 all_conf_ints['Sim_float_rho'] = intRhoList
 all_conf_ints['Sim_Rho'] = newStringRho
 
+########################## Plotting the accuracy of the estimates #############
+fig = sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints, 
+    jitter = True, color = 'k', s = 2, alpha = 0.3,
+    order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
+
+# distance across the "X" or "Y" stipplot column to span, in this case 40%
+label_width = 0.4
+
+            
+for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
+    sample_name = text.get_text()  # "X" or "Y"
+
+    #get the float value of rho corresponding with the tick
+    rho_val = all_conf_ints[all_conf_ints['Sim_Rho'] == sample_name]
+    rho_val = rho_val['Sim_float_rho'].unique()[0]
+
+    # plot horizontal lines across the column, centered on the tick
+    fig.plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
+            lw=2, color='k')
+plt.savefig(outDir + "Accuracy.png")
+plt.close()
+
+
+fig = sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints, 
+    jitter = True, color = 'k', s = 2, alpha = 0.3,
+    order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
+
+# distance across the "X" or "Y" stipplot column to span, in this case 40%
+label_width = 0.4
+
+            
+for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
+    sample_name = text.get_text()  # "X" or "Y"
+
+    #get the float value of rho corresponding with the tick
+    rho_val = all_conf_ints[all_conf_ints['Sim_Rho'] == sample_name]
+    rho_val = rho_val['Sim_float_rho'].unique()[0]
+
+    # plot horizontal lines across the column, centered on the tick
+    fig.plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
+            lw=2, color='k')
+plt.yscale('log')
+plt.savefig(outDir + "Accuracy_logy.png")
+plt.close()
+########################## Comparing pairs of groups ##########################
 
 #We need to loop through all pairs of rates
 possible_rhos = all_conf_ints['Sim_float_rho'].unique()
@@ -143,53 +195,93 @@ for i in range(len(possible_rhos -1)):
     rho_1_df = all_conf_ints[all_conf_ints['Sim_float_rho'] == curr_rho_1]
     curr_str_rho_1 = rho_1_df['Sim_Rho'].unique()[0]
 
-    for j in range(i+1, len(possible_rhos)):
+    for j in range(i, len(possible_rhos)):
         curr_rho_2 = possible_rhos[j]
         rho_2_df = all_conf_ints[all_conf_ints['Sim_float_rho'] == curr_rho_2]
         curr_str_rho_2 = rho_2_df['Sim_Rho'].unique()[0]
 
         pair_diff = curr_rho_2/curr_rho_1
+        if pair_diff >= 11:
+            continue
 
-        #randomly pair the simulations
-        rep_list_1 = rho_1_df['Group'].unique()
-        np.random.shuffle(rep_list_1)
-        rep_list_2 = rho_2_df['Group'].unique()
-        np.random.shuffle(rep_list_2)
-        assert len(rep_list_1) == len(rep_list_2), "The number of replicates for each rho value is not the same"
-        rep_pairs = [(rep_list_1[i], rep_list_2[i]) for i in range(len(rep_list_1))]
-        
-        #loop through each pair and check if the confidence intervals overlap
-        for curr_pair in rep_pairs:
-            rho_1_group = rho_1_df[rho_1_df['Group'] == curr_pair[0]]
-            rho_2_group = rho_2_df[rho_2_df['Group'] == curr_pair[1]]
-
-            #check if the estimates are in the correct order
-            if rho_1_group['est_rho'].values[0] > rho_2_group['est_rho'].values[0]:
-                order_correct = False
-            else: order_correct = True  
+        for curr_shuffle in range(NUM_SHUFFLES):
+            #randomly pair the simulations
+            rep_list_1 = rho_1_df['Group'].unique()
+            np.random.shuffle(rep_list_1)
+            rep_list_2 = rho_2_df['Group'].unique()
+            np.random.shuffle(rep_list_2)
+            assert len(rep_list_1) == len(rep_list_2), "The number of replicates for each rho value is not the same"
+            rep_pairs = [(rep_list_1[i], rep_list_2[i]) for i in range(len(rep_list_1))]
             
-            #check if the confidence intervals overlap
-            lower_conf_1 = rho_1_group['lower_conf'].values[0]
-            upper_conf_1 = rho_1_group['upper_conf'].values[0]
-            lower_conf_2 = rho_2_group['lower_conf'].values[0]
-            upper_conf_2 = rho_2_group['upper_conf'].values[0]
-            
-            if (lower_conf_1 < lower_conf_2) and (lower_conf_2 < upper_conf_1):
-                overlap = True
-            elif (lower_conf_1 < upper_conf_2) and (upper_conf_2 < upper_conf_1):
-                overlap = True
-            else:
-                overlap = False
+            #loop through each pair and check if the confidence intervals overlap
+            for curr_pair in rep_pairs:
+                rho_1_group = rho_1_df[rho_1_df['Group'] == curr_pair[0]]
+                rho_2_group = rho_2_df[rho_2_df['Group'] == curr_pair[1]]
 
-            #append the results
-            pair_results_df.append([curr_rho_1, curr_rho_2, order_correct, overlap, pair_diff])
+                #check if the estimates are in the correct order
+                if rho_1_group['est_rho'].values[0] > rho_2_group['est_rho'].values[0]:
+                    order_correct = False
+                else:
+                    order_correct = True  
+                
+                #check if the confidence intervals overlap
+                lower_conf_1 = rho_1_group['lower_conf'].values[0]
+                upper_conf_1 = rho_1_group['upper_conf'].values[0]
+                lower_conf_2 = rho_2_group['lower_conf'].values[0]
+                upper_conf_2 = rho_2_group['upper_conf'].values[0]
+                
+                if (lower_conf_1 < lower_conf_2) and (lower_conf_2 < upper_conf_1):
+                    overlap = True
+                elif (lower_conf_1 < upper_conf_2) and (upper_conf_2 < upper_conf_1):
+                    overlap = True
+                else:
+                    overlap = False
 
-pair_results_df = pd.DataFrame(pair_results_df, columns=['rho_1', 'rho_2', 'order_correct', 'overlap', 'pair_diff'])
+                #append the results
+                pair_results_df.append([curr_rho_1, curr_str_rho_1, curr_rho_2, 
+                            curr_str_rho_2, order_correct, overlap, pair_diff])
+
+pair_results_df = pd.DataFrame(pair_results_df, columns=['rho_1', 'str_rho_1',
+        'rho_2', 'str_rho_2', 'order_correct', 'overlap', 'pair_diff'])
 
 #Now calculate the proportion correct 
+disc_results = []
+pair_results_df = pair_results_df.groupby(['rho_1', 'rho_2'])
 
+for name, group in pair_results_df:
+    curr_pair_diff = group['pair_diff'].unique()[0]
+    curr_str_rho_1 = group['str_rho_1'].unique()[0]
+    curr_str_rho_2 = group['str_rho_2'].unique()[0]
+
+    #calculate the proportion correct
+    correct_order = group[group['order_correct'] == True]
+    prop_correct = len(correct_order)/len(group)
+    correct_no_overlap = correct_order[correct_order['overlap'] == False]
+    prop_correct_no_overlap = len(correct_no_overlap)/len(group)
+
+    disc_results.append([name[0], curr_str_rho_1, name[1], curr_str_rho_2,
+             prop_correct, prop_correct_no_overlap, curr_pair_diff])
+
+disc_results = pd.DataFrame(disc_results, columns=['rho_1', 'str_rho_1',
+         'rho_2', 'str_rho_2', 'prop_correct', 'prop_correct_no_overlap',
+          'pair_diff'])
+
+disc_results['pair_diff'] = disc_results['pair_diff'].apply(lambda x: round(x))
+disc_results['pair_diff'] = disc_results['pair_diff'].astype('category')
 ########################## Plotting our Results ###############################          
 
-sns.stripplot(x = 'Sim_Rho', y = 'Est_Rho', data = estimate_df, 
-    jitter = True, color = 'k', s = 8, alpha = 0.3,
+sns.stripplot(x = 'str_rho_1', y = 'prop_correct', data = disc_results, 
+    jitter = True, s = 8, hue = 'pair_diff',
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
+plt.ylabel('Proportion Ordered Correctly')
+plt.xlabel(r'Simulation Value of $\rho$')
+plt.savefig(outDir + 'discrimination.png', dpi = 300)
+plt.close()
+
+sns.stripplot(x = 'str_rho_1', y = 'prop_correct_no_overlap', data = disc_results, 
+    jitter = True, s = 8, hue = 'pair_diff',
+    order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
+plt.ylabel('Proportion with Non-Overlapping Confidence Intervals')
+plt.xlabel(r'Simulation Value of $\rho$')
+plt.savefig(outDir + 'discrimination_conf.png', dpi = 300)
+plt.close()
