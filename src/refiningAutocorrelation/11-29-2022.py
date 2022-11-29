@@ -11,7 +11,7 @@ from matplotlib import rcParams
 
 THRESHOLD = 0.2
 DIST_TIME_MAX = 50000
-NUM_REPS = 200
+NUM_REPS = 2
 
 #Today I am trying to resample the ddelta t values to see if that is affecting the fit
 
