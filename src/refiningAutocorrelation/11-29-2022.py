@@ -71,7 +71,7 @@ all_stat_dfs.append(rho_stat_dfs)
 
 all_stat_dfs = pd.concat(all_stat_dfs, ignore_index=True)
 all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] <= DIST_TIME_MAX]
-all_stat_dfs = all_stat_dfs[all_stat_dfs['d_ratio'] >= THRESHOLD]
+# all_stat_dfs = all_stat_dfs[all_stat_dfs['d_ratio'] >= THRESHOLD]
 
 # #Plot our estimates against each other 
 #make the rho values ints rather than strings
@@ -153,8 +153,9 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
             # print("**********************")
             curr_bin = curr_bin.sample(n = min_coverage)
             downsampled_df.append(curr_bin)
-        
+
         downsampled_df = pd.concat(downsampled_df, ignore_index=True)
+        print(min(downsampled_df['d_ratio']))
         sns.histplot(data = downsampled_df, stat = 'density', x = 'Dist_X_Time', color = 'blue', bins = NUM_BINS)
 
         plt.savefig(outDir + "fits/downsampled_hist"+ str(curr_float_rho) + ".png", dpi = 300)
