@@ -27,8 +27,8 @@ outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/20
 
 # dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
 # outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_07_MPL/'
-dataDirList = ['2022_09_07_MPL_1e-3/', '2022_09_07_MPL_1e-4/'] #, '2022_09_07_MPL_1e-5/']
-dataDirReps = [160, 3270] #, 5490]
+dataDirList = ['2022_09_07_MPL_1e-3/', '2022_09_07_MPL_1e-4/', '2022_09_07_MPL_1e-5/']
+dataDirReps = [160, 3270, 5490]
 
 #First I am going to read the data and randomly pair simulations
 all_stat_dfs = []
@@ -91,6 +91,8 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
     for curr_iteration in range(0, NUM_GROUPS):
         #get the data for the current rho and iteration
         curr_stat_df = curr_rho_stat[curr_rho_stat['iter_group'] == curr_iteration]
+        print(len(curr_stat_df))
+        print(curr_stat_df.head())
 
         #Get the current estimate
         lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(curr_stat_df,
@@ -149,7 +151,7 @@ sns.set_style("white")
 
 fig = sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints, 
     jitter = True, color = 'k', s = 8, alpha = 0.3,
-    order = [r"$10^{-4}$", r"$10^{-3}$"])
+    order = [r"$10^{-5}$", r"$10^{-4}$", r"$10^{-3}$"])
     #order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 
 # distance across the "X" or "Y" stipplot column to span, in this case 40%
