@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import autocorrelation as autocorr
 
-THRESHOLD = 0.01
+THRESHOLD = -float('inf')
 
 #This script uses the linkage data and outputs calculated D' ratios
 dataDir = snakemake.input[0]
@@ -21,12 +21,11 @@ outDataDir = outDataDir.split('/')[:-2]
 outDataDir = "/".join(outDataDir)
 
 linkage_file = dataDir + "/linkage/r2_and_D"
-d_ratio_out =  outDataDir + "/linkage/d_ratio"
+d_ratio_out =  outDataDir + "/linkage/d_ratio_three_haps"
 r2_and_D = pd.read_pickle(linkage_file)
 
-print(r2_and_D['timepoint'].unique())
 
-stat_df = autocorr.calculate_d_ratios(linkage_file, THRESHOLD)
+stat_df = autocorr.calculate_d_ratios(linkage_file, threshold = THRESHOLD, four_haps = False, stat = 'd_val')
 print(stat_df, file = sys.stderr)
 stat_df.to_pickle(d_ratio_out)
 print(os.listdir(dataDir + "/linkage/"))

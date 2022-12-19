@@ -19,6 +19,7 @@ DIST_TIME_MAX = 50000
 NUM_BOOTSTRAPS = 10
 NUM_REPS = 200
 NUM_GROUPS = 10
+FONTSIZE = 22
 
 #Today I am going to prototype an analysis to determine how well we can
 #discriminate between two different recombination rates that are a fixed
@@ -137,20 +138,20 @@ all_conf_ints['Sim_Rho'] = newStringRho
 
 ########################## Plotting the accuracy of the estimates #############
 #plot the estimates to show how accurate they are
-sns.set(rc={'figure.figsize':(10,10)}, font_scale = 2, font = '')
-sns.set_palette("tab10")
+sns.set(rc={'figure.figsize':(10,10)})
 sns.set_style("white")
 
-fig = sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints, 
-    jitter = True, color = 'k', s = 8, alpha = 0.3,
+fig, axs = plt.subplots(2, 1, sharex = True)
+sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints, 
+    jitter = True, color = 'k', s = 8, alpha = 0.3, ax = axs[0,0],
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 
 # distance across the "X" or "Y" stipplot column to span, in this case 40%
 label_width = 0.4
 
-plt.savefig(outDir + "sim_fig_1B.png", dpi = 300)
+plt.savefig(outDir + "sim_fig_1BC_combined.png", dpi = 300)
             
-for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
+for tick, text in zip(axs[0,0].get_xticks(), axs[0,0].get_xticklabels()):
     sample_name = text.get_text()  # "X" or "Y"
 
     #get the float value of rho corresponding with the tick
@@ -158,41 +159,12 @@ for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
     rho_val = rho_val['Sim_float_rho'].unique()[0]
 
     # plot horizontal lines across the column, centered on the tick
-    fig.plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
+    axs[0.0].plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
             lw=2, color='k')
 
-# plt.errorbar(all_rho_bins['Dist_X_Time'], all_rho_bins['D_Ratio'], yerr = all_rho_bins['D_Ratio'], fmt = 'none', ecolor = 'black', elinewidth = 1, capsize = 3)
-    #Get the data for the points on the plot, then match them to a confidence interval
-    #dictionary
 
-# #First we'll go through all the points in the plot 
-# x_points = []
-# y_points = []
-
-# all_lines = fig.get_lines()
-# for curr_line in all_lines:
-#     curr_x = curr_line.get_data()[0]
-#     curr_y = curr_line.get_data()[1]
-    
-#     x_points.extend(curr_x)
-#     y_points.extend(curr_y)
-
-
-# #match the points to the confidence intervals
-# for curr_point_i in range(len(x_points)):
-#     curr_x = x_points[curr_point_i]
-#     curr_y = y_points[curr_point_i]
-
-#     #get the confidence interval for the point
-#     print(all_conf_ints)
-#     print(curr_y)
-#     print(all_conf_ints[all_conf_ints['est_rho'] == curr_y])
-#     quit()
-
-plt.ylabel(r'Estimated Value of $\rho$')
-plt.xlabel(r'Simulation Value of $\rho$')
-plt.yscale('log')
-plt.savefig(outDir + "sim_fig_1B_200reps_10groups.png", dpi = 300)
+axs[0,0].set_ylabel(r'Estimated Value of $\rho$')
+axs[0,0].set_label(r'Simulation Value of $\rho$')
+axs[0,0].set_yscale('log')
+plt.savefig(outDir + "sim_fig_1BC_combined.png", dpi = 300)
 plt.close()
-
-    

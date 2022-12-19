@@ -24,8 +24,12 @@ full_dir_pattern_linkage = dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_op
 full_dir_linkage = expand(full_dir_pattern_linkage,
         rho_val = rho_vals, rep = reps, sel_opt = sel_opts)
 
-full_dir_pattern_d_rat = dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/d_ratio"
+full_dir_pattern_d_rat = dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/d_ratio_three_haps"
 full_dir_pattern_d_rat = expand(full_dir_pattern_d_rat,
+        rho_val = rho_vals, rep = reps, sel_opt = sel_opts)
+
+full_dir_pattern_d_rat_prime = dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/d_ratio"
+full_dir_pattern_d_rat_prime = expand(full_dir_pattern_d_rat_prime,
         rho_val = rho_vals, rep = reps, sel_opt = sel_opts)
 
 #get the proper names of all the timepoint files
@@ -37,6 +41,7 @@ timepoint_list = ["slim_formatted_t" + str(s) + '_f1' for s in timepoint_nums]
 #Targets are outputs and dependencies are inputs
 rule all:
     input:
+     full_dir_pattern_d_rat_prime,
      full_dir_pattern_d_rat
 
 rule calc_linkage_new:
@@ -47,7 +52,14 @@ rule calc_linkage_new:
      dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/r2_and_D"
     script: ruleScriptDir + "calc_linkage_new.py"
 
-rule calc_d_rat:
+rule calc_d_rat_D:
+    input:
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/r2_and_D"
+    output:
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/d_ratio_three_haps"
+    script: ruleScriptDir + "calc_d_rat_D.py"
+
+rule calc_d_rat_D_prime:
     input:
      dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage/r2_and_D"
     output:

@@ -38,12 +38,11 @@ for curr_timepoint in segregatingLoci['timepoint'].unique():
 
     #get the linkage calculation results
     stat_list, distList, supportList, resultsDF = r2.calculate_R2_df(
-        curr_genotypes, curr_seg, statistic = 'D_prime', saveData = True)
+        curr_genotypes, curr_seg, statistic = 'D', saveData = True)
     
     resultsDF['timepoint'] = curr_timepoint
     all_resultsDF.append(resultsDF)
 
 #Make the dataframe from all of our results
 all_resultsDF = pd.concat(all_resultsDF, ignore_index=True)
-print(all_resultsDF.head())
-all_resultsDF.to_pickle(dataDir + "/linkage/r2_and_D")
+all_resultsDF.to_pickle(dataDir + "/linkage_D/r2_and_D")

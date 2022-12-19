@@ -18,17 +18,21 @@ DIST_TIME_MAX = 50000
 # NUM_BOOTSTRAPS = 1000
 NUM_BOOTSTRAPS = 10
 NUM_REPS = 200
-NUM_GROUPS = 10
+NUM_GROUPS = 20
+THRESHOLD = 0.005
 
 #Today I am going to prototype an analysis to determine how well we can
 #discriminate between two different recombination rates that are a fixed
 #distance apart.
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/sim_fig_1/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
 
+# my_test = pd.read_pickle(dataDir + 'mu1e-06_rho0.001_Ne10000_M800_sneutral_rep0/linkage/d_ratio_three_haps')
+# print(my_test)
+# quit()
 # dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/sim_fig_1/'
+# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
 
 #First I am going to read the data and randomly pair simulations
 all_stat_dfs = []
@@ -48,8 +52,9 @@ for curr_data in os.listdir(dataDir):
         continue
 
     #get the dataframe for the current run
-    d_ratio_file = dataDir + curr_data + "/linkage/d_ratio"
+    d_ratio_file = dataDir + curr_data + "/linkage/d_ratio_three_haps"
     stat_df = pd.read_pickle(d_ratio_file)
+
     stat_df['rep'] = int(rep[3:])
     stat_df['Sim_Rho'] = sim_rho
     all_stat_dfs.append(stat_df)
@@ -74,6 +79,8 @@ all_stat_dfs['iter_group'] = group_labels
 ########################## Estimating recombination rates #####################
 #loop through each of the distance cutoffs
 all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] <= DIST_TIME_MAX]
+print(all_stat_dfs.head())
+all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] >=  THRESHOLD]
 all_estimate_df = []
 all_fit_df = []
 
@@ -148,7 +155,7 @@ fig = sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints,
 # distance across the "X" or "Y" stipplot column to span, in this case 40%
 label_width = 0.4
 
-plt.savefig(outDir + "sim_fig_1B.png", dpi = 300)
+plt.savefig(outDir + "D_accuracy.png", dpi = 300)
             
 for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
     sample_name = text.get_text()  # "X" or "Y"
@@ -161,38 +168,8 @@ for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
     fig.plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
             lw=2, color='k')
 
-# plt.errorbar(all_rho_bins['Dist_X_Time'], all_rho_bins['D_Ratio'], yerr = all_rho_bins['D_Ratio'], fmt = 'none', ecolor = 'black', elinewidth = 1, capsize = 3)
-    #Get the data for the points on the plot, then match them to a confidence interval
-    #dictionary
-
-# #First we'll go through all the points in the plot 
-# x_points = []
-# y_points = []
-
-# all_lines = fig.get_lines()
-# for curr_line in all_lines:
-#     curr_x = curr_line.get_data()[0]
-#     curr_y = curr_line.get_data()[1]
-    
-#     x_points.extend(curr_x)
-#     y_points.extend(curr_y)
-
-
-# #match the points to the confidence intervals
-# for curr_point_i in range(len(x_points)):
-#     curr_x = x_points[curr_point_i]
-#     curr_y = y_points[curr_point_i]
-
-#     #get the confidence interval for the point
-#     print(all_conf_ints)
-#     print(curr_y)
-#     print(all_conf_ints[all_conf_ints['est_rho'] == curr_y])
-#     quit()
-
 plt.ylabel(r'Estimated Value of $\rho$')
 plt.xlabel(r'Simulation Value of $\rho$')
 plt.yscale('log')
-plt.savefig(outDir + "sim_fig_1B_200reps_10groups.png", dpi = 300)
+plt.savefig(outDir + "D_accuracy.png", dpi = 300)
 plt.close()
-
-    
