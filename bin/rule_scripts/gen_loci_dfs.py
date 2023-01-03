@@ -10,7 +10,7 @@ import zaniniUtil as zu
 #segregating Loci
 
 #The cutoffs for processing the segregating loci
-# SEG_CUTOFF = 0.01
+SEG_CUTOFF = 0.01
 
 #I am going to use the same filtering as our previous analysis
 #These parameters are used when processing the data
