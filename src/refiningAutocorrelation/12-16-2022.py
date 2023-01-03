@@ -17,9 +17,9 @@ from matplotlib import rcParams
 DIST_TIME_MAX = 50000
 # NUM_BOOTSTRAPS = 1000
 NUM_BOOTSTRAPS = 10
-NUM_REPS = 200
-NUM_GROUPS = 20
-THRESHOLD = 0.005
+NUM_REPS = 100
+NUM_GROUPS = 10
+THRESHOLD = 0.0075
 
 #Today I am going to prototype an analysis to determine how well we can
 #discriminate between two different recombination rates that are a fixed
@@ -31,8 +31,8 @@ outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/20
 # my_test = pd.read_pickle(dataDir + 'mu1e-06_rho0.001_Ne10000_M800_sneutral_rep0/linkage/d_ratio_three_haps')
 # print(my_test)
 # quit()
-# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
 
 #First I am going to read the data and randomly pair simulations
 all_stat_dfs = []

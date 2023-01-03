@@ -16,17 +16,17 @@ from matplotlib import rcParams
 
 DIST_TIME_MAX = 50000
 NUM_BOOTSTRAPS = 10
-NUM_REPS = 200
-NUM_GROUPS = 10
-DI_THRESHOLD_LIST = [0.001, 0.005, 0.01, 0.05]
+NUM_REPS = 100
+NUM_GROUPS = 5
+DI_THRESHOLD_LIST = [0.005, 0.0075, 0.01, 0.05]
 
 #Today I am going to test the accuracy  when I move up the initial linkage threshold
 #This analysis is the same as 12-08, but I will be using D data instead of D'
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
 outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
 
-# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
 
 #First I am going to read the data and randomly pair simulations
 all_stat_dfs = []
@@ -141,7 +141,8 @@ all_conf_ints['Sim_Rho'] = newStringRho
 
 ########################## Plotting the accuracy of the estimates #############
 #plot the estimates to show how accurate they are
-sns.set(rc={'figure.figsize':(35,10)}, font_scale = 2, font = '')
+plt.rcParams.update({'font.size': 22})
+sns.set(rc={'figure.figsize':(8,8)}, font = '')
 sns.set_palette("tab10")
 sns.set_style("white")
 
@@ -155,7 +156,7 @@ for i in range(len(all_conf_ints['Threshold'].unique())):
     curr_ax = axs[ax_coords[0]][ax_coords[1]]
 
     sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = curr_plot_conf, ax = curr_ax,
-        jitter = True, color = 'k', s = 8, alpha = 0.3,
+        jitter = True, color = 'k', s = 5, alpha = 0.3,
         order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
     plt.savefig(outDir + "accuracy_facet_threshold_D.png")
     # distance across the "X" or "Y" stipplot column to span, in this case 40%
