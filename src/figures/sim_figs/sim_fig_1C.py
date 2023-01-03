@@ -109,5 +109,6 @@ for t, l in zip(fig.legend_.texts, new_labels):
     t.set_text(l)
 plt.xlabel(r'Distance X Time (bp/generation)')
 plt.ylabel("D\' Ratio")
+
 print('Saving Figure')
 plt.savefig(outDir + 'sim_fig_1C.png', dpi = 300)
