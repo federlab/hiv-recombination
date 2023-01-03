@@ -26,9 +26,4 @@ r2_and_D = pd.read_pickle(linkage_file)
 
 
 stat_df = autocorr.calculate_d_ratios(linkage_file, threshold = THRESHOLD, four_haps = False, stat = 'd_val')
-print(stat_df, file = sys.stderr)
 stat_df.to_pickle(d_ratio_out)
-print(os.listdir(dataDir + "/linkage/"))
-if 'd_ratio' not in os.listdir(dataDir + "/linkage/"):
-    print(stat_df, file = sys.stderr)
-    stat_df.to_pickle(d_ratio_out)
