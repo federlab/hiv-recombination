@@ -137,7 +137,7 @@ all_conf_ints['Sim_Rho'] = newStringRho
 
 ########################## Plotting the accuracy of the estimates #############
 #plot the estimates to show how accurate they are
-sns.set(rc={'figure.figsize':(10,10)}, font_scale = 2, font = '')
+sns.set(rc={'figure.figsize':(10,10)}) #, font_scale = 2, font = '')
 sns.set_palette("tab10")
 sns.set_style("white")
 

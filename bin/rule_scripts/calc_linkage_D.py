@@ -17,6 +17,10 @@ coCounts_dir = dataDir + "/numpy/"
 loci_dir = dataDir + "/analysis/FilteredLoci"
 genotype_dir = dataDir + "/analysis/FilteredGenotypes"
 
+#Make the output directory if we need to 
+if not os.path.exists(dataDir + "/linkage_D"):
+    os.mkdir(dataDir + "/linkage_D")
+
 #Load the segregating loci
 segregatingLoci = pd.read_pickle(loci_dir)
 genotype_df = pd.read_pickle(genotype_dir)

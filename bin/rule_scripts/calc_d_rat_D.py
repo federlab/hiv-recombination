@@ -20,8 +20,8 @@ outDataDir = snakemake.output[0]
 outDataDir = outDataDir.split('/')[:-2]
 outDataDir = "/".join(outDataDir)
 
-linkage_file = dataDir + "/linkage/r2_and_D"
-d_ratio_out =  outDataDir + "/linkage/d_ratio_three_haps"
+linkage_file = dataDir + "/linkage_D/r2_and_D"
+d_ratio_out =  outDataDir + "/linkage_D/d_ratio_three_haps"
 r2_and_D = pd.read_pickle(linkage_file)
 
 

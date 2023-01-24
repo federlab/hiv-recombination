@@ -1,0 +1,83 @@
+import numpy as np
+import os
+import shutil
+
+
+#I am using this to run the autocorrelation analysis on the Zanini data
+
+#Directory we'll use to save all of the additional analysis files
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/'
+
+#Directory with all of the scripts for our additional rules
+ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
+
+# #For Desktop Dry run
+# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake_D/'
+# ruleScriptDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
+
+#get the proper names of all the simulated directories
+participant_nums = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11']
+fragments = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6']
+
+
+#make the pattern for the files we'll need
+full_dir_pattern_d_rat = dataDir + "{par}_{frag}/linkage_D/d_ratio_three_haps"
+full_dir_pattern_d_rat = expand(full_dir_pattern_d_rat,
+        par = participant_nums, frag = fragments)
+
+#get the proper names of all the timepoint files
+timepoint_dict = {}
+#loop through the directories
+for curr_dir in os.listdir(dataDir):
+    if curr_dir[0] == '.':
+        continue
+    timepoint_list = []
+    curr_info = curr_dir.split('_')
+
+
+    #loop through the current timepoints
+    for timepoint_file in os.listdir(dataDir + curr_dir + "/numpy/"):
+        if timepoint_file.split('.')[-1] != 'npy':
+            continue
+
+        curr_timepoint = timepoint_file.split('_')[-1]
+        curr_timepoint = curr_timepoint.split('.')[0]
+        timepoint_list.append(dataDir + curr_dir + '/numpy/cocounts_' + curr_info[0] + \
+            '_sample_' + curr_timepoint[1:] + "_" + curr_info[1] + "_" + curr_timepoint + ".npy")
+    #in this dictionary the key is the directory and the value is a list of timepoints in it
+    timepoint_dict[curr_dir] = timepoint_list
+
+#make an input function that will feed the relevant timepoints to the rule inputs
+def get_correct_times(wildcards):
+    return timepoint_dict[ wildcards.par + '_' + wildcards.frag ]
+
+#Targets are outputs and dependencies are inputs
+rule all:
+    input:
+     full_dir_pattern_d_rat
+
+rule gen_loci_dfs:
+    input: 
+     dataDir +  "{par}_{frag}/timepoint_info.tsv",
+     get_correct_times
+    output:
+     dataDir + "{par}_{frag}/analysis/FilteredGenotypes",
+     dataDir + "{par}_{frag}/analysis/FilteredLoci"
+    script: ruleScriptDir + "gen_loci_dfs.py"
+
+rule calc_linkage_D:
+    input:
+     dataDir + "{par}_{frag}/analysis/FilteredLoci",
+     dataDir + "{par}_{frag}/analysis/FilteredGenotypes"
+
+    output:
+     dataDir + "{par}_{frag}/linkage_D/r2_and_D"
+    script: ruleScriptDir + "calc_linkage_D.py"
+
+rule calc_d_rat_D:
+    input:
+     dataDir + "{par}_{frag}/linkage_D/r2_and_D"
+    output:
+     dataDir + "{par}_{frag}/linkage_D/d_ratio_three_haps"
+    script: ruleScriptDir + "calc_d_rat_D.py"
+

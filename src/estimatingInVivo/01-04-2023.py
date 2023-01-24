@@ -19,14 +19,19 @@ EXAMPLE_THRESHOLD = 50000
 #For running on desktop
 dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig3/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/01-04-2023/"
+
+dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
+vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
+outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/01-04-2023/"
 
 #Make the dataframe containg D' ratios
-stat_df = zu.combine_drats(dataDir)
+stat_df = zu.combine_drats(dataDir, d_stat = True)
 stat_df = zu.label_vl_drats(stat_df, vlDir)
 
 stat_df = stat_df[stat_df['Fragment'] != 'F5']
 stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
+stat_df = stat_df[stat_df['d_i'] >= 0.0075]
 
 #Only get values for which the viral load doesn't leave the boundaries of the 
 #initial and final measurments
@@ -38,7 +43,6 @@ all_group_fits = []
 x_vals = stat_df['Dist_X_Time'].describe()
 group_size_df = []
 
-#Estimate rates specifically excluding each individual
 for curr_thresh in GROUP_THRESHOLD_LIST:
     #Get the dataframe for everyone except the current participant
     stat_df['High_VL'] = stat_df['Ave_VL'].gt(curr_thresh)
@@ -122,6 +126,7 @@ ax1.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
 ax1.axhline(0.000014, color = 'tab:green')
 ax1.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
 ax1.xaxis.set_tick_params(labelbottom=True)
+ax1.set_ylim(0, 0.0003)
 # replace labels
 
 ax1.legend(bbox_to_anchor=(1, 0.5))
@@ -138,7 +143,7 @@ ax2.get_legend().remove()
 ax2.xaxis.set_tick_params(labelbottom=True)
 fig.align_ylabels([ax1, ax2])
 plt.tight_layout()
-plt.savefig(outDir + 'fig3CD.jpg', bbox_inches='tight')
+plt.savefig(outDir + 'fig3CD_Dstat.jpg', bbox_inches='tight')
 
 plt.close()
 
@@ -163,7 +168,7 @@ sns.lineplot(x ='bin_edges', y ='high_conf', data = high_50k, color = 'saddlebro
 plt.xlabel(r'Distance X Time (bp/generation)')
 plt.ylabel("D\' Ratio")
 
-plt.savefig(outDir + 'fig3B.jpg')
+plt.savefig(outDir + 'fig3B_Dstat.jpg')
 
 plt.close()
 
@@ -220,6 +225,6 @@ for name, group in grouped_par:
 plt.xlabel('Time (days)')
 plt.ylabel('Viral Load (copies/ml)')
 plt.tight_layout()
-plt.savefig(outDir + 'fig3A.jpg')
+plt.savefig(outDir + 'fig3A_Dstat.jpg')
 
 plt.close()

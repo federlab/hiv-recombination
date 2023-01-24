@@ -45,7 +45,7 @@ all_group_fits = []
 group_size_df = []
 x_vals = stat_df['Dist_X_Time'].describe()
 
-#Estimate rates for only one individual
+#Estimate rates specifically excluding each individual
 for curr_thresh in GROUP_THRESHOLD_LIST:
     print(curr_thresh)
     for curr_par in PAR_LIST:

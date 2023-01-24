@@ -315,7 +315,7 @@ def label_vl_drats(stat_df, vlDir, cd4_label = False):
         labeled_rats['Ave_VL'] = labeled_rats[['VL_1', 'VL_2']].mean(axis=1)
     return labeled_rats
 
-def combine_drats(d_rat_dir):
+def combine_drats(d_rat_dir, d_stat = False):
     """Combines D' ratio dataframes across individuals and fragments.
     ---------------------------------------------------------------------------
     Params
@@ -332,6 +332,8 @@ def combine_drats(d_rat_dir):
         curr_frag = run_info[1]
 
         d_ratio_file = d_rat_dir + curr_data + "/linkage/d_ratio"
+        if d_stat:
+            d_ratio_file = d_rat_dir + curr_data + "/linkage_D/d_ratio_three_haps"
 
         curr_stat_df = pd.read_pickle(d_ratio_file)
         curr_stat_df['Participant'] = curr_par
