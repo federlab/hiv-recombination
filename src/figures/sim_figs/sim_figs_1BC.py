@@ -156,7 +156,7 @@ sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints,
 label_width = 0.4
 
 plt.tight_layout()
-plt.savefig(outDir + "sim_fig_1BC_combined.png", dpi = 300)
+plt.savefig(outDir + "sim_fig_1BC_combined" + str(NUM_BOOTSTRAPS) + ".png", dpi = 300)
 
 params = {'figure.figsize':(3, 3), 'axes.labelsize': 8,'axes.titlesize':8,  'legend.fontsize': 8, 'xtick.labelsize': 8, 'ytick.labelsize': 8}
 rcParams.update(params)

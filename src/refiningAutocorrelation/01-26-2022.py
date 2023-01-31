@@ -16,7 +16,7 @@ DIST_TIME_MAX = 50000
 NUM_REPS = 2
 NUM_GROUPS = 1
 NUM_BOOTSTRAPS = 10
-NUM_BINS = 300
+NUM_BINS = 100
 
 #Today I am trying to resample the ddelta t values to see if that is affecting the fit
 
@@ -136,6 +136,9 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
         #get the data for the current rho and iteration
         curr_stat_df = curr_rho_stat[curr_rho_stat['iter_group'] == curr_iteration]
 
+        # # #Try binning by unique loci
+        # unique_loci = 
+
         #Now downsample the group to the coverage of the lowest bin
         #Bin the d' ratios so they are easier to view on the plots
         bin_count, binedges, bin_nums = binned_statistic(
@@ -146,18 +149,52 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
 
         downsampled_df = []
         min_coverage = int(min(bin_count))
+        num_unique_loci = []
 
+        # #get the minimum number of distinct loci
+        # for i in range(len(binedges)-1):
+        #     bin_start = binedges[i]
+        #     bin_end = binedges[i+1]
+        #     curr_bin = curr_stat_df[(curr_stat_df['Dist_X_Time'] >= bin_start) & (curr_stat_df['Dist_X_Time'] <= bin_end)]
+        #     unique_loci = set(list(curr_stat_df['Locus_1'].unique()) + list(curr_stat_df['Locus_2'].unique().tolist()))
+        #     num_unique_loci.append(len(unique_loci))
+        
+        # min_unique_loci = int(min(num_unique_loci))
+
+        # for i in range(len(binedges)-1):
+        #     bin_start = binedges[i]
+        #     bin_end = binedges[i+1]
+        #     curr_bin = curr_stat_df[(curr_stat_df['Dist_X_Time'] >= bin_start) & (curr_stat_df['Dist_X_Time'] <= bin_end)]
+        #     unique_loci = set(list(curr_stat_df['Locus_1'].unique()) + list(curr_stat_df['Locus_2'].unique().tolist()))
+        #     sampled_loci = np.random.choice(list(unique_loci), min_unique_loci, replace = False)
+        #     sample_df = curr_bin[curr_bin['Locus_1'].isin(sampled_loci) & (curr_bin['Locus_2'].isin(sampled_loci))]
+        #     downsampled_df.append(sample_df)
+
+        
         for i in range(len(binedges)-1):
             bin_start = binedges[i]
             bin_end = binedges[i+1]
             curr_bin = curr_stat_df[(curr_stat_df['Dist_X_Time'] >= bin_start) & (curr_stat_df['Dist_X_Time'] <= bin_end)]
-            print(len(curr_bin))
-            print("**********************")
-            curr_bin = curr_bin.sample(n = min_coverage)
+
+            #sample segregating sites while the D' num is below the threshold
+            sample_df = []
+            sample_size = 0
+            sampled_loci = set()
+            unsampled_loci = set(list(curr_bin['Locus_1'].unique()) + list(curr_bin['Locus_2'].unique().tolist()))
+            while sample_size < min_coverage and len(unsampled_loci) > 0:
+                #sample another locus
+                my_sample = np.random.choice(list(unsampled_loci))
+                sampled_loci.add(my_sample)
+                unsampled_loci.remove(my_sample)
+                sample_df = curr_bin[curr_bin['Locus_1'].isin(sampled_loci) & (curr_bin['Locus_2'].isin(sampled_loci))]
+                sample_size = len(sample_df)
+                
+
+            curr_bin = sample_df
             downsampled_df.append(curr_bin)
 
         downsampled_df = pd.concat(downsampled_df, ignore_index=True)
-        print(min(downsampled_df['d_ratio']))
+   
         sns.histplot(data = downsampled_df, stat = 'density', x = 'Dist_X_Time', color = 'blue', bins = NUM_BINS)
 
         plt.savefig(outDir + "fits/downsampled_hist"+ str(curr_float_rho) + ".png", dpi = 300)
@@ -165,17 +202,17 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
 
 
         #get the estimate and fit for the current dataset and sample size
-        x_vals = curr_stat_df['Dist_X_Time'].unique()
+        x_vals = downsampled_df['Dist_X_Time'].unique()
         coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, 
-            curr_stat_df['Dist_X_Time'], curr_stat_df['d_ratio'],
+            downsampled_df['Dist_X_Time'], downsampled_df['d_ratio'],
             p0 = [0, 0.26, .0000439], maxfev = 10000)
         fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2])
                     for x in x_vals]
 
         #Bin the d' ratios so they are easier to view on the plots
         binned_rat, binedges, bin_nums = binned_statistic(
-            curr_stat_df['Dist_X_Time'].to_numpy(), 
-            curr_stat_df['d_ratio'].to_numpy(), bins = 100)
+            downsampled_df['Dist_X_Time'].to_numpy(), 
+            downsampled_df['d_ratio'].to_numpy(), bins = 100)
 
         sns.lineplot(y = binned_rat, x = binedges[1:], color = 'black')
         sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
@@ -190,7 +227,7 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
 
 
 all_estimate_df = pd.concat(all_estimate_df, ignore_index=True)
-
+print(all_estimate_df)
 all_conf_ints = []
 
 #Calculate the confidence intervals for the estimates with low + high VL
@@ -255,3 +292,7 @@ plt.ylabel(r'Estimated Value of $\rho$')
 plt.xlabel(r'Simulation Value of $\rho$')
 plt.yscale('log')
 plt.savefig(outDir + "downsampled_accuracy.png", dpi = 300)
+
+#Need to convert the coefficient estimates into long form and then plot
+# coefficients_for_plot = pd.melt(estimate_df, id_vars = ['Group', 'Sim_Rho'], value_vars = ['c0', 'c1', 'c2'])
+# print(coefficients_for_plot)

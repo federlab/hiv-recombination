@@ -115,15 +115,15 @@ all_conf_ints = pd.DataFrame(all_conf_ints,
 
 
 #Output the data that made the figures
-all_par_ests.to_csv(outDir + 'all_par_ests.csv')
-all_conf_ints.to_csv(outDir + 'all_conf_ints.csv')
+all_par_ests.to_csv(outDir + 'all_par_ests_'+ str(NUM_BOOTSTRAPS)+ ' .csv')
+all_conf_ints.to_csv(outDir + 'all_conf_ints_' + str(NUM_BOOTSTRAPS)+ '.csv')
 print(all_conf_ints)
 
 ############################# Plotting Panel C ################################
 
 
 print(all_group_fits)
-rcParams.update({'font.size': 8,'figure.figsize':(4, 4) })
+rcParams.update({'font.size': 8,'figure.figsize':(3, 3.5) })
 linewidth = 1
 sns.set_palette("tab10")
 sns.set_style("white")
@@ -134,11 +134,11 @@ sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_es
 
 ax1.set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
 ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
-ax1.set_ylim(0, 0.0003)
+ax1.set_ylim(0, 0.00025)
 ax1.ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
-ax1.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
-ax1.axhline(0.000014, color = 'tab:green')
-ax1.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
+ax1.axhline(0.000008, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
+ax1.axhline(0.000014, color = 'tab:green', linewidth = linewidth)
+ax1.axhline(0.00002, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
 ax1.xaxis.set_tick_params(labelbottom=True)
 new_labels = ['Low VL', 'High VL']
 for t, l in zip(ax1.get_legend().texts, new_labels):
@@ -154,5 +154,5 @@ ax2.get_legend().remove()
 ax2.xaxis.set_tick_params(labelbottom=True)
 fig.align_ylabels([ax1, ax2])
 plt.tight_layout()
-plt.savefig(outDir + 'fig4.jpg', dpi = 300)
+plt.savefig(outDir + 'fig4_' + str(NUM_BOOTSTRAPS) + '.jpg', dpi = 300)
 plt.close()

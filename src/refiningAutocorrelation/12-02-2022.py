@@ -72,7 +72,7 @@ all_stat_dfs.append(rho_stat_dfs)
 
 all_stat_dfs = pd.concat(all_stat_dfs, ignore_index=True)
 all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] <= DIST_TIME_MAX]
-# all_stat_dfs = all_stat_dfs[all_stat_dfs['d_ratio'] >= THRESHOLD]
+all_stat_dfs = all_stat_dfs[all_stat_dfs['d_ratio'] >= THRESHOLD]
 
 # #Plot our estimates against each other 
 #make the rho values ints rather than strings
@@ -159,19 +159,24 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
 
 
 
-        
         #calculate the r2 value for the fit
-        residuals = curr_stat_df['d_ratio'] - [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2])
-                    for x in curr_stat_df['Dist_X_Time']]
+        residuals, res_bins, res_bin_nums = binned_statistic(curr_stat_df['Dist_X_Time'].to_numpy(),
+            curr_stat_df['d_ratio'] - [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2])
+                    for x in curr_stat_df['Dist_X_Time']], bins = 100, statistic = 'mean')
+        tot_ss, tot_bins, tot_bin_nums = binned_statistic(curr_stat_df['Dist_X_Time'].to_numpy(), curr_stat_df['d_ratio'].to_numpy(), bins = 100, statistic= 'mean')
         ss_res = np.sum(residuals**2)
-        ss_tot = np.sum((curr_stat_df['d_ratio'] - np.mean(curr_stat_df['d_ratio']))**2)
-        r2 = 1 - (ss_res / ss_tot)
+        ss_tot = np.sum((tot_ss - np.mean(curr_stat_df['d_ratio']))**2)
+        r2 = 1 - (ss_res / ss_tot)   
+
+        #choose the fit with the best r2 value
         which_fit = np.argmax([short_dist_fit.rvalue**2, line_fit.rvalue**2, r2])
 
         best_fit_df = []
         if which_fit == 0:
+            print("Short dist")
             best_fit_df.append([short_dist_fit.slope, short_dist_fit.rvalue**2])
         elif which_fit == 1:
+            print("line")
             best_fit_df.append([line_fit.slope, line_fit.rvalue**2])
         else:
             best_fit_df.append([coeffs[1]*coeffs[2], r2])

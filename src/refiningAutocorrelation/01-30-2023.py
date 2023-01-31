@@ -9,22 +9,22 @@ import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic
 from matplotlib import rcParams
 import plot_neher as plne
-from scipy import optimize
+from scipy.stats import linregress
 
-DI_THRESH = 0.2
+THRESHOLD = 0.2
 DIST_TIME_MAX = 50000
-NUM_REPS = 2
-NUM_GROUPS = 1
+NUM_REPS = 60
+NUM_GROUPS = 30
 NUM_BOOTSTRAPS = 10
 NUM_BINS = 300
 
-#Today I am trying to resample the ddelta t values to see if that is affecting the fit
+#Today I am going to calculate R^2 for each of the fits and maybe fit a line when R^2 is bad
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/01-26-2023/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/01-30-2023/'
 
 # dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/01-26-2023/'
+# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/01-30-2023/'
 
 #First, we will get all of the data and divide it into groups
 all_stat_dfs = []
@@ -71,8 +71,7 @@ all_stat_dfs.append(rho_stat_dfs)
 
 all_stat_dfs = pd.concat(all_stat_dfs, ignore_index=True)
 all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] <= DIST_TIME_MAX]
-all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] > DI_THRESH]
-# all_stat_dfs = all_stat_dfs[all_stat_dfs['d_ratio'] >= THRESHOLD]
+all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] >= THRESHOLD]
 
 # #Plot our estimates against each other 
 #make the rho values ints rather than strings
@@ -106,25 +105,11 @@ all_stat_dfs['Sim_Rho'] = newStringRho
 all_stat_dfs['dist'] = all_stat_dfs['Locus_2'] - all_stat_dfs['Locus_1']
 print(all_stat_dfs)
 
-####################### Plotting the Ddelta t distribution ####################
-sns.histplot(data = all_stat_dfs, stat = 'density', x = 'Dist_X_Time', color = 'blue', bins = NUM_BINS)
-
-plt.savefig(outDir + "Ddelta_t_dist.png", dpi = 300)
-plt.close()
-
-sns.scatterplot(data = all_stat_dfs, x = 'dist', y = 'Time_Diff')
-plt.ylim(0,700)
-
-plt.savefig(outDir + "dist_and_time.png", dpi = 300)
-plt.close()
-
-####### Now we can check the estimates with the downsampled distribution ######
-
 ########################## Estimating recombination rates #####################
 #loop through each of the distance cutoffs
 all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] <= DIST_TIME_MAX]
 all_estimate_df = []
-all_fit_df = []
+all_best_fits = []
 
 #loop through each rho value
 for curr_rho in all_stat_dfs['Sim_Rho'].unique():
@@ -140,37 +125,56 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
         #Bin the d' ratios so they are easier to view on the plots
         bin_count, binedges, bin_nums = binned_statistic(
         curr_stat_df['Dist_X_Time'].to_numpy(), 
-        curr_stat_df['d_ratio'].to_numpy(), bins = NUM_BINS, statistic= 'count')
-        # print(min(bin_count))
-        # print(bin_count)
-
-        downsampled_df = []
-        min_coverage = int(min(bin_count))
-
-        for i in range(len(binedges)-1):
-            bin_start = binedges[i]
-            bin_end = binedges[i+1]
-            curr_bin = curr_stat_df[(curr_stat_df['Dist_X_Time'] >= bin_start) & (curr_stat_df['Dist_X_Time'] <= bin_end)]
-            print(len(curr_bin))
-            print("**********************")
-            curr_bin = curr_bin.sample(n = min_coverage)
-            downsampled_df.append(curr_bin)
-
-        downsampled_df = pd.concat(downsampled_df, ignore_index=True)
-        print(min(downsampled_df['d_ratio']))
-        sns.histplot(data = downsampled_df, stat = 'density', x = 'Dist_X_Time', color = 'blue', bins = NUM_BINS)
-
-        plt.savefig(outDir + "fits/downsampled_hist"+ str(curr_float_rho) + ".png", dpi = 300)
-        plt.close()
+        curr_stat_df['d_ratio'].to_numpy(), bins = 100, statistic= 'count')
 
 
         #get the estimate and fit for the current dataset and sample size
         x_vals = curr_stat_df['Dist_X_Time'].unique()
-        coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, 
-            curr_stat_df['Dist_X_Time'], curr_stat_df['d_ratio'],
-            p0 = [0, 0.26, .0000439], maxfev = 10000)
-        fit_vals = [plne.neher_leitner(x, coeffs[0], coeffs[1], coeffs[2])
-                    for x in x_vals]
+
+        
+        line_fit = linregress(curr_stat_df['Dist_X_Time'], curr_stat_df['d_ratio'])
+        mid_dist = curr_stat_df[curr_stat_df['Dist_X_Time'] <= 10000]
+        mid_dist_fit = linregress(mid_dist['Dist_X_Time'], mid_dist['d_ratio'])
+        short_dist = curr_stat_df[curr_stat_df['Dist_X_Time'] <= 2000]
+        short_dist_fit = linregress(short_dist['Dist_X_Time'], short_dist['d_ratio'])
+        super_short_dist = curr_stat_df[curr_stat_df['Dist_X_Time'] <= 1000]
+        super_short_dist_fit = linregress(super_short_dist['Dist_X_Time'], super_short_dist['d_ratio'])
+        shortest_dist = curr_stat_df[curr_stat_df['Dist_X_Time'] <= 500]
+        shortest_dist_fit = linregress(shortest_dist['Dist_X_Time'], shortest_dist['d_ratio'])
+
+
+        #choose the fit with the best r2 value
+        which_fit = np.argmax([short_dist_fit.rvalue**2, line_fit.rvalue**2, mid_dist_fit.rvalue**2, super_short_dist_fit.rvalue**2, shortest_dist_fit.rvalue**2])
+
+        best_fit_df = []
+        if which_fit == 0:
+            print("Short dist")
+            fit_vals = short_dist_fit.slope * x_vals + short_dist_fit.intercept
+        elif which_fit == 1:
+            print("line")
+            fit_vals = line_fit.slope * x_vals + line_fit.intercept
+        elif which_fit == 2:
+            print("mid dist")
+            fit_vals = mid_dist_fit.slope * x_vals + mid_dist_fit.intercept
+        elif which_fit == 3:
+            print("super short dist")
+            fit_vals = super_short_dist_fit.slope * x_vals + super_short_dist_fit.intercept
+        elif which_fit == 4:
+            print("shortest dist")
+            fit_vals = shortest_dist_fit.slope * x_vals + shortest_dist_fit.intercept
+
+        best_fit_df.append([shortest_dist_fit.slope, shortest_dist_fit.rvalue**2, 500])
+        best_fit_df.append([super_short_dist_fit.slope, short_dist_fit.rvalue**2, 1000])
+        best_fit_df.append([short_dist_fit.slope, short_dist_fit.rvalue**2, 2000])
+        best_fit_df.append([line_fit.slope, line_fit.rvalue**2, 50000])
+        best_fit_df.append([mid_dist_fit.slope, mid_dist_fit.rvalue**2, 10000])
+
+
+        best_fit_df = pd.DataFrame(best_fit_df, columns = ['Estimated_Rho', 'Fit_R2', 'Fit_Type'])
+        best_fit_df['Sim_Rho'] = curr_rho
+        all_best_fits.append(best_fit_df)
+        print(which_fit)
+        print('************************************************')
 
         #Bin the d' ratios so they are easier to view on the plots
         binned_rat, binedges, bin_nums = binned_statistic(
@@ -179,31 +183,11 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
 
         sns.lineplot(y = binned_rat, x = binedges[1:], color = 'black')
         sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
-        plt.savefig(outDir + 'fits/fit_results' + str(curr_float_rho) + '.png')
+        plt.savefig(outDir + 'fits/fit_results_r2_' + str(curr_float_rho) + "_" + str(curr_iteration) + '.png')
         plt.close()
 
-        estimate_df = pd.DataFrame([[coeffs[0], coeffs[1], coeffs[2], coeffs[1] * coeffs[2]]], columns = ['c0', 'c1', 'c2', 'Estimated_Rho'])
 
-        estimate_df['Group'] = curr_iteration
-        estimate_df['Sim_Rho'] = curr_rho
-        all_estimate_df.append(estimate_df)
-
-
-all_estimate_df = pd.concat(all_estimate_df, ignore_index=True)
-
-all_conf_ints = []
-
-#Calculate the confidence intervals for the estimates with low + high VL
-for name, group in all_estimate_df.groupby(['Group', 'Sim_Rho']):
-    lower_conf = np.quantile(group['Estimated_Rho'], 0.025)
-    mid_est = np.quantile(group['Estimated_Rho'], 0.5)
-    upper_conf = np.quantile(group['Estimated_Rho'], 0.975)
-
-    #append the confidence interval
-    all_conf_ints.append([lower_conf, mid_est, upper_conf, name[0], name[1]])
-
-all_conf_ints = pd.DataFrame(all_conf_ints, 
-    columns=['lower_conf', 'est_rho', 'upper_conf', 'Group', 'Sim_Rho'])
+all_best_fits = pd.concat(all_best_fits, ignore_index=True)
 
 
 #To get the comparison, we need to convert the rho values to floats
@@ -218,9 +202,10 @@ rhoDict = {r"$10^{-3}$" : 0.001,
 #redo the labeling on the rho values from what was used in the simulation names
 intRhoList = []
 newStringRho = []
-for entry in all_conf_ints['Sim_Rho']:
+for entry in all_best_fits['Sim_Rho']:
     intRhoList.append(rhoDict[entry])
-all_conf_ints['Sim_float_rho'] = intRhoList
+all_best_fits['Sim_float_rho'] = intRhoList
+
 
 
 ########################## Plotting the accuracy of the estimates #############
@@ -229,22 +214,22 @@ sns.set(rc={'figure.figsize':(10,10)}, font_scale = 2, font = '')
 sns.set_palette("tab10")
 sns.set_style("white")
 
-fig = sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints, 
-    jitter = True, color = 'k', s = 8, alpha = 0.3,
-    order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$" , r"$10^{-3}$"])
-    #order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
+fig = sns.stripplot(x = 'Sim_Rho', y = 'Estimated_Rho', data = all_best_fits, 
+    jitter = True, hue = 'Fit_Type', s = 8, alpha = 1,
+    order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$" , r"$10^{-3}$"],
+    palette=sns.color_palette("coolwarm", n_colors=len(all_best_fits['Fit_Type'].unique())))
 
 # distance across the "X" or "Y" stipplot column to span, in this case 40%
 label_width = 0.4
 
 #need to save the fig to force the axis to be drawn
-plt.savefig(outDir + "selection_accuracy.png", dpi = 300)
+plt.savefig(outDir + "line_fits_both.png", dpi = 300)
             
 for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
     sample_name = text.get_text()  # "X" or "Y"
 
     #get the float value of rho corresponding with the tick
-    rho_val = all_conf_ints[all_conf_ints['Sim_Rho'] == sample_name]
+    rho_val = all_best_fits[all_best_fits['Sim_Rho'] == sample_name]
     rho_val = rho_val['Sim_float_rho'].unique()[0]
 
     # plot horizontal lines across the column, centered on the tick
@@ -254,4 +239,5 @@ for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
 plt.ylabel(r'Estimated Value of $\rho$')
 plt.xlabel(r'Simulation Value of $\rho$')
 plt.yscale('log')
-plt.savefig(outDir + "downsampled_accuracy.png", dpi = 300)
+plt.savefig(outDir + "line_fits_both.png", dpi = 300)
+plt.close()

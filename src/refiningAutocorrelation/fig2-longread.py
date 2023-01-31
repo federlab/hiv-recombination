@@ -27,7 +27,7 @@ NUM_GROUPS = 9
 REG_WIN_SIZE = 5000
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_09_16_neutral_long/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig2/'
+outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_16_neutral_long/'
 
 #First, we will get all of the data and divide it into groups
 all_stat_dfs = []
@@ -100,19 +100,19 @@ for curr_size in D_PRIME_NUMS:
             num_tests = len(range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE))
             fit_stop = DIST_EXAMPLE
 
-            for i in range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE):
-                linreg_df = curr_stat_df[curr_stat_df['Dist_X_Time'].between(i, i+REG_WIN_SIZE)]
-                if len(linreg_df) < 10:
-                    continue
-                mylinreg_results = linregress(linreg_df['Dist_X_Time'], linreg_df['d_ratio'])
+            # for i in range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE):
+            #     linreg_df = curr_stat_df[curr_stat_df['Dist_X_Time'].between(i, i+REG_WIN_SIZE)]
+            #     if len(linreg_df) < 10:
+            #         continue
+            #     mylinreg_results = linregress(linreg_df['Dist_X_Time'], linreg_df['d_ratio'])
 
-                #test to see if the slope is not significantly different from 0
-                if (1-mylinreg_results.pvalue) < 0.05:
-                    print("stop fitting at " + str(i))
-                    print(curr_iteration)
-                    print(curr_rho)
-                    fit_stop = i
-                    break
+            #     #test to see if the slope is not significantly different from 0
+            #     if (1-mylinreg_results.pvalue) < 0.05:
+            #         print("stop fitting at " + str(i))
+            #         print(curr_iteration)
+            #         print(curr_rho)
+            #         fit_stop = i
+            #         break
 
             #get the estimate and fit for the current dataset and sample size
             curr_stat_df = curr_stat_df[curr_stat_df['Dist_X_Time'] <= fit_stop]
@@ -160,19 +160,19 @@ for curr_x in DIST_TIME_MAX:
             num_tests = len(range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE))
             fit_stop = curr_x
 
-            for i in range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE):
-                linreg_df = curr_stat_df[curr_stat_df['Dist_X_Time'].between(i, i+REG_WIN_SIZE)]
-                if len(linreg_df) < 10:
-                    continue
-                mylinreg_results = linregress(linreg_df['Dist_X_Time'], linreg_df['d_ratio'])
+            # for i in range(int(min(x_vals)), int(max(x_vals)), REG_WIN_SIZE):
+            #     linreg_df = curr_stat_df[curr_stat_df['Dist_X_Time'].between(i, i+REG_WIN_SIZE)]
+            #     if len(linreg_df) < 10:
+            #         continue
+            #     mylinreg_results = linregress(linreg_df['Dist_X_Time'], linreg_df['d_ratio'])
 
-                #test to see if the slope is not significantly different from 0
-                if (1-mylinreg_results.pvalue) < 0.05:
-                    print("stop fitting at " + str(i))
-                    print(curr_iteration)
-                    print(curr_rho)
-                    fit_stop = i
-                    break
+            #     #test to see if the slope is not significantly different from 0
+            #     if (1-mylinreg_results.pvalue) < 0.05:
+            #         print("stop fitting at " + str(i))
+            #         print(curr_iteration)
+            #         print(curr_rho)
+            #         fit_stop = i
+            #         break
 
             #get the estimate and fit for the current dataset and sample size
             curr_stat_df = curr_stat_df[curr_stat_df['Dist_X_Time'] <= fit_stop]
@@ -194,7 +194,7 @@ for curr_x in DIST_TIME_MAX:
 
             sns.lineplot(x = 'Dist_X_Time', y = 'd_ratio', data = my_data, color = 'black')
             sns.lineplot(x = x_vals, y = fit_vals, color = 'red')
-            plt.savefig(outDir + str(curr_rho) + '/fit_results_' + str(curr_iteration) + "_" + str(curr_x) + '.png')
+            plt.savefig(outDir + str(curr_rho) + '/updated_fit_results_' + str(curr_iteration) + "_" + str(curr_x) + '.png')
             plt.close()
 
             estimate_df_x.append([coeffs[0], coeffs[1], coeffs[2], 
@@ -324,6 +324,6 @@ plt.legend(title = r'd$\Delta$t Threshold')
 plt.tight_layout()
     
 
-plt.savefig(outDir + "figure_2_longread.jpg")
+plt.savefig(outDir + "figure_2_longread_updated.jpg")
 plt.close()
     

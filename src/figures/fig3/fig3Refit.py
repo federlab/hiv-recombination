@@ -164,12 +164,12 @@ data_50k = all_group_fits[all_group_fits['Threshold'] == EXAMPLE_THRESHOLD]
 low_50k = data_50k[data_50k['Group'] == 'Low_VL']
 high_50k = data_50k[data_50k['Group'] == 'High_VL']
 sns.lineplot(x ='bin_edges', y ='ratio_bins', data = low_50k, color = 'tab:blue', ax = axd['lower left'], linewidth = linewidth)
-sns.lineplot(x ='bin_edges', y ='mid_conf', data = low_50k, color = 'tab:blue', linestyle = 'dashed', ax = axd['lower left'],linewidth = linewidth)
+sns.lineplot(x ='bin_edges', y ='mid_conf', data = low_50k, color = 'navy', ax = axd['lower left'],linewidth = linewidth)
 sns.lineplot(x ='bin_edges', y ='lower_conf', data = low_50k, color = 'navy', linestyle = 'dashed', ax = axd['lower left'], linewidth = linewidth)
 sns.lineplot(x ='bin_edges', y ='high_conf', data = low_50k, color = 'navy', linestyle = 'dashed', ax = axd['lower left'], linewidth = linewidth)
 
 sns.lineplot(x ='bin_edges', y ='ratio_bins', data = high_50k, color = 'tab:orange', ax = axd['lower left'], linewidth = linewidth)
-sns.lineplot(x ='bin_edges', y ='mid_conf', data = high_50k, color = 'tab:orange', linestyle = 'dashed', ax = axd['lower left'], linewidth = linewidth)
+sns.lineplot(x ='bin_edges', y ='mid_conf', data = high_50k, color = 'saddlebrown', ax = axd['lower left'], linewidth = linewidth)
 sns.lineplot(x ='bin_edges', y ='lower_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed', ax = axd['lower left'], linewidth = linewidth)
 sns.lineplot(x ='bin_edges', y ='high_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed', ax = axd['lower left'], linewidth = linewidth)
 axd['lower left'].set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generation)')

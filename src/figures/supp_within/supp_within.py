@@ -13,18 +13,18 @@ from matplotlib import rcParams
 
 GROUP_THRESHOLD_LIST = [10000, 25000, 50000, 100000, 200000]
 NUM_BOOTSTRAPS = 1000
-PAR_LIST = ['p1']
+PAR_LIST = ['p3', 'p9']
 
 
 #For running on desktop
 dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/fig4/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_within/"
 
 # #For running on cluster
 # dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 # vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-# outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/fig4/"
+# outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_within/"
 
 #Make the dataframe containg D' ratios
 stat_df = zu.combine_drats(dataDir)
@@ -90,28 +90,28 @@ for curr_thresh in GROUP_THRESHOLD_LIST:
             group_fits['Participant'] = curr_par
 
             #Add the size of the group to the dictionary which labels the axis
-            group_size_df.append([curr_thresh, curr_name, group.shape[0]])
+            group_size_df.append([curr_thresh, curr_name, group.shape[0], curr_par])
 
             all_group_fits.append(group_fits)
             all_par_ests.append(estimate_df)
 
 all_par_ests = pd.concat(all_par_ests, ignore_index=True)
 all_group_fits = pd.concat(all_group_fits, ignore_index=True)
-all_group_sizes = pd.DataFrame(group_size_df, columns=['Threshold', 'Group', 'Size'])
+all_group_sizes = pd.DataFrame(group_size_df, columns=['Threshold', 'Group', 'Size', 'Participant'])
 
 all_conf_ints = []
 
 #Calculate the confidence intervals for the estimates with low + high VL
-for name, group in all_par_ests.groupby(['Group', 'Threshold']):
+for name, group in all_par_ests.groupby(['Group', 'Threshold', 'Participant']):
     lower_conf = np.quantile(group['Estimated_Rho'], 0.025)
     mid_conf = np.quantile(group['Estimated_Rho'], 0.5)
     upper_conf = np.quantile(group['Estimated_Rho'], 0.975)
 
     #append the confidence interval
-    all_conf_ints.append([lower_conf, mid_conf, upper_conf, name[0], name[1]])
+    all_conf_ints.append([lower_conf, mid_conf, upper_conf, name[0], name[1], name[2]])
 
 all_conf_ints = pd.DataFrame(all_conf_ints, 
-    columns=['lower_conf', 'mid_conf', 'upper_conf', 'Group', 'Threshold'])
+    columns=['lower_conf', 'mid_conf', 'upper_conf', 'Group', 'Threshold', 'Participant'])
 
 
 #Output the data that made the figures
@@ -122,37 +122,41 @@ print(all_conf_ints)
 ############################# Plotting Panel C ################################
 
 
-print(all_group_fits)
-rcParams.update({'font.size': 8,'figure.figsize':(4, 4) })
+rcParams.update({'font.size': 8,'figure.figsize':(6.5, 4) })
 linewidth = 1
 sns.set_palette("tab10")
 sns.set_style("white")
-fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [7, 1]})
-plt.subplots_adjust(hspace=0.25)
+fig, axs = plt.subplots(2, 2, sharex=True, gridspec_kw={'height_ratios': [7, 1]})
+hue_order = ['Low_VL', 'High_VL']
 
-sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_ests, ax = ax1,  fliersize = 2, linewidth = linewidth)
+for i in range(len(PAR_LIST)):
+    curr_par_ests = all_par_ests[all_par_ests['Participant'] == PAR_LIST[i]]
+    curr_group_sizes = all_group_sizes[all_group_sizes['Participant'] == PAR_LIST[i]]
+    plt.subplots_adjust(hspace=0.25)
 
-ax1.set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
-ax1.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
-ax1.set_ylim(0, 0.0003)
-ax1.ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
-ax1.axhline(0.000008, linestyle = 'dashed', color = 'tab:green')
-ax1.axhline(0.000014, color = 'tab:green')
-ax1.axhline(0.00002, linestyle = 'dashed', color = 'tab:green')
-ax1.xaxis.set_tick_params(labelbottom=True)
-new_labels = ['Low VL', 'High VL']
-for t, l in zip(ax1.get_legend().texts, new_labels):
-    t.set_text(l)
+    sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', hue_order = hue_order, data = curr_par_ests, ax = axs[0][i],  fliersize = 2, linewidth = linewidth)
 
-############################# Plotting Panel D ################################
-print(all_group_sizes)
+    axs[0][i].set_title('Participant ' + str(PAR_LIST[i][1]))
+    axs[0][i].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
+    axs[0][i].set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+    axs[0][i].set_ylim(0, 0.0003)
+    axs[0][i].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
+    axs[0][i].axhline(0.000008, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
+    axs[0][i].axhline(0.000014, color = 'tab:green', linewidth = linewidth)
+    axs[0][i].axhline(0.00002, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
+    axs[0][i].xaxis.set_tick_params(labelbottom=True)
+    new_labels = ['Low VL', 'High VL']
+    for t, l in zip(axs[0][i].get_legend().texts, new_labels):
+        t.set_text(l)
 
-sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', data = all_group_sizes, errorbar = None, ax = ax2)
-ax2.set_xlabel(r'Group Viral Load Threshold (copies/ml)')
-ax2.set_ylabel("Group Size")
-ax2.get_legend().remove()
-ax2.xaxis.set_tick_params(labelbottom=True)
-fig.align_ylabels([ax1, ax2])
+    ############################# Plotting Panel D ################################
+    sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', hue_order = hue_order, data = curr_group_sizes, errorbar = None, ax = axs[1][i])
+    axs[1][i].set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+    axs[1][i].set_ylabel("Group Size")
+    axs[1][i].get_legend().remove()
+    axs[1][i].xaxis.set_tick_params(labelbottom=True)
+    fig.align_ylabels([axs[1][i], axs[0][i]])
+
 plt.tight_layout()
-plt.savefig(outDir + 'fig4.jpg', dpi = 300)
+plt.savefig(outDir + 'supp_within'+str(NUM_BOOTSTRAPS)+'.jpg', dpi = 300)
 plt.close()
