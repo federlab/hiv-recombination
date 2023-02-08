@@ -290,13 +290,13 @@ sns.set_style("white")
 #coolwarm
 fig, ax = plt.subplots(1, 2)
 sns.stripplot(x = 'str_rho_1', y = 'prop_correct', data = disc_results, 
-    jitter = 0.2, s = 5, hue = 'pair_diff', ax = ax[0],
+    jitter = 0.2, s = 3, hue = 'pair_diff', ax = ax[0],
     palette=sns.color_palette("coolwarm", n_colors = len(disc_results['pair_diff'].unique())),
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 ax[0].axhline(0.5, linestyle= "dashed", color = "black")
 ax[0].set_ylim(0,1.1)
 ax[0].set_ylabel('Proportion Ordered Correctly')
-ax[0].set_xlabel(r'Simulation Value of $\rho$')
+ax[0].set_xlabel(r'Simulated Recombination Rate ($\rho$)')
 ax[0].get_legend().remove()
     
 
@@ -306,7 +306,7 @@ sns.stripplot(x = 'str_rho_1', y = 'prop_correct_no_overlap', data = disc_result
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 ax[1].set_ylim(0,1.1)
 ax[1].set_ylabel('Proportion with Non-Overlapping \n Confidence Intervals')
-ax[1].set_xlabel(r'Simulation Value of $\rho$')
+ax[1].set_xlabel(r'Simulated Recombination Rate ($\rho$)')
 ax[1].legend(title = r'$\rho$ Ratio')
 ax[1].axhline(0.05, linestyle= "dashed", color = "black")
 

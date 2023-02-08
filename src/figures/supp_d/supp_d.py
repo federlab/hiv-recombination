@@ -16,20 +16,16 @@ from matplotlib import rcParams
 
 DIST_TIME_MAX = 50000
 NUM_BOOTSTRAPS = 1000
-# NUM_BOOTSTRAPS = 10
 NUM_REPS = 200
 NUM_GROUPS = 100
+DI_THRESHOLD = 0.005
 
-
-#Today I am going to prototype an analysis to determine how well we can
-#discriminate between two different recombination rates that are a fixed
-#distance apart.
-
+#This figure has the accuracy of the method with D values instead of D' values
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/sim_fig_1/'
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_d/"
 
 dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/sim_fig_1/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_d/'
 
 #First I am going to read the data and randomly pair simulations
 all_stat_dfs = []
@@ -49,15 +45,13 @@ for curr_data in os.listdir(dataDir):
         continue
 
     #get the dataframe for the current run
-    d_ratio_file = dataDir + curr_data + "/linkage/d_ratio"
+    d_ratio_file = dataDir + curr_data + "/linkage/d_ratio_three_haps"
     stat_df = pd.read_pickle(d_ratio_file)
     stat_df['rep'] = int(rep[3:])
     stat_df['Sim_Rho'] = sim_rho
     all_stat_dfs.append(stat_df)
 all_stat_dfs = pd.concat(all_stat_dfs)
-
-#Filter the groups so the first d' value is greater than 0.2
-all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] > 0.2]
+all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] >= DI_THRESHOLD]
 
 #Randomly divide the reps into 10 groups
 rep_groups = np.array(range(0, NUM_REPS))
@@ -75,12 +69,13 @@ group_labels = [group_dict[x] for x in all_stat_dfs['rep']]
 all_stat_dfs['iter_group'] = group_labels
 
 
-
+print(len(all_stat_dfs))
 ########################## Estimating recombination rates #####################
 #loop through each of the distance cutoffs
 all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] <= DIST_TIME_MAX]
 all_estimate_df = []
 all_fit_df = []
+
 
 #loop through each rho value
 for curr_rho in all_stat_dfs['Sim_Rho'].unique():
@@ -93,7 +88,7 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
 
         #Get the current estimate
         lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(curr_stat_df,
-                                                             NUM_BOOTSTRAPS)
+                                                            NUM_BOOTSTRAPS)
         estimate_df['Group'] = curr_iteration
         estimate_df['Sim_Rho'] = curr_rho
         all_estimate_df.append(estimate_df)
@@ -140,105 +135,38 @@ for entry in all_conf_ints['Sim_Rho']:
 all_conf_ints['Sim_float_rho'] = intRhoList
 all_conf_ints['Sim_Rho'] = newStringRho
 
+
 ########################## Plotting the accuracy of the estimates #############
 #plot the estimates to show how accurate they are
-params = {'figure.figsize':(6.5, 3), 'axes.labelsize': 8,'axes.titlesize':8,  'legend.fontsize': 8, 'xtick.labelsize': 8, 'ytick.labelsize': 8}
-rcParams.update(params)
+rcParams.update({'figure.figsize':(3.5, 3), 'font.size': 8})
 
 
 
-fig, axs = plt.subplots(1, 2)
-sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints, 
-    jitter = True, color = 'k', s = 3, alpha = 0.3, ax = axs[1],
+fig = sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints,
+    jitter = True, color = 'k', s = 3, alpha = 0.3,
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
-
+plt.savefig(outDir + "accuracy_D"  + str(NUM_BOOTSTRAPS) + ".png")
 # distance across the "X" or "Y" stipplot column to span, in this case 40%
 label_width = 0.4
-
-plt.tight_layout()
-plt.savefig(outDir + "sim_fig_1BC_combined" + str(NUM_BOOTSTRAPS) + ".png", dpi = 300)
-
-params = {'figure.figsize':(3, 3), 'axes.labelsize': 8,'axes.titlesize':8,  'legend.fontsize': 8, 'xtick.labelsize': 8, 'ytick.labelsize': 8}
-rcParams.update(params)
-            
-for tick, text in zip(axs[1].get_xticks(), axs[1].get_xticklabels()):
+                
+for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
     sample_name = text.get_text()  # "X" or "Y"
+    print(sample_name)
 
     #get the float value of rho corresponding with the tick
     rho_val = all_conf_ints[all_conf_ints['Sim_Rho'] == sample_name]
     rho_val = rho_val['Sim_float_rho'].unique()[0]
 
     # plot horizontal lines across the column, centered on the tick
-    axs[1].plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
+    fig.plot([tick-label_width/2, tick+label_width/2], [rho_val, rho_val],
             lw=1, color='k')
 
-
-axs[1].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
-axs[1].set_xlabel(r'Simulated Recombination Rate ($\rho$)')
-axs[1].set_yscale('log')
+fig.set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
+fig.set_xlabel(r'Simulated Recombination Rate ($\rho$)')
 
 
-########################## Plotting Figure 1C ################################
-all_rho_bins = []
-
-#Bin the points for each rho value
-for curr_rho in all_stat_dfs['Sim_Rho'].unique():
-    curr_stat_df = all_stat_dfs[all_stat_dfs['Sim_Rho'] == curr_rho]
-
-    #Bin the d' ratios so they are easier to view on the plots
-    binned_rat, binedges, bin_nums = binned_statistic(
-        curr_stat_df['Dist_X_Time'].to_numpy(), 
-        curr_stat_df['d_ratio'].to_numpy(), bins = 100)
-    
-    curr_rho_bins = pd.DataFrame({'Dist_X_Time': binedges[1:], 'D_Ratio': binned_rat})
-    curr_rho_bins['Sim_Rho'] = curr_rho
-
-    all_rho_bins.append(curr_rho_bins)
-
-all_rho_bins = pd.concat(all_rho_bins, ignore_index=True)
-
-# #Plot our estimates against each other 
-#make the rho values ints rather than strings
-rhoDict = {"0.001" : 0.001,
-            "1e-04" : 0.0001,
-            "2e-04" : 0.0002,
-            "1e-05" : 0.00001,
-            "2e-05" : 0.00002,
-            "2e-06" : 0.000002}
-rho_dict_fix_strings = { "0.001" : r"$10^{-3}$",
-                        "1e-04" : r"$10^{-4}$",
-                        "2e-04" : r"$2\times10^{-4}$",
-                        "1e-05" : r"$10^{-5}$",
-                        "2e-05" : r"$2\times10^{-5}$",
-                        "2e-06" : r"$2\times10^{-6}$"}
-float_to_str = {0.001 : r"$10^{-3}$",
-            0.0001 : r"$10^{-4}$",
-            0.0002 : r"$2\times10^{-4}$",
-            0.00001 : r"$10^{-5}$",
-            0.00002 : r"$2\times10^{-5}$",
-            0.000002 : r"$2\times10^{-6}$"}
-
-#redo the labeling on the rho values from what was used in the simulation names
-intRhoList = []
-newStringRho = []
-for entry in all_rho_bins['Sim_Rho']:
-    intRhoList.append(rhoDict[entry])
-    newStringRho.append(rho_dict_fix_strings[entry])
-all_rho_bins['Sim_float_rho'] = intRhoList
-all_rho_bins['Sim_Rho'] = newStringRho
-
-sns.lineplot(data=all_rho_bins, x='Dist_X_Time', y='D_Ratio', hue='Sim_float_rho',
-             linewidth = 1, ax = axs[0],
-             palette=sns.color_palette("coolwarm", n_colors=len(all_rho_bins['Sim_float_rho'].unique())))
-
-axs[0].legend_.set_title(r'$\rho$')
-
-new_labels = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$" ]
-for t, l in zip(axs[0].legend_.texts, new_labels):
-    t.set_text(l)
-    # t.set_font('')
-axs[0].set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generations)')
-axs[0].set_ylabel("D\' Ratio")
+plt.ylim(0.000001, 0.01)
 plt.tight_layout()
-plt.savefig(outDir + "sim_fig_1BC_combined" + str(NUM_BOOTSTRAPS) + ".png", dpi = 300)
+plt.yscale('log')
+plt.savefig(outDir + "accuracy_D" + str(NUM_BOOTSTRAPS) + ".png", dpi = 300)
 plt.close()

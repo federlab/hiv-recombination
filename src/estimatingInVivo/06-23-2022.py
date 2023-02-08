@@ -15,8 +15,7 @@ import zaniniUtil as zu
 from scipy import optimize
 from scipy import stats
 
-# In this script I am repeating the viral load analysis, but I am resampling
-# from the patients such that I leave one out in each sample
+
 THRESHOLD = 0.2
 DIST_TIME_MAX = 50000
 GROUP_THRESHOLD_LIST = [10000, 50000, 100000, 200000]
@@ -45,9 +44,8 @@ all_par_ests = []
 all_group_fits = []
 x_vals = stat_df['Dist_X_Time'].unique()
 
-#Estimate rates specifically excluding each individual
+#Loop through the different viral load thresholds
 for curr_thresh in GROUP_THRESHOLD_LIST:
-    #Get the dataframe for everyone except the current participant
     stat_df['High_VL'] = stat_df['Ave_VL'].gt(curr_thresh)
 
     #Estimate for the specific group

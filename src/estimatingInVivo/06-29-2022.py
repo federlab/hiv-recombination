@@ -50,9 +50,8 @@ plt.yscale('log')
 plt.savefig(outDir + "CD4_VL_scatter.jpg")
 
 
-#Estimate rates specifically excluding each individual
+#Estimate rates for each cd4+ threshold
 for curr_thresh in GROUP_THRESHOLD_LIST:
-    #Get the dataframe for everyone except the current participant
     stat_df['High_CD4'] = stat_df['Ave_CD4'].gt(curr_thresh)
 
     #Estimate for the specific group

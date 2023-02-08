@@ -15,20 +15,19 @@ from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
 
 DIST_TIME_MAX = 50000
-NUM_BOOTSTRAPS = 10
-NUM_GROUPS = 10
 NUM_REPS = 20
- 
+THRESHOLD = 0.2
+RHO_LIST = ["0.001", "1e-04", "1e-05"]
 
-#Today I am going to plot the neutral recombination rate DxT distributions next to the selection DxT distributions
+#Today I am going to plot the neutral recombination rate curves next to the selection recombination rate curves
 
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
 neutralDataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_07_MPL/'
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_selection/"
 
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
-neutralDataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_09_07_MPL/'
+# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
+# neutralDataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
+# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_selection/'
 
 dataDirList = ['2022_09_07_MPL_1e-3/', '2022_09_07_MPL_1e-4/', '2022_09_07_MPL_1e-5/']
 dataDirReps = [160, 3270, 5490]
@@ -86,32 +85,9 @@ for curr_data in os.listdir(neutralDataDir):
     all_stat_dfs.append(stat_df)
 
 all_stat_dfs = pd.concat(all_stat_dfs, ignore_index=True)
+all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] > THRESHOLD]
 all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] <= DIST_TIME_MAX]
-
-all_rho_bins = []
-
-#Make the curves for the simulation types separately
-for curr_type in all_stat_dfs['Sim_Type'].unique():
-    type_stat_df = all_stat_dfs[all_stat_dfs['Sim_Type'] == curr_type]
-
-    #Bin the points for each rho value
-    for curr_rho in all_stat_dfs['Sim_Rho'].unique():
-        curr_stat_df = type_stat_df[type_stat_df['Sim_Rho'] == curr_rho]
-        if len(curr_stat_df) == 0:
-            continue
-
-        #Bin the d' ratios so they are easier to view on the plots
-        binned_rat, binedges, bin_nums = binned_statistic(
-            curr_stat_df['Dist_X_Time'].to_numpy().astype(float), 
-            curr_stat_df['d_ratio'].to_numpy().astype(float), bins = 100)
-        
-        curr_rho_bins = pd.DataFrame({'Dist_X_Time': binedges[1:], 'D_Ratio': binned_rat})
-        curr_rho_bins['Sim_Rho'] = curr_rho
-        curr_rho_bins['Sim_Type'] = curr_type
-
-        all_rho_bins.append(curr_rho_bins)
-
-all_rho_bins = pd.concat(all_rho_bins, ignore_index=True)
+all_stat_dfs = all_stat_dfs[all_stat_dfs['Sim_Rho'].isin(RHO_LIST) ]
 
 # #Plot our estimates against each other 
 #make the rho values ints rather than strings
@@ -134,47 +110,23 @@ float_to_str = {0.001 : r"$10^{-3}$",
             0.00002 : r"$2\times10^{-5}$",
             0.000002 : r"$2\times10^{-6}$"}
 
-#redo the labeling on the rho values from what was used in the simulation names
-intRhoList = []
-newStringRho = []
-for entry in all_rho_bins['Sim_Rho']:
-    intRhoList.append(rhoDict[entry])
-    newStringRho.append(rho_dict_fix_strings[entry])
-all_rho_bins['Sim_float_rho'] = intRhoList
-all_rho_bins['Sim_Rho'] = newStringRho
 
-############################# Plot the Data ###################################
-
-print(all_rho_bins)
-fig = sns.FacetGrid(data=all_rho_bins, col='Sim_Type', hue='Sim_float_rho', hue_kws = {'palette' : sns.color_palette("coolwarm", n_colors=len(all_rho_bins['Sim_float_rho'].unique()))})
-fig.map(sns.lineplot, 'Dist_X_Time', 'D_Ratio',
-             linewidth = 3,
-             )
-
-plt.tight_layout()
-plt.legend()
-plt.xlabel(r'Distance X Time (bp/generation)')
-plt.ylabel("D\' Ratio")
-print('Saving Figure')
-plt.savefig(outDir + 'sim_fig_1C.png', dpi = 300)
-plt.close()
 
 ############################# Plot the D' Distributions ###################################
 
 example_rho = 0.0001
-print(all_stat_dfs['Sim_Rho'].unique())
-#print([type(x) for x in all_stat_dfs['Sim_Rho']])
-my_example_df = all_stat_dfs[(all_stat_dfs['Sim_Rho'] == '1e-04')]
-print(my_example_df.head())
-
-fig = sns.FacetGrid(data=my_example_df, col='Sim_Type')
-fig.map(sns.histplot, 'd_i', stat = 'density',
-             linewidth = 3,
-             )
+fig = sns.FacetGrid(data=all_stat_dfs, col='Sim_Rho', hue = 'Sim_Type')
+fig.map(sns.histplot, 'Dist_X_Time', stat = 'density', hue = 'Sim_Type',
+            data = all_stat_dfs,linewidth = 0, bins = 100, alpha = 0.3,
+            palette=sns.color_palette("coolwarm", n_colors=2))
 plt.tight_layout()
 
-plt.xlabel('D_i')
-plt.ylabel("D\' Ratio")
+
+
+# fig.axes[0].set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generation)')
+# fig.axes[0].set_ylabel("D\' Ratio")
+# fig.axes[1].set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generation)')
+# fig.axes[2].set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generation)')
 print('Saving Figure')
-plt.savefig(outDir + 'di_hist_faceted', dpi = 300)
+plt.savefig(outDir + 'dxt_hist_faceted', dpi = 300)
 plt.close()

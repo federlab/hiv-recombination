@@ -11,7 +11,7 @@ import zaniniUtil as zu
 from scipy import stats
 from matplotlib import rcParams
 
-GROUP_THRESHOLD_LIST = [10000, 25000, 50000, 100000, 200000]
+GROUP_THRESHOLD_LIST = [10000, 25000, 50000, 100000]
 NUM_BOOTSTRAPS = 1000
 PAR_LIST = ['p3', 'p9']
 
@@ -150,12 +150,38 @@ for i in range(len(PAR_LIST)):
         t.set_text(l)
 
     ############################# Plotting Panel D ################################
+    #calculate the size of each group to help format bar labels
+    print(curr_group_sizes)
+    low_vl_labels = curr_group_sizes[curr_group_sizes['Group'] == 'Low_VL']
+    low_vl_labels = low_vl_labels.copy()
+    low_vl_labels.sort_values(by = 'Threshold', inplace = True)
+    low_vl_labels = low_vl_labels['Size'].tolist()
+
+    low_vl_labels = [x  if x < 1000 else '' for x in low_vl_labels]
+
+ 
+
+    high_vl_labels = curr_group_sizes[curr_group_sizes['Group'] == 'High_VL']
+    high_vl_labels = high_vl_labels.copy()
+    high_vl_labels.sort_values(by = 'Threshold', inplace = True)
+    high_vl_labels = high_vl_labels['Size'].tolist()
+
+    high_vl_labels = [x  if x < 1000 else '' for x in high_vl_labels]
+    print(low_vl_labels)
+    print(high_vl_labels)
+    
+
+
     sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', hue_order = hue_order, data = curr_group_sizes, errorbar = None, ax = axs[1][i])
+    if i == 1:
+        axs[1][i].bar_label(axs[1][i].containers[0], labels = low_vl_labels, fontsize = 5)
+        axs[1][i].bar_label(axs[1][i].containers[1], labels = high_vl_labels, fontsize = 5)
     axs[1][i].set_xlabel(r'Group Viral Load Threshold (copies/ml)')
     axs[1][i].set_ylabel("Group Size")
     axs[1][i].get_legend().remove()
     axs[1][i].xaxis.set_tick_params(labelbottom=True)
     fig.align_ylabels([axs[1][i], axs[0][i]])
+
 
 plt.tight_layout()
 plt.savefig(outDir + 'supp_within'+str(NUM_BOOTSTRAPS)+'.jpg', dpi = 300)
