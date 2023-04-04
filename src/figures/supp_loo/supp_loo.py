@@ -29,10 +29,10 @@ dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
 outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_loo/"
 
-# #For running on desktop
-# dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
-# vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-# outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_loo/"
+#For running on desktop
+dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
+vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_loo/"
 
 #Make the dataframe containg D' ratios
 stat_df = zu.combine_drats(dataDir)
@@ -116,13 +116,6 @@ all_conf_ints.to_csv(outDir + 'all_conf_ints' + str(NUM_BOOTSTRAPS)+'.csv')
 
 
 ########################### Plotting our results ##############################
-#rcParams.update({'font.size': 8,'figure.figsize':(6.5, 4) })
-plt.rcdefaults()
-
-rcParams['font.size'] = 8
-rcParams['figure.figsize'] = (6.5, 4)
-sns.set
-#sns.set(rc = {'font.size': 8,'figure.figsize':(6.5, 4) })
 linewidth = 1
 myplot = sns.FacetGrid(all_group_fits, col = 'Threshold', row = 'excl_par')
 myplot.map_dataframe(sns.scatterplot, x ='bin_edges', y ='ratio_bins', hue = 'Group', palette = 'tab10')
@@ -135,6 +128,8 @@ plt.savefig(outDir + "loo_fits_sep_groups.jpg")
 plt.close()
 
 ################### Estimate Facet by Excl_Par ################################
+params = {'axes.labelsize': 8,'axes.titlesize':8,  'legend.fontsize': 8, 'xtick.labelsize': 8, 'ytick.labelsize': 8}
+plt.rcParams.update(params)
 
 #We need to use facetgrid params to adjust the size of the plots
 #Because outherwise seaborn just writes over the figure size
@@ -148,6 +143,10 @@ new_labels = ['Low VL', 'High VL']
 for t, l in zip(plt.legend().texts, new_labels):
     t.set_text(l)
 
+#make the layout tight before we add any labels or legends that would push the
+#panels further apart.
+plt.tight_layout()
+
 myplot.set_ylabels("Estimated Recombination \n" + r'Rate ($\hat{\rho}$)')
 myplot.set_xlabels(r'Group Viral Load Threshold' + "\n (copies/ml)")
 myplot.set_titles('Excluding {col_name}')
@@ -157,7 +156,6 @@ labeledaxes = [8,9,10]
 for curr_ind in labeledaxes:
     labels = myplot.axes[curr_ind].get_xticklabels()
     myplot.axes[curr_ind].set_xticklabels(labels, rotation=45) # set new labels
-
 
 myplot.axes[10].legend(loc='center left', bbox_to_anchor=(1,0.5))
 new_labels = ['Low VL', 'High VL']

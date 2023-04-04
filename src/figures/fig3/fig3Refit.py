@@ -38,6 +38,7 @@ stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
 stat_df = stat_df[stat_df['Monotonic'] == True]
 print(min(stat_df['d_i']))
 
+
 ############################# Panel 1 Analysis ################################
 all_par_ests = []
 all_group_fits = []
@@ -172,7 +173,7 @@ sns.lineplot(x ='bin_edges', y ='ratio_bins', data = high_50k, color = 'tab:oran
 sns.lineplot(x ='bin_edges', y ='mid_conf', data = high_50k, color = 'saddlebrown', ax = axd['lower left'], linewidth = linewidth)
 sns.lineplot(x ='bin_edges', y ='lower_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed', ax = axd['lower left'], linewidth = linewidth)
 sns.lineplot(x ='bin_edges', y ='high_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed', ax = axd['lower left'], linewidth = linewidth)
-axd['lower left'].set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generation)')
+axd['lower left'].set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generations)')
 axd['lower left'].set_ylabel("D\' Ratio")
 
 
@@ -222,7 +223,7 @@ for name, group in grouped_par:
 
     axd['upper left'].plot(ave_time, ave_vl, color = my_color2, marker = "D", markersize = 2)
 
-axd['upper left'].set_xlabel('Time (days)')
+axd['upper left'].set_xlabel('Time (days from EDI)')
 axd['upper left'].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
 axd['upper left'].set_ylabel('Viral Load (copies/ml)')
 plt.tight_layout()

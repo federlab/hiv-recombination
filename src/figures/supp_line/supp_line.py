@@ -194,7 +194,7 @@ for i in range(len(all_stat_dfs['Sim_Rho'].unique())):
             if i != len(all_stat_dfs['Sim_Rho'].unique()) - 1:
                 curr_ax.get_legend().remove()
 
-plt.savefig(outDir + 'fits.png')
+plt.savefig(outDir + 'fits.png', dpi = 300)
 plt.close()
 
 
@@ -228,7 +228,7 @@ print(negative_ests['Fit Length'].value_counts())
 #plot the estimates to show how accurate they are
 rcParams.update({'figure.figsize':(3.5,3), 'font.size': 8})
 
-
+#make a 
 
 fig = sns.stripplot(x = 'Sim_Rho', y = 'Estimated_Rho', data = all_best_fits,
     jitter = True, hue = 'Fit Length', s = 3, alpha = 1,

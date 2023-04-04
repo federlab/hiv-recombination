@@ -287,7 +287,7 @@ def label_vl_drats(stat_df, vlDir, cd4_label = False):
         curr_d_rats['Day_2'] = curr_d_rats['Time_2'] * 2
         
 
-        #check if there are rows without any exact matrhing timepoints
+        #check if there are rows without any exact matching timepoints
         unmatched = curr_d_rats[~curr_d_rats['Day_1'].isin(dict_from_csv.keys()) | ~curr_d_rats['Day_2'].isin(dict_from_csv.keys())]
         if len(unmatched) > 0:
             print("Unmatched timepoints for participant " + participant)

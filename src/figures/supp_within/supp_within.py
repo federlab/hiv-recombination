@@ -136,7 +136,7 @@ for i in range(len(PAR_LIST)):
 
     sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', hue_order = hue_order, data = curr_par_ests, ax = axs[0][i],  fliersize = 2, linewidth = linewidth)
 
-    axs[0][i].set_title('Participant ' + str(PAR_LIST[i][1]))
+    axs[0][i].set_title('Participant ' + str(PAR_LIST[i][1]), fontsize = 8)
     axs[0][i].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
     axs[0][i].set_xlabel(r'Group Viral Load Threshold (copies/ml)')
     axs[0][i].set_ylim(0, 0.0003)

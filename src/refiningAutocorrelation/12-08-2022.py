@@ -18,7 +18,7 @@ DIST_TIME_MAX = 50000
 NUM_BOOTSTRAPS = 10
 NUM_REPS = 200
 NUM_GROUPS = 10
-DI_THRESHOLD_LIST = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+DI_THRESHOLD_LIST = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
 #Today I am going to test the accuracy  when I move up the initial linkage threshold
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
@@ -143,8 +143,8 @@ sns.set(rc={'figure.figsize':(35,10)}, font_scale = 2, font = '')
 sns.set_palette("tab10")
 sns.set_style("white")
 
-fig, axs = plt.subplots(2, 4, sharex = True, sharey = True)
-axs_nums = [(0,0),(0,1), (0,2), (0,3), (1,0), (1,1), (1,2), (1,3)]
+fig, axs = plt.subplots(5, 2, sharex = True, sharey = True)
+axs_nums = [(0,0),(0,1), (1,0), (1,1), (2,0), (2,1), (3,0), (3,1), (4,0), (4,1)]
 
 for i in range(len(all_conf_ints['Threshold'].unique())):
     curr_plot_conf = all_conf_ints[all_conf_ints['Threshold'] == all_conf_ints['Threshold'].unique()[i]]
@@ -176,8 +176,7 @@ for i in range(len(all_conf_ints['Threshold'].unique())):
 
     curr_ax.set_title("Threshold = " + str(all_conf_ints['Threshold'].unique()[i]))
 
-axs[0][0].set_ylabel(r'Estimated Value of $\rho$')
-axs[1][0].set_ylabel(r'Estimated Value of $\rho$')
+axs[2][0].set_ylabel(r'Estimated Recombination Rate $\hat{\rho}$')
 axs[1][0].set_xlabel(r'Simulation Value of $\rho$')
 axs[1][1].set_xlabel(r'Simulation Value of $\rho$')
 axs[1][2].set_xlabel(r'Simulation Value of $\rho$')
@@ -185,5 +184,5 @@ axs[1][3].set_xlabel(r'Simulation Value of $\rho$')
 plt.savefig(outDir + "accuracy_facet_threshold_unlogged.png", dpi = 300)
 plt.tight_layout()
 plt.yscale('log')
-#plt.savefig(outDir + "accuracy_facet_threshold.png", dpi = 300)
+plt.savefig(outDir + "accuracy_facet_threshold.png", dpi = 300)
 plt.close()
