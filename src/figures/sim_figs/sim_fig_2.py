@@ -15,11 +15,12 @@ from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
 
 DIST_TIME_MAX = 50000
+RATIOS_PER_GROUP = 25000
 
 NUM_BOOTSTRAPS = 1000
 # NUM_BOOTSTRAPS = 10
 NUM_REPS = 200
-NUM_GROUPS = 100
+NUM_GROUPS = 40
 NUM_SHUFFLES = 500
 # NUM_SHUFFLES = 10
 
@@ -94,6 +95,9 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
     for curr_iteration in range(0, NUM_GROUPS):
         #get the data for the current rho and iteration
         curr_stat_df = curr_rho_stat[curr_rho_stat['iter_group'] == curr_iteration]
+
+        #downsample the group to 25k loci
+        curr_stat_df = plne.downsample_ratios(curr_stat_df, RATIOS_PER_GROUP)
 
         #Get the current estimate
         lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(curr_stat_df,
@@ -284,13 +288,13 @@ disc_results['pair_diff'] = disc_results['pair_diff'].apply(lambda x: round(x))
 disc_results['pair_diff'] = disc_results['pair_diff'].astype('category')
 ########################## Plotting our Results ###############################          
 print(disc_results['pair_diff'].unique())
-rcParams.update({'font.size': 8, 'figure.figsize':(6.5, 2.5)})
+rcParams.update({'font.size': 8, 'figure.figsize':(7, 2.5)})
 sns.set_style("white")
 
 #coolwarm
 fig, ax = plt.subplots(1, 2)
 sns.stripplot(x = 'str_rho_1', y = 'prop_correct', data = disc_results, 
-    jitter = 0.2, s = 3, hue = 'pair_diff', ax = ax[0],
+    jitter = 0.3, s = 5, hue = 'pair_diff', ax = ax[0],
     palette=sns.color_palette("coolwarm", n_colors = len(disc_results['pair_diff'].unique())),
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 ax[0].axhline(0.5, linestyle= "dashed", color = "black")
@@ -301,7 +305,7 @@ ax[0].get_legend().remove()
     
 
 sns.stripplot(x = 'str_rho_1', y = 'prop_correct_no_overlap', data = disc_results, 
-    jitter = 0.2, s = 5, hue = 'pair_diff', ax = ax[1],
+    jitter = 0.3, s = 5, hue = 'pair_diff', ax = ax[1],
     palette=sns.color_palette("coolwarm", n_colors = len(disc_results['pair_diff'].unique())),
     order = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$", r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$"])
 ax[1].set_ylim(0,1.1)
@@ -313,5 +317,5 @@ ax[1].axhline(0.05, linestyle= "dashed", color = "black")
 for curr_dot in ax[1].legend_.legendHandles:
     curr_dot._sizes = [12]
 plt.tight_layout()
-plt.savefig(outDir + 'discrimination_conf_refit.png', dpi = 300)
+plt.savefig(outDir + "discrimination_conf_refit"+ str(NUM_BOOTSTRAPS) + "reps_"+ str(NUM_REPS) +"groups_" + str(NUM_GROUPS) + "500shuffs.png", dpi = 300)
 plt.close()

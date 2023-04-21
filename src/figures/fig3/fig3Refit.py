@@ -129,7 +129,7 @@ fig, axd = plt.subplot_mosaic([['upper left', 'right'],
 sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', data = all_par_ests, ax = axd['right'], palette = ['tab:blue', 'tab:orange'], fliersize = 2, linewidth = linewidth)
 # print(axd['right'])
 axd['right'].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
-axd['right'].set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+axd['right'].set_xlabel(r'Group Viral Load Threshold (copies/mL)')
 axd['right'].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
 axd['right'].axhline(0.000008, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
 axd['right'].axhline(0.000014, color = 'tab:green', linewidth = linewidth)
@@ -148,7 +148,7 @@ for t, l in zip(axd['right'].get_legend().texts, new_labels):
 print(all_group_sizes)
 
 sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', data = all_group_sizes, ci = None, ax = axd['bottom right'], palette = ['tab:blue', 'tab:orange'])
-axd['bottom right'].set_xlabel(r'Group Viral Load Threshold (copies/ml)')
+axd['bottom right'].set_xlabel(r'Group Viral Load Threshold (copies/mL)')
 axd['bottom right'].set_ylabel("Group Size")
 axd['bottom right'].get_legend().remove()
 axd['bottom right'].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
@@ -223,9 +223,9 @@ for name, group in grouped_par:
 
     axd['upper left'].plot(ave_time, ave_vl, color = my_color2, marker = "D", markersize = 2)
 
-axd['upper left'].set_xlabel('Time (days from EDI)')
+axd['upper left'].set_xlabel('Time (days since EDI)')
 axd['upper left'].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
-axd['upper left'].set_ylabel('Viral Load (copies/ml)')
+axd['upper left'].set_ylabel('Viral Load (copies/mL)')
 plt.tight_layout()
 plt.savefig(outDir + 'fig3refit_' + str(NUM_BOOTSTRAPS) + '.jpg', dpi = 300)
 

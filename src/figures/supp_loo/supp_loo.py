@@ -148,7 +148,7 @@ for t, l in zip(plt.legend().texts, new_labels):
 plt.tight_layout()
 
 myplot.set_ylabels("Estimated Recombination \n" + r'Rate ($\hat{\rho}$)')
-myplot.set_xlabels(r'Group Viral Load Threshold' + "\n (copies/ml)")
+myplot.set_xlabels(r'Group Viral Load Threshold' + "\n (copies/mL)")
 myplot.set_titles('Excluding {col_name}')
 
 

@@ -378,6 +378,8 @@ def fix_unmatched_VLs_CD4(stat_df, label_dict):
         #make sure the nearest timepoint is within 100 days
         if abs(closest_time - curr_time) < 100:
             label_dict[curr_time] = label_dict[closest_time]
+        else: 
+            print("No VL measurement within 100 days of timepoint " + str(curr_time))
     return label_dict
 
 

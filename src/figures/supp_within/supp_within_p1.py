@@ -11,9 +11,9 @@ import zaniniUtil as zu
 from scipy import stats
 from matplotlib import rcParams
 
-GROUP_THRESHOLD_LIST = [10000, 25000, 50000, 100000]
+GROUP_THRESHOLD_LIST = [10000, 25000, 50000, 100000, 200000]
 NUM_BOOTSTRAPS = 1000
-PAR_LIST = ['p3', 'p9']
+PAR_LIST = ['p1']
 
 
 #For running on desktop
@@ -122,11 +122,11 @@ print(all_conf_ints)
 ############################# Plotting Panel C ################################
 
 
-rcParams.update({'font.size': 8,'figure.figsize':(6.5, 4) })
+rcParams.update({'font.size': 8,'figure.figsize':(3.5, 4) })
 linewidth = 1
 sns.set_palette("tab10")
 sns.set_style("white")
-fig, axs = plt.subplots(2, 2, sharex=True, gridspec_kw={'height_ratios': [7, 1]})
+fig, axs = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [7, 1]})
 hue_order = ['Low_VL', 'High_VL']
 
 for i in range(len(PAR_LIST)):
@@ -134,19 +134,19 @@ for i in range(len(PAR_LIST)):
     curr_group_sizes = all_group_sizes[all_group_sizes['Participant'] == PAR_LIST[i]]
     plt.subplots_adjust(hspace=0.25)
 
-    sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', hue_order = hue_order, data = curr_par_ests, ax = axs[0][i],  fliersize = 2, linewidth = linewidth)
+    sns.boxplot(x ='Threshold', y ='Estimated_Rho', hue = 'Group', hue_order = hue_order, data = curr_par_ests, ax = axs[0],  fliersize = 2, linewidth = linewidth)
 
-    axs[0][i].set_title('Participant ' + str(PAR_LIST[i][1]), fontsize = 8)
-    axs[0][i].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
-    axs[0][i].set_xlabel(r'Group Viral Load Threshold (copies/mL)')
-    axs[0][i].set_ylim(0, 0.0003)
-    axs[0][i].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
-    axs[0][i].axhline(0.000008, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
-    axs[0][i].axhline(0.000014, color = 'tab:green', linewidth = linewidth)
-    axs[0][i].axhline(0.00002, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
-    axs[0][i].xaxis.set_tick_params(labelbottom=True)
+    axs[0].set_title('Participant ' + str(PAR_LIST[i][1]), fontsize = 8)
+    axs[0].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
+    axs[0].set_xlabel(r'Group Viral Load Threshold (copies/mL)')
+    axs[0].set_ylim(0, 0.0003)
+    axs[0].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
+    axs[0].axhline(0.000008, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
+    axs[0].axhline(0.000014, color = 'tab:green', linewidth = linewidth)
+    axs[0].axhline(0.00002, linestyle = 'dashed', color = 'tab:green', linewidth = linewidth)
+    axs[0].xaxis.set_tick_params(labelbottom=True)
     new_labels = ['Low VL', 'High VL']
-    for t, l in zip(axs[0][i].get_legend().texts, new_labels):
+    for t, l in zip(axs[0].get_legend().texts, new_labels):
         t.set_text(l)
 
     ############################# Plotting Panel D ################################
@@ -172,17 +172,17 @@ for i in range(len(PAR_LIST)):
     
 
 
-    sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', hue_order = hue_order, data = curr_group_sizes, errorbar = None, ax = axs[1][i])
+    sns.barplot(x = 'Threshold', y = 'Size', hue = 'Group', hue_order = hue_order, data = curr_group_sizes, errorbar = None, ax = axs[1])
     if i == 1:
-        axs[1][i].bar_label(axs[1][i].containers[0], labels = low_vl_labels, fontsize = 5)
-        axs[1][i].bar_label(axs[1][i].containers[1], labels = high_vl_labels, fontsize = 5)
-    axs[1][i].set_xlabel(r'Group Viral Load Threshold (copies/mL)')
-    axs[1][i].set_ylabel("Group Size")
-    axs[1][i].get_legend().remove()
-    axs[1][i].xaxis.set_tick_params(labelbottom=True)
-    fig.align_ylabels([axs[1][i], axs[0][i]])
+        axs[1].bar_label(axs[1].containers[0], labels = low_vl_labels, fontsize = 5)
+        axs[1].bar_label(axs[1].containers[1], labels = high_vl_labels, fontsize = 5)
+    axs[1].set_xlabel(r'Group Viral Load Threshold (copies/mL)')
+    axs[1].set_ylabel("Group Size")
+    axs[1].get_legend().remove()
+    axs[1].xaxis.set_tick_params(labelbottom=True)
+
 
 
 plt.tight_layout()
-plt.savefig(outDir + 'supp_within_'+str(NUM_BOOTSTRAPS)+'.jpg', dpi = 300)
+plt.savefig(outDir + 'supp_within_'+str(NUM_BOOTSTRAPS)+'_p1.jpg', dpi = 300)
 plt.close()

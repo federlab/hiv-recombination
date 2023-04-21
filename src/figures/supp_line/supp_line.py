@@ -14,7 +14,7 @@ from scipy.stats import linregress
 THRESHOLD = 0.2
 DIST_TIME_MAX = 50000
 NUM_REPS = 60
-NUM_GROUPS = 30
+NUM_GROUPS = 60
 NUM_BINS = 300
 
 #Today I am going to calculate R^2 for each of the fits and maybe fit a line when R^2 is bad
@@ -188,7 +188,7 @@ for i in range(len(all_stat_dfs['Sim_Rho'].unique())):
             curr_ax.set_title(r'$\rho$ = ' + str(curr_rho), fontsize = 8)
             curr_ax.set_ylim(-0.1,1.5)
             curr_ax.set_ylabel('D\' Ratio')
-            curr_ax.set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generation)')
+            curr_ax.set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generations)')
 
             #Remove the legends except for the last one
             if i != len(all_stat_dfs['Sim_Rho'].unique()) - 1:
@@ -255,8 +255,9 @@ for tick, text in zip(fig.get_xticks(), fig.get_xticklabels()):
 fig.set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
 fig.set_xlabel(r'Simulated Recombination Rate ($\rho$)')
 fig.set_yscale('log')
+plt.legend(loc = 'lower right')
 plt.tight_layout()
-plt.savefig(outDir + "line_fits_both.png", dpi = 300)
+plt.savefig(outDir + "line_fits_both_" + str(NUM_GROUPS) + ".png", dpi = 300)
 plt.close()
 ######################### Plotting some example fits ##########################
 

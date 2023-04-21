@@ -15,10 +15,12 @@ from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
 
 DIST_TIME_MAX = 50000
+RATIOS_PER_GROUP = 25000
+
 NUM_BOOTSTRAPS = 1000
 # NUM_BOOTSTRAPS = 10
 NUM_REPS = 200
-NUM_GROUPS = 100
+NUM_GROUPS = 40
 
 
 #Today I am going to prototype an analysis to determine how well we can
@@ -91,6 +93,9 @@ for curr_rho in all_stat_dfs['Sim_Rho'].unique():
         #get the data for the current rho and iteration
         curr_stat_df = curr_rho_stat[curr_rho_stat['iter_group'] == curr_iteration]
 
+        #downsample the group to 25k loci
+        curr_stat_df = plne.downsample_ratios(curr_stat_df, RATIOS_PER_GROUP)
+
         #Get the current estimate
         lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(curr_stat_df,
                                                              NUM_BOOTSTRAPS)
@@ -155,6 +160,7 @@ sns.stripplot(x = 'Sim_Rho', y = 'est_rho', data = all_conf_ints,
 # distance across the "X" or "Y" stipplot column to span, in this case 40%
 label_width = 0.4
 
+# we need to save the figure once here so that we can access the axis labels
 plt.tight_layout()
 plt.savefig(outDir + "sim_fig_1BC_combined" + str(NUM_BOOTSTRAPS) + ".png", dpi = 300)
 
@@ -240,5 +246,5 @@ for t, l in zip(axs[0].legend_.texts, new_labels):
 axs[0].set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generations)')
 axs[0].set_ylabel("D\' Ratio")
 plt.tight_layout()
-plt.savefig(outDir + "sim_fig_1BC_combined" + str(NUM_BOOTSTRAPS) + ".png", dpi = 300)
+plt.savefig(outDir + "sim_fig_1BC_combined" + str(NUM_BOOTSTRAPS) + "reps_"+ str(NUM_REPS) +"groups_" + str(NUM_GROUPS) + ".png", dpi = 300)
 plt.close()

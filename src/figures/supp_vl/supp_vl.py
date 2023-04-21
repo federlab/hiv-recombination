@@ -99,8 +99,8 @@ for i in range(len(par_list)):
         curr_par_num = curr_par.split("p")[1]
         axs[ax0][ax1].set_title("Participant " + curr_par_num, fontsize = FONTSIZE)
 
-axs[3][0].set_xlabel('Time (days)')
-axs[3][0].set_ylabel('Viral Load (copies/ml)')
+axs[3][0].set_xlabel('Time (days since EDI)')
+axs[3][0].set_ylabel('Viral Load (copies/mL)')
 plt.tight_layout()
 plt.savefig(outDir + 'supp_vl' + '.jpg', dpi = 300)
 

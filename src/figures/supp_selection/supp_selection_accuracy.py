@@ -16,7 +16,7 @@ from matplotlib import rcParams
 
 DIST_TIME_MAX = 50000
 NUM_BOOTSTRAPS = 1000
-NUM_GROUPS = 10
+NUM_GROUPS = 20
 
 #Today I am going to prototype an analysis to determine how well we can
 #discriminate between two different recombination rates that are a fixed
@@ -25,8 +25,8 @@ NUM_GROUPS = 10
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
 outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_selection/"
 
-# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
-# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_selection/'
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
+outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_selection/'
 dataDirList = ['2022_09_07_MPL_1e-3/', '2022_09_07_MPL_1e-4/', '2022_09_07_MPL_1e-5/']
 dataDirReps = [160, 3270, 5490]
 

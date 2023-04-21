@@ -6,28 +6,26 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import zaniniUtil as zu
 from scipy.stats import binned_statistic
 import plot_neher as plne
-import autocorrelation as autocorr
 from scipy import optimize
 from sklearn.metrics import mean_squared_error
 from matplotlib import rcParams
 
 THRESHOLD = 0.2
 DIST_EXAMPLE = 50000
-NUM_BOOTSTRAPS = 10#00
+NUM_BOOTSTRAPS = 1000
 D_PRIME_NUMS = [2500, 5000, 10000, 25000, 50000]
-DIST_TIME_MAX = [5000, 10000, 25000, 50000, 100000, 200000]
+DIST_TIME_MAX = [10000, 25000, 50000, 100000, 200000]
 NUM_REPS = 200
-NUM_GROUPS = 100
+NUM_GROUPS = 40
 
 #For running on Cluster
 dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/"
 outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_params/"
 
 # dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-# outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_params/'
+# outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_params/"
 
 #First, we will get all of the data and divide it into groups
 all_stat_dfs = []
@@ -54,6 +52,9 @@ for curr_data in os.listdir(dataDir):
     all_stat_dfs.append(stat_df)
 all_stat_dfs = pd.concat(all_stat_dfs)
 
+#Filter the groups so the first d' value is greater than 0.2
+all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] > THRESHOLD]
+
 #Randomly divide the reps into 10 groups
 rep_groups = np.array(range(0, NUM_REPS+1))
 np.random.shuffle(rep_groups)
@@ -74,7 +75,7 @@ all_stat_dfs['iter_group'] = group_labels
 #loop through each of the sample sizes
 estimate_df_size = []
 for curr_size in D_PRIME_NUMS:
-    # print("Size is: " + str(curr_size))
+    print("Size is: " + str(curr_size))
     #loop through each rho value
     for curr_rho in all_stat_dfs['Sim_Rho'].unique():
         curr_rho_stat = all_stat_dfs[all_stat_dfs['Sim_Rho'] == curr_rho]
@@ -83,9 +84,9 @@ for curr_size in D_PRIME_NUMS:
         curr_rho_stat = curr_rho_stat[curr_rho_stat['Dist_X_Time'] <= DIST_EXAMPLE] 
 
         #loop through each iter group
-        for curr_iteration in range(1, NUM_GROUPS+1):
+        for curr_iteration in range(1, NUM_GROUPS):
             #get the data for the current rho and iteration
-            curr_stat_df = curr_rho_stat[curr_rho_stat['rep'] == curr_iteration]
+            curr_stat_df = curr_rho_stat[curr_rho_stat['iter_group'] == curr_iteration]
             
             #sample segregating sites while the D' num is below the threshold
             sample_df = []
@@ -103,16 +104,16 @@ for curr_size in D_PRIME_NUMS:
             # print(sample_size)
             curr_stat_df= sample_df
             
+            if len(unsampled_loci) == 0:
+                print("No more loci to sample")
+                print(curr_iteration)
+                quit()
 
             #get the estimate and fit for the current dataset and sample size
             x_vals = curr_stat_df['Dist_X_Time'].unique()
             #Get the current estimate
             lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(curr_stat_df,
                                                                 NUM_BOOTSTRAPS)
-            #04/07/23: making the fit use bootstrapping instead of this single fit
-            # coeffs, fit_dat = optimize.curve_fit(plne.neher_leitner, 
-            #     curr_stat_df['Dist_X_Time'], curr_stat_df['d_ratio'],
-            #     p0 = [0, 0.26, .0000439], maxfev = 10000)
 
             lower_conf = np.quantile(estimate_df['Estimated_Rho'], 0.025)
             mid_est = np.quantile(estimate_df['Estimated_Rho'], 0.5)
@@ -122,28 +123,14 @@ for curr_size in D_PRIME_NUMS:
                 mid_est, curr_data, curr_rho, curr_iteration, 
                 curr_data, curr_size])  
             
-            # if mid_est < 0:
-            #     print("Chaos")
-            #     print(curr_rho)
-            #     print(curr_size)
-            #     binned_rat, binedges, bin_nums = binned_statistic(
-            #     curr_stat_df['Dist_X_Time'].to_numpy(), 
-            #     curr_stat_df['d_ratio'].to_numpy(), bins = 100)
-    
-            #     curr_rho_bins = pd.DataFrame({'Dist_X_Time': binedges[1:], 'D_Ratio': binned_rat})
-            #     sns.lineplot(data=curr_rho_bins, x='Dist_X_Time', y='D_Ratio')
-            #     plt.savefig(outDir + 'Chaos.png')
-            #     quit()
 
 estimate_df_size = pd.DataFrame(estimate_df_size, columns=["Est_Rho", 'Dataset', 
                     'Sim_Rho', 'iter_name' , 'data', 'sample_size'] )
 
-
-
 #loop through each of the distance cutoffs
 estimate_df_x = []
 for curr_x in DIST_TIME_MAX:
-    # print("X is: " + str(curr_x))
+    print("X is: " + str(curr_x))
     curr_x_stat = all_stat_dfs[all_stat_dfs['Dist_X_Time'] <= curr_x]
 
     #loop through each rho value
@@ -173,7 +160,7 @@ estimate_df_x = pd.DataFrame(estimate_df_x, columns=["Est_Rho", 'Dataset',
                         'Sim_Rho', 'iter_name' , 'data', 'sample_size', 'x_threshold'] )
 
 
-############################# Plotting Estimate Accuracy ######################
+###################### Getting things set to plot ##############################
 # #Plot our estimates against each other 
 #make the rho values ints rather than strings
 rhoDict = {"0.001" : 0.001,
@@ -207,49 +194,34 @@ for entry in estimate_df_size['Sim_Rho']:
 estimate_df_size['Sim_int_rho'] = intRhoList
 estimate_df_size['Sim_Rho'] = newStringRho
 
-
-rcParams['mathtext.fontset'] = 'custom'
-rcParams['mathtext.rm'] = 'DejaVu Sans'
-rcParams['mathtext.it'] = 'DejaVu Sans:italic'
-
-estimate_df = estimate_df_x[estimate_df_x['x_threshold'] == DIST_EXAMPLE]
-
-#plot the estimates to show how accurate they are
-sns.set(rc={'figure.figsize':(25,25)}, font_scale = 3, font = '')
-sns.set_palette("tab10")
-sns.set_style("white")
-linewidth = 2
-
-fig, axes = plt.subplots(2)
+params = {'font.size': 8, 'axes.labelsize': 8,'axes.titlesize':8,  'legend.fontsize': 8, 'xtick.labelsize': 8, 'ytick.labelsize': 8}
+plt.rcParams.update(params)
+linewidth = 1.5
 
 ##################### Plotting the MSE for each sample size ###################
+#plot the estimates to show how accurate they are
+fig, axes = plt.subplots(1, 2, figsize=(7, 2.5))
+
 #First we need to group by the sample size and rho
 #Then we can calculate the mean squared error
 grouped_ests = estimate_df_size.groupby(['sample_size', 'Sim_int_rho'])
 group_MSE = []
-for name, group in grouped_ests:
+for name,group in grouped_ests:
     truth = [name[1] for x in range(len(group))]
-    mse = np.sqrt(abs(mean_squared_error(group['Est_Rho'], truth)))/abs(np.mean(group['Sim_int_rho']))
-    if mse < 0:
-        print("The RMSE is")
-        print(mse)
-        print("The mse is")
-        print(mean_squared_error(group['Est_Rho'], truth))
-        print("The mean is")
-        print(np.mean(group['Est_Rho']) )
+    mse = np.sqrt(mean_squared_error(group['Est_Rho'], truth))/np.mean(group['Est_Rho'])
     string_rho = group['Sim_Rho'].unique()[0]
     group_MSE.append([name[0], name[1], mse, string_rho])
 
 group_MSE = pd.DataFrame(group_MSE, 
     columns=['sample_size', 'Sim_int_rho', 'NRMSE', 'Sim_Rho'])
-
-sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE', linewidth = linewidth,
-    data = group_MSE, hue = 'sample_size', ax = axes[0],
-   palette=sns.color_palette("icefire", n_colors=len(D_PRIME_NUMS)))
-axes[0].set_xscale('log')
-axes[0].set_ylabel('Normalized RMSE')
-axes[0].set_xlabel(r'Simulation Value of $\rho$')
-axes[0].legend(title = '# of D\' Ratios')
+# print(group)
+sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE', 
+    data = group_MSE, hue = 'sample_size', ax = axes[1],
+    palette=sns.color_palette("icefire", n_colors=len(D_PRIME_NUMS)))
+axes[1].set_xscale('log')
+axes[1].set_ylabel('Normalized RMSE')
+axes[1].set_xlabel(r'Simulated Recombination Rate ($\rho$)')
+axes[1].legend(title = '# of D\' Ratios', loc = 'upper left')
 
 
 ##################### Plotting the MSE for each threshold ###################
@@ -259,7 +231,7 @@ grouped_ests = estimate_df_x.groupby(['x_threshold', 'Sim_int_rho'])
 group_MSE = []
 for name,group in grouped_ests:
     truth = [name[1] for x in range(len(group))]
-    mse = np.sqrt(abs(mean_squared_error(group['Est_Rho'], truth)))/abs(np.mean(group['Sim_int_rho']))
+    mse = np.sqrt(mean_squared_error(group['Est_Rho'], truth))/np.mean(group['Est_Rho'])
     string_rho = group['Sim_Rho'].unique()[0]
     group_MSE.append([name[0], name[1], mse, string_rho])
 
@@ -267,15 +239,14 @@ group_MSE = pd.DataFrame(group_MSE,
     columns=['sample_size', 'Sim_int_rho', 'NRMSE', 'Sim_Rho'])
 
 sns.lineplot(x = 'Sim_int_rho', y = 'NRMSE', 
-    data = group_MSE, hue = 'sample_size', ax = axes[1], 
-    linewidth = linewidth, 
-    palette=sns.color_palette("icefire", n_colors=len(DIST_TIME_MAX)))
-axes[1].set_xscale('log')
-axes[1].set_ylabel('Normalized RMSE')
-axes[1].set_xlabel(r'Simulation Value of $\rho$')
-plt.legend(title = r'd$\Delta$t Threshold')
+    data = group_MSE, hue = 'sample_size', ax = axes[0],
+   palette=sns.color_palette("icefire", n_colors=len(DIST_TIME_MAX)))
+axes[0].set_xscale('log')
+axes[0].set_ylabel('Normalized RMSE')
+axes[0].set_xlabel(r'Simulated Recombination Rate ($\rho$)')
+axes[0].legend(title = r'd$\Delta$t Threshold', loc = 'upper right')
 plt.tight_layout()
 
-plt.savefig(outDir + "supp_params_" + str(NUM_GROUPS) +"_" + str(NUM_BOOTSTRAPS) + ".jpg", dpi = 300)
+plt.savefig(outDir + "supp_params_" + str(NUM_GROUPS) + ".jpg", dpi = 300)
 plt.close()
-    
+

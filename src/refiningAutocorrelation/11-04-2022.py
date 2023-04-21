@@ -27,8 +27,8 @@ NUM_SHUFFLES = 500
 dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
 outDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
 
-dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
-outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
+# dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
+# outDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/results/slimDatasets/2022_10_03_neutral/'
 
 #First I am going to read the data and randomly pair simulations
 all_stat_dfs = []
@@ -54,6 +54,7 @@ for curr_data in os.listdir(dataDir):
     stat_df['Sim_Rho'] = sim_rho
     all_stat_dfs.append(stat_df)
 all_stat_dfs = pd.concat(all_stat_dfs)
+
 
 #Randomly divide the reps into 10 groups
 rep_groups = np.array(range(0, NUM_REPS))

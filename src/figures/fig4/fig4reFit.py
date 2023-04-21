@@ -145,8 +145,8 @@ myplot = sns.lineplot(x = 'Days from infection', y = 'Viral load [virions/ml]', 
                      errorbar = None, ax = ax0, markers = True, linewidth = linewidth, markersize = markersize)
 ax0.axhline(EXAMPLE_THRESHOLD, linestyle = 'dashed', color = 'black', linewidth = linewidth)
 ax0.set_yscale('log')
-ax0.set_xlabel("Days from EDI")
-ax0.set_ylabel("Viral Load (copies/ml)")
+ax0.set_xlabel("Time (days since EDI)")
+ax0.set_ylabel("Viral Load (copies/mL)")
 ax0.legend(loc = 'upper left')
 new_labels = ['Low VL', 'High VL']
 for t, l in zip(ax0.get_legend().texts, new_labels):

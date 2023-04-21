@@ -25,10 +25,10 @@ dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
 outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_thresh_rats/"
 
-# #For running on desktop
-# dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
-# vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-# outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_thresh_rats/"
+#For running on desktop
+dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
+vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_thresh_rats/"
 
 #Make the dataframe containg D' ratios
 stat_df = zu.combine_drats(dataDir)
@@ -126,7 +126,7 @@ for i in range(len(GROUP_THRESHOLD_LIST)):
     sns.lineplot(x ='bin_edges', y ='lower_conf', linewidth = linewidth, linestyle = 'dashed', color = 'navy', ax = curr_ax, data = low_df)
     sns.lineplot(x ='bin_edges', y ='mid_conf', linewidth = linewidth, color = 'navy', ax = curr_ax, data = low_df)
     sns.lineplot(x ='bin_edges', y ='high_conf', linewidth = linewidth, linestyle = 'dashed', color = 'navy', ax = curr_ax, data = low_df)
-    curr_ax.set_xlabel(r'Distance $\cdot$' + "Time" + r'(bp $\cdot$ generation)')
+    curr_ax.set_xlabel(r'Distance $\cdot$' + "Time " + r'(bp $\cdot$ generations)')
     curr_ax.set_ylabel("D' Ratio")
     curr_ax.set_title('Threshold = ' + str(curr_thresh))
 

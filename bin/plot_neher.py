@@ -290,8 +290,12 @@ def bootstrap_rho(d_ratio_df, num_boots):
         stat_df_sample = stat_df_sample[stat_df_sample["Locus_2"].isin(seg_loc_sample)]
 
         #calculate the recombination rate from the current sample
-        coeffs, fit_dat = optimize.curve_fit(neher_leitner, 
-            stat_df_sample['Dist_X_Time'].to_numpy(), stat_df_sample['d_ratio'].to_numpy(), p0 = [0, 0.26, .0000439], maxfev = 10000)
+        try:
+            coeffs, fit_dat = optimize.curve_fit(neher_leitner, 
+                stat_df_sample['Dist_X_Time'].to_numpy(), stat_df_sample['d_ratio'].to_numpy(), p0 = [0, 0.26, .0000439], maxfev = 10000)
+        except RuntimeError:
+            print("Max iterations reached", file = sys.stderr)
+            continue
         estimates.append([coeffs[0], coeffs[1], coeffs[2], coeffs[1] * coeffs[2]])
     estimate_df = pd.DataFrame(estimates, columns = ['c0', 'c1', 'c2', 'Estimated_Rho'])
     conf_int = (np.quantile(estimate_df['Estimated_Rho'], 0.025), np.quantile(estimate_df['Estimated_Rho'], 0.975))
@@ -302,3 +306,47 @@ def bootstrap_rho(d_ratio_df, num_boots):
     upper_fit = estimate_df.iloc[(estimate_df['Estimated_Rho']-conf_int[1]).abs().argsort()[:2]]
     upper_fit = upper_fit.head(1)
     return lower_fit, upper_fit, estimate_df
+
+###################### Functionality for Downsampling D' ratios ###############
+
+def downsample_ratios(current_group, sample_size = 25000):
+    """Takes in a dataframe of D' ratios that is goint to be used as one group
+    for estimation. This function samples without replacement from the 
+    segregating loci until the number of D' ratios in the dataset reaches
+    sample_size.
+    ---------------------------------------------------------------------------
+    Params
+    ------------
+    current_group: pd.DataFrame, the dataframe containing the D' ratios and 
+                    their corresponding segregating loci
+    sample_size:   int, the number of D' ratios to sample
+    Returns
+    -------------
+    downsampled_df: pd.DataFrame, the dataframe containing the downsampled D'
+                     ratios
+    """
+    #sample segregating sites while the D' num is below the threshold
+    sample_df = []
+    curr_size = 0
+    sampled_loci = set()
+    unsampled_loci = set(list(current_group['Locus_1'].unique())\
+                          + list(current_group['Locus_2'].unique().tolist()))
+    
+    while curr_size < sample_size and len(unsampled_loci) > 0:
+        #sample another locus
+        my_sample = np.random.choice(list(unsampled_loci))
+        sampled_loci.add(my_sample)
+        unsampled_loci.remove(my_sample)
+
+        #add any D' ratios to the group that only contain sampled loci
+        sample_df = current_group[current_group['Locus_1'].isin(sampled_loci)\
+                             & (current_group['Locus_2'].isin(sampled_loci))]
+        curr_size = len(sample_df)
+
+    
+    #If the loci did not provide enough loci to form the group
+    if len(unsampled_loci) == 0:
+        raise ValueError('Group did not contain enough loci')
+    
+    return sample_df
+    

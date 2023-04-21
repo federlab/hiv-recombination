@@ -47,6 +47,7 @@ for curr_data in os.listdir(dataDir):
 all_stat_dfs = pd.concat(all_stat_dfs)
 all_stat_dfs = all_stat_dfs[all_stat_dfs['Dist_X_Time'] < 0.3e6]
 
+
 print(np.max(all_stat_dfs['Locus_2'] - all_stat_dfs['Locus_1']))
 print(np.max(all_stat_dfs['Dist_X_Time']))
 print(np.max(all_stat_dfs['Time_Diff']))
