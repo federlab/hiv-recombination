@@ -210,18 +210,25 @@ label_dict = {
     10 : r"$10 \times \rho_1$",
 }
 
+label_dict = {
+    1 : r"$\rho$ vs $\rho$",
+    2 : r"$\rho$ vs $2\rho$",
+    5 : r"$\rho$ vs $5\rho$",
+    10 : r"$\rho$ vs $10\rho$",
+}
+
 disc_results['pair_diff'] = disc_results['pair_diff'].map(label_dict)
 
 ######################### Configure Plot Settings #############################
 #plot the estimates to show how accurate they are
-params = {'figure.figsize':(5, 5), 'axes.labelsize': 6,'axes.titlesize':6,  
+params = {'figure.figsize':(6, 4.5), 'axes.labelsize': 6,'axes.titlesize':6,  
           'legend.fontsize': 6, 'xtick.labelsize': 6, 'ytick.labelsize': 6,
           'legend.title_fontsize': 6}
 rcParams.update(params)
 
 #Make a 4 panel Figure
 fig, axs = plt.subplots(2, 2)
-plt.subplots_adjust(hspace = 0.4, wspace = 0.4)
+plt.subplots_adjust(hspace = 0.4, wspace = 0.35)
 
 ######################### Panel A  D' Ratio ###################################
 sns.lineplot(data=all_rho_bins, x='Dist_X_Time', y='D_Ratio', 
@@ -237,7 +244,7 @@ axs[0,0].set_xlim(0,50000)
 
 ######################### Panel B  Accuracy ###################################
 sns.stripplot(x = 'Sim_Rho', y = 'est_rho', hue = 'Sim_float_rho',
-                data = all_conf_ints, jitter = True, s = 3,
+                data = all_conf_ints, jitter = True, s = 4,
                 palette=sns.color_palette("viridis", 
                 n_colors=len(all_rho_bins['Sim_float_rho'].unique())),
                 alpha = 0.3, ax = axs[0, 1], order = [r"$2\times10^{-6}$", 
@@ -277,32 +284,42 @@ axs[0,1].set_yscale('log')
 
 ########################## Panel C Ordering ###################################
 sns.stripplot(x = 'pair_diff', y = 'percent_correct', data = disc_results, 
-    jitter = True, s = 3, hue = 'str_rho_1', ax = axs[1,0],
+    jitter = 0.3, s = 4, hue = 'str_rho_1', ax = axs[1,0],
     palette=sns.color_palette("viridis", n_colors = len(disc_results['str_rho_1'].unique())),)
 axs[1,0].set_ylim(-5,105)
 axs[1,0].set_ylabel('Percent of Pairs Correctly Ranked')
-axs[1,0].set_xlabel("Magnitude of Difference \nBetween the Compared Rates")
-axs[1,0].axhline(50, linestyle= "dashed", color = "black")
+axs[1,0].set_xlabel("Compared Recombination Rates")
+axs[1,0].axhline(50, linestyle= "dashed", color = "black", linewidth = 1)
 axs[1,0].get_legend().remove()
+
+# blackline = Line2D([0], [0], color='k', linestyle='--', label = r'Expected Accuracy for $\rho$ vs $\rho$')
+# axs[1,0].legend(handles = [blackline], loc = 'lower right', frameon = True)
 
 ########################## Panel D Significance ################################
 sns.stripplot(x = 'pair_diff', y = 'percent_correct_no_overlap', data = disc_results, 
-    jitter = True, s = 3, hue = 'str_rho_1', ax = axs[1,1],
+    jitter = 0.3, s = 4, hue = 'str_rho_1', ax = axs[1,1],
     palette=sns.color_palette("viridis", n_colors = len(disc_results['str_rho_1'].unique())))
 axs[1,1].set_ylim(-5,105)
 axs[1,1].set_ylabel('Percent of Differences Deemed Significant')
-axs[1,1].set_xlabel("Magnitude of Difference \nBetween the Compared Rates")
-axs[1,1].axhline(5, linestyle= "dashed", color = "black")
+axs[1,1].set_xlabel("Compared Recombination Rates")
+axs[1,1].axhline(5, linestyle= "dashed", color = "black", linewidth = 1)
 axs[1,1].get_legend().remove()
+# blackline = Line2D([0], [0], color='k', linestyle='--', label = r'5% Significance Level')
+# axs[1,1].legend(handles = [blackline], loc = 'lower right', frameon = True)
+
 
 ######################### Format the Figure Legend ############################
 #Relabel the legend handles so the values are formatted nicely
 new_labels = [r"$2\times10^{-6}$", r"$10^{-5}$", r"$2\times10^{-5}$",
                r"$10^{-4}$", r"$2\times10^{-4}$", r"$10^{-3}$" ]
 
-fig.legend(loc='upper center', bbox_to_anchor=(0.5, 1),title = r'Simulated Recombination Rate ($\rho$)', ncol = 6,
+fig.legend(loc='upper center', bbox_to_anchor=(0.5, .97),title = r'Simulated Recombination Rate ($\rho$)', ncol = 6,
            labels = new_labels, handles = axs[0,0].get_legend_handles_labels()[0], frameon = True)
 
-axs[0,0].set_xticks(axs[0,0].get_xticks(), axs[0,0].get_xticklabels(), rotation=45, ha='right')
-axs[0,1].set_xticks(axs[0,1].get_xticks(), axs[0,1].get_xticklabels(), rotation=45, ha='right')
+axs[0,0].set_xticks(axs[0,0].get_xticks(), axs[0,0].get_xticklabels(), rotation=30, ha='right')
+axs[0,1].set_xticks(axs[0,1].get_xticks(), axs[0,1].get_xticklabels(), rotation=30, ha='right')
+axs[1,0].set_xticks(axs[1,0].get_xticks(), axs[1,0].get_xticklabels(), rotation=30, ha='right')
+axs[1,1].set_xticks(axs[1,1].get_xticks(), axs[1,1].get_xticklabels(), rotation=30, ha='right')
+
+
 plt.savefig(outDir + "figure3_prototype.jpg", dpi=300)

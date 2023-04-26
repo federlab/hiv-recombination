@@ -140,7 +140,7 @@ for curr_x in DIST_TIME_MAX:
         #loop through each iter group
         for curr_iteration in range(1, NUM_GROUPS+1):
             #get the data for the current rho and iteration
-            curr_stat_df = curr_rho_stat[curr_rho_stat['rep'] == curr_iteration]
+            curr_stat_df = curr_rho_stat[curr_rho_stat['iter_group'] == curr_iteration]
 
             #get the estimate and fit for the current dataset and sample size
             x_vals = curr_stat_df['Dist_X_Time'].unique()
@@ -247,6 +247,6 @@ axes[0].set_xlabel(r'Simulated Recombination Rate ($\rho$)')
 axes[0].legend(title = r'd$\Delta$t Threshold', loc = 'upper right')
 plt.tight_layout()
 
-plt.savefig(outDir + "supp_params_" + str(NUM_GROUPS) + ".jpg", dpi = 300)
+plt.savefig(outDir + "check_supp_params_" + str(NUM_GROUPS) + ".jpg", dpi = 300)
 plt.close()
 

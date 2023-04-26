@@ -7,7 +7,8 @@ import plot_neher as plne
 
 def make_comparison_dataframes(dataDir, outDir, NUM_REPS, NUM_GROUPS,
                                 NUM_BOOTSTRAPS, DIST_TIME_MAX, 
-                                RATIOS_PER_GROUP):
+                                RATIOS_PER_GROUP, THRESHOLD = 0.2,
+                                DSTATISTIC = False):
     """This function randomly pairs simulations and makes a dataframe
     that shows how often we can correctly order pairs and how often
     their confidence intervals overlap.
@@ -22,6 +23,10 @@ def make_comparison_dataframes(dataDir, outDir, NUM_REPS, NUM_GROUPS,
     DIST_TIME_MAX:  int, the maximum distance * time to fit the curves up to.
     RATIOS_PER_GROUP:   int, the number of D' ratios to downsample each group
                         to.
+    THRESHOLD:  float, the minimum D' value at timepoint 1 to include in the
+                    analysis.
+    DSTATISTIC: bool, whether or not to use the D statistic rather than D'
+
     Returns:
     ------------
     None, but saves the estimate and confidence interval dataframes to
@@ -45,7 +50,10 @@ def make_comparison_dataframes(dataDir, outDir, NUM_REPS, NUM_GROUPS,
             continue
 
         #get the dataframe for the current run
-        d_ratio_file = dataDir + curr_data + "/linkage/d_ratio"
+        if DSTATISTIC:
+            d_ratio_file = dataDir + curr_data + "/linkage/d_ratio_three_haps"
+        else:
+            d_ratio_file = dataDir + curr_data + "/linkage/d_ratio"
         stat_df = pd.read_pickle(d_ratio_file)
         stat_df['rep'] = int(rep[3:])
         stat_df['Sim_Rho'] = sim_rho
@@ -53,7 +61,7 @@ def make_comparison_dataframes(dataDir, outDir, NUM_REPS, NUM_GROUPS,
     all_stat_dfs = pd.concat(all_stat_dfs)
 
     #Filter the groups so the first d' value is greater than 0.2
-    all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] > 0.2]
+    all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] > THRESHOLD]
 
     #Randomly divide the reps into 10 groups
     rep_groups = np.array(range(0, NUM_REPS))
