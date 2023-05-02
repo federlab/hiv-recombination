@@ -19,6 +19,8 @@ D_PRIME_NUMS = [2500, 5000, 10000, 25000, 50000]
 DIST_TIME_MAX = [10000, 25000, 50000, 100000, 200000]
 NUM_REPS = 200
 NUM_GROUPS = 40
+#Used for the distance cutoff plot
+RATIOS_PER_GROUP = 25000
 
 #For running on Cluster
 dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/"
@@ -138,15 +140,30 @@ for curr_x in DIST_TIME_MAX:
         curr_rho_stat = curr_x_stat[curr_x_stat['Sim_Rho'] == curr_rho]
 
         #loop through each iter group
-        for curr_iteration in range(1, NUM_GROUPS+1):
+        for curr_iteration in range(1, NUM_GROUPS):
             #get the data for the current rho and iteration
             curr_stat_df = curr_rho_stat[curr_rho_stat['iter_group'] == curr_iteration]
+
+            #sample segregating sites while the D' num is below the threshold
+            sample_df = []
+            sample_size = 0
+            sampled_loci = set()
+            unsampled_loci = set(list(curr_stat_df['Locus_1'].unique()) + list(curr_stat_df['Locus_2'].unique().tolist()))
+            while sample_size < RATIOS_PER_GROUP and len(unsampled_loci) > 0:
+                #sample another locus
+                my_sample = np.random.choice(list(unsampled_loci))
+                sampled_loci.add(my_sample)
+                unsampled_loci.remove(my_sample)
+                sample_df = curr_stat_df[curr_stat_df['Locus_1'].isin(sampled_loci) & (curr_stat_df['Locus_2'].isin(sampled_loci))]
+                sample_size = len(sample_df)
+
+            # print(sample_size)
+            curr_stat_df= sample_df
 
             #get the estimate and fit for the current dataset and sample size
             x_vals = curr_stat_df['Dist_X_Time'].unique()
             lower_fit, upper_fit, estimate_df = plne.bootstrap_rho(curr_stat_df,
                                                                 NUM_BOOTSTRAPS)
-
 
             lower_conf = np.quantile(estimate_df['Estimated_Rho'], 0.025)
             mid_est = np.quantile(estimate_df['Estimated_Rho'], 0.5)

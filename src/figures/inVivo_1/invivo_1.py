@@ -20,12 +20,12 @@ QUANTILE_LIST = [0, 0.33, 0.66, 1]
 #For running on desktop
 dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/zanini/04-24-2023/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/inVivo_1/"
 
 #For running on cluster
 # dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 # vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-# outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/zanini/04-24-2023/"
+# outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/inVivo_1/"
 
 #Make the dataframe containing D' ratios
 stat_df = zu.combine_drats(dataDir)
@@ -52,24 +52,21 @@ linewidth = 1
 markersize = 4
 
 
-
-
-# lgnd = ax0.get_legend()
-# for handle in lgnd.legendHandles:
-#     handle.set_markersize(markersize)
-#     handle.set_linewidth(linewidth)
-
-# lgnd.legendHandles[1].set_marker("x")
-
 ###################### Analysis for panels 2 and 3 ############################
 all_par_ests = []
 all_group_fits = []
 group_size_df = []
 
+lower_label = "Lower \n<" + str(int(np.quantile(stat_df['Ave_VL'], 0.33)))
+middle_label = "Middle \n" + str(int(np.quantile(stat_df['Ave_VL'], 0.33))) + " - " + str(int(np.quantile(stat_df['Ave_VL'], 0.66))) 
+upper_label = "Upper \n>" + str(int(np.quantile(stat_df['Ave_VL'], 0.66)))
+
 #First we need to group the data by the viral load quantiles
-stat_df['VL_Quantile'], bins = pd.qcut(stat_df['Ave_VL'], q = QUANTILE_LIST, retbins= True, labels = ['Lower', 'Middle', 'Upper'])
+stat_df['VL_Quantile'], bins = pd.qcut(stat_df['Ave_VL'], q = QUANTILE_LIST, retbins= True, labels = [lower_label, middle_label, upper_label])
 grouped_stats = stat_df.groupby(by = ['VL_Quantile'])
 print(bins)
+
+
 
 for name, group in grouped_stats:
     #Get the current estimate
@@ -143,8 +140,7 @@ for curr_par in par_list:
 
 #plot the quantile thresholds
 color_list = ['tab:blue', 'tab:gray', 'tab:orange']
-# for i in range(1, len(QUANTILE_LIST)-1):
-#     axs[0].axhline(bins[i], linestyle = 'dashed', color = 'k', linewidth = linewidth)
+
 aug_bins = [1] + bins.tolist()[1:-1] + [10**6]
 fill_x = np.linspace(0, 6000, 100)
 
@@ -156,9 +152,6 @@ axs[0].set_xlim(0, 6000)
 axs[0].set_xlabel("Time (days since EDI)")
 axs[0].set_ylabel("Viral Load (copies/mL)")
 
-# new_labels = ['Low VL', 'High VL']
-# for t, l in zip(axs[0].get_legend().texts, new_labels):
-#     t.set_text(l)
 
 ###################### Panel 2: D' Ratio vs. dDeltaT ##########################
 
@@ -167,10 +160,9 @@ sns.lineplot(x ='bin_edges', y ='ratio_bins', data = all_group_fits, hue = 'Grou
              palette=['tab:blue', 'tab:gray', 'tab:orange'])
 sns.lineplot(x ='bin_edges', y ='mid_conf', data = all_group_fits, hue = 'Group', ax = axs[1], linewidth = linewidth,
              palette=['tab:blue', 'tab:gray', 'tab:orange'])
-# sns.lineplot(x ='bin_edges', y ='lower_conf', data = all_group_fits, hue = 'Group', ax = axs[1], linestyle = 'dashed')
-# axs[1].get_legend().remove()
-# sns.lineplot(x ='bin_edges', y ='high_conf', data = all_group_fits, hue = 'Group', ax = axs[1], linestyle = 'dashed')
+
 handles, labels = axs[1].get_legend_handles_labels()
+labels = ['Lower', 'Middle', 'Upper']
 by_label = dict(zip(labels, handles))
 axs[1].legend(by_label.values(), by_label.keys(), title = 'Viral Load Tertile')
 
@@ -184,22 +176,11 @@ axs[1].set_ylabel("D\' Ratio")
 sns.boxplot(x ='Group', y ='Estimated_Rho', data = all_par_ests, ax = axs[2], fliersize = 2, linewidth = linewidth,
             palette=['tab:blue', 'tab:gray', 'tab:orange'])
 axs[2].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
-axs[2].set_xlabel(r'Viral Load Tertile')
+axs[2].set_xlabel(r'Viral Load Tertile (copies/mL)')
 axs[2].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
 axs[2].xaxis.set_tick_params(labelbottom=True)
 
-# bin_labs = bins[1:-1]
-# bin_labs = map(lambda x: str(x), bin_labs)
-# new_labels = ['0-0.33 :', '0.33-0.66 :', '0.66-1 :']
-# new_labels = [m+str(n) for m,n in zip(new_labels, bin_labs)]
-# print(new_labels)
-
-# axs[1].legend(loc='lower center', bbox_to_anchor=(0.5, 1.02),title = r'Viral Load Quantile', ncol = 3,
-#            labels = axs[1].get_legend_handles_labels()[1], handles = axs[1].get_legend_handles_labels()[0], frameon = True)
-
-
-# plt.subplots_adjust(wspace = 0.3)
 plt.tight_layout()
-plt.savefig(outDir + 'fig3jc_' + str(NUM_BOOTSTRAPS) + '.jpg', dpi = 300)
+plt.savefig(outDir + 'invivo_1_' + str(NUM_BOOTSTRAPS) + '.jpg', dpi = 300)
 
 plt.close()

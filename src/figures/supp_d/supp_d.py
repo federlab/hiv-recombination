@@ -17,7 +17,7 @@ from matplotlib import rcParams
 DIST_TIME_MAX = 50000
 NUM_BOOTSTRAPS = 1000
 NUM_REPS = 200
-NUM_GROUPS = 1
+NUM_GROUPS = 20
 DI_THRESHOLD = 0.005
 
 #This figure has the accuracy of the method with D values instead of D' values
