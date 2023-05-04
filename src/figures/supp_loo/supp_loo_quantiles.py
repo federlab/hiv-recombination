@@ -33,6 +33,9 @@ stat_df = zu.label_vl_drats(stat_df, vlDir)
 
 stat_df = stat_df[stat_df['Fragment'] != 'F5']
 stat_df = stat_df[stat_df['Time_Diff'].gt(50)]
+print(stat_df['Participant'].value_counts())
+stat_df = stat_df[stat_df['Participant'] != 'p10']
+print(stat_df['Participant'].unique())
 
 #Only get values for which the viral load doesn't leave the boundaries of the 
 #initial and final measurments
@@ -107,13 +110,14 @@ markersize = 4
 fig, axs = plt.subplots(4, 3, sharey = True)
 
 ax_list = axs.flatten()
-par_list = ['p1', 'p2', 'p3','p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11']
+par_list = ['p1', 'p2', 'p3','p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p11']
 
 #plot each of the participant subplots separately
 for i in range(len(par_list)):
     curr_excl = par_list[i]
     curr_df = all_par_ests[all_par_ests['excl_par'] == curr_excl]
     curr_ax = ax_list[i]
+    print(curr_excl)
     sns.boxplot(x ='Group', y ='Estimated_Rho',data = curr_df, ax = curr_ax,
                      fliersize = 2, linewidth = linewidth,
                     palette=['tab:blue', 'tab:gray', 'tab:orange'])
@@ -128,7 +132,7 @@ axs[1][0].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
 axs[2][0].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
 axs[3][0].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
 axs[3][0].set_xlabel(r'Viral Load Tertile (copies/mL)')
-axs[3][1].set_xlabel(r'Viral Load Tertile (copies/mL)')
+axs[2][1].set_xlabel(r'Viral Load Tertile (copies/mL)')
 axs[2][2].set_xlabel(r'Viral Load Tertile (copies/mL)')
 
 plt.subplots_adjust(hspace= 0.4)

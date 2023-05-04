@@ -177,6 +177,7 @@ sns.boxplot(x ='Group', y ='Estimated_Rho', data = all_par_ests, ax = axs[2], fl
             palette=['tab:blue', 'tab:gray', 'tab:orange'])
 axs[2].set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
 axs[2].set_xlabel(r'Viral Load Tertile (copies/mL)')
+
 axs[2].ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
 axs[2].xaxis.set_tick_params(labelbottom=True)
 

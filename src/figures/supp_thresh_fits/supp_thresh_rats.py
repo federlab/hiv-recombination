@@ -13,8 +13,7 @@ import zaniniUtil as zu
 from scipy import stats
 from matplotlib import rcParams
 
-# In this script I am repeating the viral load analysis, but I am resampling
-# from the patients such that I leave one out in each sample
+
 THRESHOLD = 0.2
 DIST_TIME_MAX = 50000
 GROUP_THRESHOLD_LIST = [7500, 10000, 25000, 50000, 100000, 200000]
@@ -23,12 +22,12 @@ NUM_BOOTSTRAPS = 1000
 #For running on Cluster
 dataDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_thresh_rats/"
+outDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/results/paper/supp_thresh_fits/"
 
 #For running on desktop
 dataDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini_snakemake/"
 vlDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/zanini/viralLoads/"
-outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_thresh_rats/"
+outDir = "/Volumes/feder-vol1/home/evromero/2021_hiv-rec/results/paper/supp_thresh_fits/"
 
 #Make the dataframe containg D' ratios
 stat_df = zu.combine_drats(dataDir)
@@ -133,7 +132,7 @@ for i in range(len(GROUP_THRESHOLD_LIST)):
     if i != 0:
         curr_ax.get_legend().remove()
     else:
-        new_labels = ['Low VL', 'High VL']
+        new_labels = ['Below Threshold', 'Above Threshold']
         for t, l in zip(curr_ax.get_legend().texts, new_labels):
             t.set_text(l)
         for curr_dot in curr_ax.legend_.legendHandles:

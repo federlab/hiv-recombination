@@ -148,24 +148,41 @@ viralLoadData = viralLoadData[viralLoadData['Participant'] == 'p1']
 viralLoadData['BelowThreshold'] = ['Low_VL' if x < bins[1] else 'High_VL' for x in viralLoadData['Viral load [virions/ml]']]
 
 #now plot the viral loads
-myplot = sns.lineplot(x = 'Days from infection', y = 'Viral load [virions/ml]', hue = 'BelowThreshold', style = 'BelowThreshold',data = viralLoadData,
-                     errorbar = None, ax = ax0, markers = True, linewidth = linewidth, markersize = markersize)
-ax0.axhline(y = bins[1], color = 'black', linestyle = 'dashed', linewidth = linewidth)
+# myplot = sns.lineplot(x = 'Days from infection', y = 'Viral load [virions/ml]', hue = 'BelowThreshold', style = 'BelowThreshold',data = viralLoadData,
+#                      errorbar = None, ax = ax0, markers = True, linewidth = linewidth, markersize = markersize)
+# ax0.axhline(y = bins[1], color = 'black', linestyle = 'dashed', linewidth = linewidth)
+# ax0.set_yscale('log')
+# ax0.set_xlabel("Time (days since EDI)")
+# ax0.set_ylabel("Viral Load (copies/mL)")
+# ax0.legend(loc = "lower right",title = 'Viral Load Quantile')
+# new_labels = ['Below Median', 'Above Median']
+# for t, l in zip(ax0.get_legend().texts, new_labels):
+#     t.set_text(l)
+
+
+# lgnd = ax0.get_legend()
+# for handle in lgnd.legendHandles:
+#     handle.set_markersize(markersize)
+#     handle.set_linewidth(linewidth)
+
+# lgnd.legendHandles[1].set_marker("x")
+
+#now plot the viral loads
+myplot = sns.lineplot(x = 'Days from infection', y = 'Viral load [virions/ml]',
+                        data = viralLoadData, errorbar = None, ax = ax0, color = 'k',
+                        markers = True, linewidth = linewidth, markersize = markersize)
+
+color_list = ['tab:blue', 'tab:orange']
+fill_x = np.linspace(0, 3500, 100)
+
+ax0.fill_between(fill_x, 0, bins[1], color = color_list[0], alpha = 0.3)
+ax0.fill_between(fill_x, bins[1], 10**6, color = color_list[1], alpha = 0.3)
+
+ax0.set_ylim(np.min(viralLoadData['Viral load [virions/ml]']), np.max(viralLoadData['Viral load [virions/ml]']))
+ax0.set_xlim(0, 3500)
 ax0.set_yscale('log')
 ax0.set_xlabel("Time (days since EDI)")
 ax0.set_ylabel("Viral Load (copies/mL)")
-ax0.legend(loc = "lower right",title = 'Viral Load Quantile')
-new_labels = ['Below Median', 'Above Median']
-for t, l in zip(ax0.get_legend().texts, new_labels):
-    t.set_text(l)
-
-
-lgnd = ax0.get_legend()
-for handle in lgnd.legendHandles:
-    handle.set_markersize(markersize)
-    handle.set_linewidth(linewidth)
-
-lgnd.legendHandles[1].set_marker("x")
 
 ########################## Plot the box plots ################################
 ax1 = axd['right']
@@ -183,7 +200,7 @@ sns.boxplot(x ='Group', y ='Estimated_Rho', data = all_par_ests, ax = ax1,  flie
 ax1.set_ylabel(r'Estimated Recombination Rate ($\hat{\rho}$)')
 ax1.set_xlabel(r'Viral Load Quantile (copies/mL)')
 ax1.ticklabel_format(style = 'sci', axis = 'y', scilimits = (0,0))
-ax1.xaxis.set_tick_params(labelbottom=True)
+
 # new_labels = ['Low VL', 'High VL']
 # for t, l in zip(ax1.get_legend().texts, new_labels):
 #     t.set_text(l)
@@ -204,9 +221,14 @@ sns.lineplot(x ='bin_edges', y ='ratio_bins', data = high_50k, color = 'tab:oran
 sns.lineplot(x ='bin_edges', y ='mid_conf', data = high_50k, color = 'saddlebrown', linewidth = linewidth, ax = ax2)
 # sns.lineplot(x ='bin_edges', y ='lower_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed', linewidth = linewidth, ax = ax2)
 # sns.lineplot(x ='bin_edges', y ='high_conf', data = high_50k, color = 'saddlebrown', linestyle = 'dashed', linewidth = linewidth, ax = ax2)
-ax2.get_legend().remove()
+
 ax2.set_xlabel(r'Distance $\cdot$ Time (bp $\cdot$ generations)')
 ax2.set_ylabel("D\' Ratio")
+ax2.legend(loc = "lower right",title = 'Viral Load Quantile')
+new_labels = ['Below Median', 'Above Median']
+for t, l in zip(ax2.get_legend().texts, new_labels):
+    t.set_text(l)
+ax2.xaxis.set_tick_params(labelbottom=True)
 
 plt.tight_layout()
 plt.savefig(outDir + 'fig4reFit_' + str(NUM_BOOTSTRAPS) + '.jpg', dpi = 300)
