@@ -33,6 +33,7 @@ sel <- opt$selection
 #Fixed args
 path_to_hxb2_env <- "/net/feder/vol1/project/hiv_recombination/data/reference/hxb2/hxb2_env_full.fa.txt"
 samplingGenerations <- 5*Ne + c(0, 150, 300, 450, 600)
+samplingGenerations <- round(samplingGenerations, digits = 0)
 
 trial_directory <- paste0("mu", mu, "_rho", rho, "_Ne", Ne, "_M", M, "_s", sel,"_rep", rep)
 

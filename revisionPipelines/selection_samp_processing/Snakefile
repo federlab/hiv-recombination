@@ -1,0 +1,48 @@
+import numpy as np
+import shutil
+
+#This file is for running our neher and leitner analysis on the filtered genotypes
+
+#Directory we'll use to save all of the additional analysis files
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2023_09_12_selection_samp/'
+
+#Directory with all of the scripts for our additional rules
+ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
+
+# #For Desktop Dry run
+# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2023_09_12_selection_samp/'
+
+
+#get the values for each of the simulation options
+rho_vals = ['1e-04','1e-05']
+sample_depths = ['80', '40', '20', '10']
+reps = range(5000)
+
+#the patterns for the linkage results
+full_dir_pattern_linkage = dataDir + "mu1e-05_rho{rho_val}_Ne10000_M{depth}_rep{rep}/linkage/r2_and_D"
+full_dir_linkage = expand(full_dir_pattern_linkage,
+        rho_val = rho_vals, depth = sample_depths, rep = reps)
+
+full_dir_pattern_d_rat_prime = dataDir + "mu1e-05_rho{rho_val}_Ne10000_M{depth}_rep{rep}/linkage/d_ratio"
+full_dir_pattern_d_rat_prime = expand(full_dir_pattern_d_rat_prime,
+        rho_val = rho_vals, depth = sample_depths, rep = reps)
+
+#Targets are outputs and dependencies are inputs
+rule all:
+    input:
+     full_dir_pattern_d_rat_prime,
+
+rule calc_linkage_new:
+    input:
+     dataDir + "mu1e-05_rho{rho_val}_Ne10000_M{depth}_rep{rep}/analysis/FilteredLoci",
+     dataDir + "mu1e-05_rho{rho_val}_Ne10000_M{depth}_rep{rep}/analysis/FilteredGenotypes"
+    output:
+     dataDir + "mu1e-05_rho{rho_val}_Ne10000_M{depth}_rep{rep}/linkage/r2_and_D"
+    script: ruleScriptDir + "calc_linkage_new.py"
+
+rule calc_d_rat_D_prime:
+    input:
+     dataDir + "mu1e-05_rho{rho_val}_Ne10000_M{depth}_rep{rep}/linkage/r2_and_D"
+    output:
+     dataDir + "mu1e-05_rho{rho_val}_Ne10000_M{depth}_rep{rep}/linkage/d_ratio"
+    script: ruleScriptDir + "calc_d_rat.py"

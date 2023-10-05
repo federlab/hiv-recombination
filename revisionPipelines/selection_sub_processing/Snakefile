@@ -1,0 +1,46 @@
+import numpy as np
+import shutil
+
+#This file is for running our neher and leitner analysis on the filtered genotypes
+
+#Directory we'll use to save all of the additional analysis files
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2023_09_01_selection_sub/'
+
+#Directory with all of the scripts for our additional rules
+ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
+
+# #For Desktop Dry run
+# dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2023_09_01_selection_sub/'
+
+
+#get the values for each of the simulation options
+rho_vals = ['1e-05', '1e-04']
+mig_rates = ['1e-05', '1e-04', '0.001', '0.01']
+reps = range(250)
+STR_NE = '5000'
+
+#the patterns for the linkage results
+full_dir_pattern_d_rat_prime = dataDir + "mu1e-05_rho{rho_val}_Ne" + STR_NE +  "_M800_rep{rep}_mr{mig_rate}/linkage/d_ratio"
+full_dir_pattern_d_rat_prime = expand(full_dir_pattern_d_rat_prime,
+        rho_val = rho_vals, rep = reps, mig_rate = mig_rates)
+
+#Targets are outputs and dependencies are inputs
+rule all:
+    input:
+     full_dir_pattern_d_rat_prime,
+
+
+rule calc_linkage_new:
+    input:
+     dataDir + "mu1e-05_rho{rho_val}_Ne" + STR_NE +  "_M800_rep{rep}_mr{mig_rate}/analysis/FilteredLoci",
+     dataDir + "mu1e-05_rho{rho_val}_Ne" + STR_NE +  "_M800_rep{rep}_mr{mig_rate}/analysis/FilteredGenotypes"
+    output:
+     dataDir + "mu1e-05_rho{rho_val}_Ne" + STR_NE +  "_M800_rep{rep}_mr{mig_rate}/linkage/r2_and_D"
+    script: ruleScriptDir + "calc_linkage_new.py"
+
+rule calc_d_rat_D_prime:
+    input:
+     dataDir + "mu1e-05_rho{rho_val}_Ne" + STR_NE +  "_M800_rep{rep}_mr{mig_rate}/linkage/r2_and_D"
+    output:
+     dataDir + "mu1e-05_rho{rho_val}_Ne" + STR_NE +  "_M800_rep{rep}_mr{mig_rate}/linkage/d_ratio"
+    script: ruleScriptDir + "calc_d_rat.py"

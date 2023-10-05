@@ -1,0 +1,75 @@
+import numpy as np
+
+#Load the modules we will need for the jobs
+# shell.prefix()
+shell.prefix("module load pcre2/10.39;\nmodule load R/4.1.2;\nmodule load SLiM/3.7;")
+
+#Directory where the simulations will take place
+wrap_dir = '/net/feder/vol1/project/hiv_recombination/data/simulated/'
+r_script_dir = '/net/feder/vol1/project/hiv_recombination/bin/R_for_snakemake/'
+python_script_dir = '/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts_simulation/'
+out_dir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
+
+# #For Desktop Dry run
+# wrap_dir = '/Volumes/feder-vol1/project/hiv_recombination/data/simulated/'
+# r_script_dir = '/Volumes/feder-vol1/project/hiv_recombination/bin/R_for_snakemake/'
+# python_script_dir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/bin/rule_scripts_simulation/'
+# out_dir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/'
+
+#The constants we will use for each run
+DIR_NAME = '2023_09_12_selection_samp'
+MU = 1e-5
+STR_MU = '1e-05'
+NE = 1e4
+
+
+#get the values for each of the simulation options
+rho_vals = ['1e-04','1e-05']
+sample_depths = ['80', '40', '20', '10']
+reps = range(5000)
+
+#the patterns for the genotype and loci dataframes
+full_dir_pattern_gen= out_dir + DIR_NAME + "/mu" + STR_MU +"_rho{rho_val}_Ne10000_M{depth}_rep{rep}/analysis/FilteredGenotypes"
+full_dir_pattern_gen = expand(full_dir_pattern_gen,
+        rho_val = rho_vals, rep = reps, depth = sample_depths)
+
+full_dir_pattern_loc= out_dir + DIR_NAME + "/mu" + STR_MU +"_rho{rho_val}_Ne10000_M{depth}_rep{rep}/analysis/FilteredLoci"
+full_dir_pattern_loc = expand(full_dir_pattern_loc,
+        rho_val = rho_vals, rep = reps, depth = sample_depths)
+
+
+#Targets are outputs and dependencies are inputs
+rule all:
+    input:
+     full_dir_pattern_gen,
+     full_dir_pattern_loc
+
+#This rule creates the directories and slim scripts for each simulation
+rule set_up_dirs:
+    output: 
+     wrap_dir + DIR_NAME + "/mu" + STR_MU +"_rho{rho_val}_Ne10000_M{depth}_rep{rep}/slim_script.txt"
+    shell: "Rscript " + r_script_dir + "sel_setup_dir_and_script.r -d " + \
+             DIR_NAME + " -m " + str(MU) + " -r {wildcards.rho_val} -N " + str(NE) + " -M {wildcards.depth} -i {wildcards.rep}" 
+
+#This rule runs the slim script for each simulation
+rule run_slim:
+    input:
+     wrap_dir + DIR_NAME + "/mu" + STR_MU +"_rho{rho_val}_Ne10000_M{depth}_rep{rep}/slim_script.txt"
+
+    output:
+     wrap_dir + DIR_NAME + "/mu" + STR_MU +"_rho{rho_val}_Ne10000_M{depth}_rep{rep}/slim_output.txt"
+    
+    shell: "slim " + wrap_dir + DIR_NAME + "/mu" + STR_MU +"_rho{wildcards.rho_val}_Ne10000_M{wildcards.depth}_rep{wildcards.rep}/slim_script.txt > " + \
+            wrap_dir + DIR_NAME + "/mu" + STR_MU +"_rho{wildcards.rho_val}_Ne10000_M{wildcards.depth}_rep{wildcards.rep}/slim_output.txt"
+
+#This rule parses and makes dataframes of the slim output
+rule format_slim_output:
+    input: 
+     wrap_dir + DIR_NAME + "/mu" + STR_MU +"_rho{rho_val}_Ne10000_M{depth}_rep{rep}/slim_output.txt"
+    
+    output:
+     out_dir + DIR_NAME + "/mu" + STR_MU +"_rho{rho_val}_Ne10000_M{depth}_rep{rep}/analysis/FilteredGenotypes",
+     out_dir + DIR_NAME + "/mu" + STR_MU +"_rho{rho_val}_Ne10000_M{depth}_rep{rep}/analysis/FilteredLoci"
+    
+    script:
+        python_script_dir + "format_slim_output.py"

@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import r2Analysis as r2
 import sys
 
 #Estimate the recombination rate by looking at the decay of 
@@ -47,8 +46,6 @@ def calculate_d_ratios(linkage_file, threshold = 0.2, four_haps = True, stat = '
         three_filter.append(row_sum)
     rd_arr['three_filter'] = three_filter
 
-    print(((rd_arr['AB_obs'] > 0) + (rd_arr['aB_obs'] > 0) \
-            + (rd_arr['Ab_obs'] > 0) + (rd_arr['ab_obs'] > 0)), file = sys.stderr)
     #only include loci with 4 haplotypes
     if four_haps:
         rd_arr = rd_arr.loc[(rd_arr['AB_obs'] > 0) & (rd_arr['aB_obs'] > 0) \

@@ -1,5 +1,3 @@
-# import pysam
-# import allel
 import sys
 import numpy as np
 import pandas as pd
