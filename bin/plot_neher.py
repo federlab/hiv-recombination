@@ -1,4 +1,5 @@
 import sys
+import warnings
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -252,7 +253,9 @@ def run_neher_fit(c0_fixed, lower_bounds, upper_bounds, initial, test_results):
 ###################### Functionality for Bootstrapping ########################
 def bootstrap_rho(d_ratio_df, num_boots):
     """ Takes a d_ratio dataframe and resamples from it to bootstrap a rho
-    estimate.
+    estimate. Note 08/17/2023: This function is in the biorxiv version of the 
+    paper, but we are changing the estimation method during the revision so it
+    is no longer used.
     ---------------------------------------------------------------------------
     Params
     ------------
@@ -307,6 +310,75 @@ def bootstrap_rho(d_ratio_df, num_boots):
     upper_fit = upper_fit.head(1)
     return lower_fit, upper_fit, estimate_df
 
+#This method is quite sensitive to underlying noise in the data. So we will not be using it
+# def bootstrap_rho_saturation(d_ratio_df, num_boots, S_VAL):
+#     """ Takes a d_ratio dataframe and resamples from it to bootstrap a rho
+#     estimate. In this version of the function, we have updated the method
+#     to use the saturation x = 1/(s_val * rho). 
+#     ---------------------------------------------------------------------------
+#     Params
+#     ------------
+#     d_ratio_df: pd.DataFrame, containing the d' ratio for a pair of loci
+#                 also includes d' at the first time point, and information 
+#                 about the two timepoints of sampling
+#     num_boots:  int, the number of bootstrap resamples to perform
+#     S_VAL:      float, the value of s to use in the saturation equation
+
+#     Returns
+#     -------------
+#     lower_fit:  pd.Series, row of the estimate dataframe containing the fit at
+#                 the 2.5 percentile
+#     upper_fit:  pd.Series, row of the estimate dataframe containing the fit at 
+#                 the 97.5 percentile
+#     estimate_df:pd.DataFrame, the dataframe containing all of the bootstrapped
+#                 fits in the distribution
+#     """
+#     #make a list of all the segregating loci
+#     all_seg_loc_1 = set(d_ratio_df["Locus_1"].unique())
+#     all_seg_loc_2 = set(d_ratio_df["Locus_2"].unique())
+#     all_seg_loc = all_seg_loc_1.union(all_seg_loc_2)
+#     all_seg_loc = np.array(list(all_seg_loc))
+#     num_seg = len(all_seg_loc)
+
+#     estimates = []
+
+#     #sample with replacement num_boots times
+#     for i in range(num_boots):
+#         #sample a given number of segregating loci
+#         seg_loc_sample = np.random.choice(all_seg_loc, size = num_seg, replace = True)
+#         seg_loc_sample = set(seg_loc_sample)
+
+#         #get only the autocorrelation of the chosen loci
+#         stat_df_sample = d_ratio_df[d_ratio_df["Locus_1"].isin(seg_loc_sample)]
+#         stat_df_sample = stat_df_sample[stat_df_sample["Locus_2"].isin(seg_loc_sample)]
+
+#         #calculate the recombination rate from the current sample
+#         try:
+#             coeffs, fit_dat = optimize.curve_fit(neher_leitner, 
+#                 stat_df_sample['Dist_X_Time'].to_numpy(), stat_df_sample['d_ratio'].to_numpy(), p0 = [0, 0.26, .0000439], maxfev = 10000)
+#         except RuntimeError:
+#             print("Max iterations reached", file = sys.stderr)
+#             continue
+
+#         #calculate the saturation point
+#         c0 = coeffs[0]
+#         c1 = coeffs[1]
+#         c2 = coeffs[2]
+#         e_neg_c2_x = (c0 + c1)/(2*c1)
+#         my_estimate = np.log(e_neg_c2_x)/(-c2)
+#         my_estimate = 1/(S_VAL * my_estimate)
+
+#         estimates.append([c0, c1, c2, my_estimate])
+#     estimate_df = pd.DataFrame(estimates, columns = ['c0', 'c1', 'c2', 'Estimated_Rho'])
+#     conf_int = (np.quantile(estimate_df['Estimated_Rho'], 0.025), np.quantile(estimate_df['Estimated_Rho'], 0.975))
+
+#     #get the row at the given quantile
+#     lower_fit = estimate_df.iloc[(estimate_df['Estimated_Rho']-conf_int[0]).abs().argsort()[:2]]
+#     lower_fit = lower_fit.head(1)
+#     upper_fit = estimate_df.iloc[(estimate_df['Estimated_Rho']-conf_int[1]).abs().argsort()[:2]]
+#     upper_fit = upper_fit.head(1)
+#     return lower_fit, upper_fit, estimate_df
+
 ###################### Functionality for Downsampling D' ratios ###############
 
 def downsample_ratios(current_group, sample_size = 25000):
@@ -348,5 +420,44 @@ def downsample_ratios(current_group, sample_size = 25000):
     if len(unsampled_loci) == 0:
         raise ValueError('Group did not contain enough loci')
     
+    return sample_df
+    
+def downsample_loci(current_group, sample_size = 1000):
+    """Takes in a dataframe of D' ratios that is going to be used as one group
+    for estimation. This function samples without replacement from the 
+    segregating loci.
+    ---------------------------------------------------------------------------
+    Params
+    ------------
+    current_group: pd.DataFrame, the dataframe containing the D' ratios and 
+                    their corresponding segregating loci
+    sample_size:   int, the number of segregating loci to sample
+    Returns
+    -------------
+    downsampled_df: pd.DataFrame, the dataframe containing the downsampled D'
+                     ratios
+    """
+    sample_list = []
+    reps_in_group = len(current_group['rep'].unique())
+    
+    #Next we need to sample segregating sites but we have to group by locus and simulation
+    #To do this we'll make columns that give the rep and the locus
+    #basically sample an even number of segregating loci from each rep
+    for curr_rep in current_group['rep'].unique():
+        rep_stat_df = current_group[current_group['rep'] == curr_rep]
+        curr_loci = set(rep_stat_df['Locus_1'].unique().tolist() + rep_stat_df['Locus_2'].unique().tolist())
+
+        #now sample a number of segregating loci from the current rep
+        if len(curr_loci) < int(sample_size/reps_in_group):
+            warnings.warn('Not enough segregating loci to sample from rep ' + str(curr_rep))
+            curr_sample = np.random.choice(list(curr_loci), size = len(curr_loci), replace = False)
+
+        else:
+            curr_sample = np.random.choice(list(curr_loci), size = int(sample_size/reps_in_group), replace = False)
+        sample_list.append(rep_stat_df[rep_stat_df['Locus_1'].isin(curr_sample) & rep_stat_df['Locus_2'].isin(curr_sample)])
+
+    
+    sample_df = pd.concat(sample_list, ignore_index=True)
+
     return sample_df
     

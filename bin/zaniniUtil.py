@@ -349,6 +349,123 @@ def combine_drats(d_rat_dir, d_stat = False):
     stat_df['Dist'] = stat_df['Locus_2'] - stat_df['Locus_1']
     return stat_df
 
+def make_dprime_df(dataDir, allele_freq_threshes, distance_thresh,
+                   four_hap_thresh = True, frags_to_exclude = []):
+    """This function makes a dataframe of the D' ratios labeled by rho value.
+    I am going to use it to make linkage plots . 
+    ---------------------------------------------------------------------------
+    params:
+    ---------
+    dataDir:    str, path to the directory containing the slim output files
+    allele_freq_thresh: tuple, the minimum and maximum allele frequencies that
+                we'll use to calculate D' ratios
+    distance_thresh: int, the maximum distance between loci that we'll put in
+                the dataframe
+    four_hap_thresh: bool, whether to require four haplotypes to include ratios
+                in the dataframe
+    frags_to_exclude: list, a list of fragments to exclude from the dataframe
+
+    returns:
+    ---------
+    dprime_df:  pd.DataFrame, dataframe containing the D' ratios for all of 
+                the simulations
+    """
+    #Make a list where we'll store the results
+    dprime_df = []
+
+    #Loop through each dataset in the directory
+    for curr_dir in os.listdir(dataDir):
+        #Skip the non-directories
+        if not os.path.isdir(dataDir+curr_dir) or curr_dir[0] == '.':
+            continue
+        
+        #Get the info for the run
+        participant = curr_dir.split('_')[0]
+        fragment = curr_dir.split('_')[1]
+
+        #Skip any fragments we want to exclude
+        if fragment in frags_to_exclude:
+            continue
+
+        #Now, get the D' ratios for the run
+        curr_file = dataDir + curr_dir + "/linkage/r2_and_D"
+        if not os.path.exists(curr_file):
+            continue
+        D_vals_df = pd.read_pickle(curr_file) 
+        D_vals_df['Participant'] = participant
+        D_vals_df['Fragment'] = fragment
+
+        #Filter the data by allele frequency
+        freq_min = allele_freq_threshes[0]
+        freq_max = allele_freq_threshes[1]
+        D_vals_df = D_vals_df[D_vals_df['p_A'].between(freq_min, freq_max)]
+        D_vals_df = D_vals_df[D_vals_df['p_B'].between(freq_min, freq_max)]
+
+        #Filter the data by distance
+        D_vals_df['Dist'] = D_vals_df['Locus_2'] - D_vals_df['Locus_1']
+        D_vals_df = D_vals_df[D_vals_df['Dist'] <= distance_thresh]
+
+        #Filter the data by number of haplotypes
+        if four_hap_thresh:
+            D_vals_df = D_vals_df[D_vals_df['AB_obs'] > 0]
+            D_vals_df = D_vals_df[D_vals_df['Ab_obs'] > 0]
+            D_vals_df = D_vals_df[D_vals_df['aB_obs'] > 0]
+            D_vals_df = D_vals_df[D_vals_df['ab_obs'] > 0]
+
+        #Add the data to the list we'll return
+        dprime_df.append(D_vals_df)
+    
+    dprime_df = pd.concat(dprime_df, ignore_index=True)
+
+    return dprime_df
+
+def count_seg_sites(stat_df, grouping_var):
+    """ This function takes the D' ratio dataframe used to produce grouped
+    estimates. Then, it calculates the number of segregating sites that
+    went into each estimate.
+    ---------------------------------------------------------------------------
+    params:
+    ---------
+    stat_df:   pd.DataFrame, dataframe containing the D' ratio values output by
+                the estimation_util module
+    grouping_var: str, the name of the column in the dataframe that was used to
+                form estimate groups
+
+    returns:
+    ---------
+    all_loci_counts:    pd.DataFrame, dataframe containing the number of loci
+                        for each estimate group
+    """
+    all_loci_counts = []
+
+    #Loop through each group we were estimating from
+    for curr_group_var in stat_df[grouping_var].unique():
+        curr_group_stat = stat_df[stat_df[grouping_var] == curr_group_var]
+        num_ldms = len(curr_group_stat)
+
+        #make a place to store the number of loci in the estimate
+        group_num_loci = 0
+
+        #Next we need to count segregating sites but we have to group by
+        #participant and fragment
+        curr_group_stat = curr_group_stat.groupby(['Participant', 'Fragment'])
+
+        for name, group in curr_group_stat:
+            curr_loci = set(group['Locus_1'].unique().tolist() + \
+                            group['Locus_2'].unique().tolist())
+            group_num_loci += len(curr_loci)
+        
+        #Now we have the number of loci in the group, so we can add it to 
+        # the dataframe
+        all_loci_counts.append([curr_group_var, group_num_loci,
+                                num_ldms])
+
+    #Make a dataframe of the counts
+    all_loci_counts = pd.DataFrame(all_loci_counts, 
+                columns = ['est_group', 'num_loci', 'num_ldms'])
+    
+    return all_loci_counts
+
 ########################### Helper Functions ##################################
 def fix_unmatched_VLs_CD4(stat_df, label_dict):
     """For participants with no exact matching timepoints, pairs the closest 

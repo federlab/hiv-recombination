@@ -1,0 +1,55 @@
+import numpy as np
+import shutil
+
+#This file is for running our neher and leitner analysis on the filtered genotypes
+
+#Directory we'll use to save all of the additional analysis files
+dataDir = '/net/feder/vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
+
+#Directory with all of the scripts for our additional rules
+ruleScriptDir = "/net/feder/vol1/home/evromero/2021_hiv-rec/bin/rule_scripts/"
+
+#For Desktop Dry run
+dataDir = '/Volumes/feder-vol1/home/evromero/2021_hiv-rec/data/slimDatasets/2022_10_03_neutral/'
+
+
+#get the proper names of all the simulated directories
+rho_vals = ['0.001', '1e-04','2e-04' ,'1e-05', '2e-05', '2e-06' ]
+
+reps = range(200)
+sel_opts = ['neutral']
+
+#the patterns for the linkage results
+full_dir_pattern_linkage = dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage_D/r2_and_D"
+full_dir_linkage = expand(full_dir_pattern_linkage,
+        rho_val = rho_vals, rep = reps, sel_opt = sel_opts)
+
+full_dir_pattern_d_rat = dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage_D/d_ratio_three_haps"
+full_dir_pattern_d_rat = expand(full_dir_pattern_d_rat,
+        rho_val = rho_vals, rep = reps, sel_opt = sel_opts)
+
+#get the proper names of all the timepoint files
+timepoint_nums = range(1, 6)
+
+# timepoint_pattern = "slim_formatted_t{timepoint_num}"
+timepoint_list = ["slim_formatted_t" + str(s) + '_f1' for s in timepoint_nums]
+
+#Targets are outputs and dependencies are inputs
+rule all:
+    input:
+     full_dir_pattern_d_rat
+
+rule calc_linkage_D:
+    input:
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredLoci",
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/analysis/FilteredGenotypes"
+    output:
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage_D/r2_and_D"
+    script: ruleScriptDir + "calc_linkage_D.py"
+
+rule calc_d_rat_D:
+    input:
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage_D/r2_and_D"
+    output:
+     dataDir + "mu1e-06_rho{rho_val}_Ne10000_M800_s{sel_opt}_rep{rep}/linkage_D/d_ratio_three_haps"
+    script: ruleScriptDir + "calc_d_rat_D.py"
