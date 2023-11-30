@@ -97,9 +97,12 @@ def label_Ne(my_dataframe):
     labeling and returns the newly labeled dataframe
     """
     ne_dict_fix_strings = {
+            "1000" : r"$N_e=10^3$",
             "5000" : r"$N_e=5\times10^3$",
             "10000" : r"$N_e=10^4$",
-            "50000" : r"$N_e=5\times10^4$"}
+            "50000" : r"$N_e=5\times10^4$",
+            "1e+05" : r"$N_e=10^5$",
+            "5e+05" : r"$N_e=5\times10^5$"}
     newStringNe = []
     for entry in my_dataframe['Ne']:
         newStringNe.append(ne_dict_fix_strings[entry])
