@@ -223,11 +223,15 @@ def vNE_make_comparison_dataframes(dataDir, outDir, NUM_REPS, NUM_GROUPS,
     #Filter the groups so the first d' value is greater than 0.2
     all_stat_dfs = all_stat_dfs[all_stat_dfs['d_i'] > THRESHOLD]
 
-    #Randomly divide the reps into 10 groups
+    #Filter out any additional iterations
+    #EVR added on 11-15-2023 because I was combining dataframes from different
+    #simulation pipelines
+    all_stat_dfs = all_stat_dfs[all_stat_dfs['rep'] < NUM_REPS]
+
+    #Randomly divide the reps into the specified number of groups
     rep_groups = np.array(range(0, NUM_REPS))
     np.random.shuffle(rep_groups)
     rep_groups = np.array_split(rep_groups, NUM_GROUPS)
-
 
     #Make a dictionary to label each group
     group_dict = {}
