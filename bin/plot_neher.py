@@ -382,7 +382,7 @@ def bootstrap_rho(d_ratio_df, num_boots):
 ###################### Functionality for Downsampling D' ratios ###############
 
 def downsample_ratios(current_group, sample_size = 25000):
-    """Takes in a dataframe of D' ratios that is goint to be used as one group
+    """Takes in a dataframe of D' ratios that is going to be used as one group
     for estimation. This function samples without replacement from the 
     segregating loci until the number of D' ratios in the dataset reaches
     sample_size.
